@@ -267,3 +267,36 @@ into a notes box, and white label backgrounds.)*
   (10 tests pass), `pnpm lint`, `pnpm --filter infra synth` — all green.
 - One fix along the way: pinned `web` to Vite 5 to match the Vite that `vitest@2`
   bundles (Vite 6 caused a plugin-type mismatch).
+
+---
+
+## 12 — Module 2: SharedStack + edge
+
+> [After reviewing the full module list] Looks good. Let's go to Module 2 then.
+
+**Context:** first real infrastructure module.
+
+**Architecture refinement made here:** Cognito moved **out** of `SharedStack`
+into the Accounts stack (Module 3). If SharedStack owned the user pool while
+Accounts owned the post-confirmation trigger and the `/me` routes (which need
+SharedStack's API), the stacks would depend on each other cyclically. Accounts
+now owns the user pool + app client + hosted-UI domain + trigger + the shared
+JWT authorizer; SharedStack has no Cognito dependency. All cross-stack wiring is
+via SSM parameters (`infra/lib/param-names.ts`).
+
+**Outcome — `SharedStack` (verified by synth + 8 unit tests):**
+
+- EventBridge custom bus `cre-portal-bus`.
+- One edge API Gateway **HTTP API** with a public `GET /v1/health` route backed
+  by an inline arm64 Node 22 Lambda (X-Ray active) — the deploy smoke test.
+- SPA hosting: private S3 bucket (`BLOCK_ALL`, `DESTROY` + `autoDeleteObjects`)
+  behind CloudFront with OAC, HTTP/2+3, `PRICE_CLASS_100`, and 403/404 → 200
+  `/index.html` for client-side routing.
+- Context-gated SES sender identity (`-c senderEmail=…`).
+- Seven `/cre-portal/shared/*` SSM parameters (bus, api id/endpoint, web bucket,
+  distribution id/domain) for service stacks to consume.
+- Corrected the design doc: HTTP APIs don't support X-Ray active tracing (only
+  REST APIs do) — tracing is Lambda-layer + correlation-id propagation.
+
+Not deployed yet (needs `aws login`); `pnpm --filter infra synth --strict` is
+clean and all 17 workspace tests pass.

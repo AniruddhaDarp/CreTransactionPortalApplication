@@ -393,7 +393,7 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
 
 | Service | Owns | Publishes | Consumes |
 |---|---|---|---|
-| **Accounts** | user profiles; Cognito post-confirmation trigger | `account.created` | — |
+| **Accounts** | user profiles; **the Cognito user pool + app client + hosted-UI domain + post-confirmation trigger + the shared JWT authorizer** (exported via SSM) | `account.created` | — |
 | **Deals** | deal record + status; membership + invitations; milestones (stages, checklists); handshake state machine | `deal.created`, `deal.updated`, `deal.status_changed`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed`, `stage.advanced`, `handshake.requested`, `handshake.approved`, `handshake.rejected` | `document.archived` (delete saga) |
 | **Chat** | threads, messages, receipts, read markers; local `memberships` projection | `message.posted`, `message.edited`, `message.deleted`, `thread.created`, `thread.converted` | `member.*` |
 | **Documents** | documents + versions, document requests; S3 docs bucket; local `memberships` projection | `document.uploaded`, `document.versioned`, `document.promoted`, `document.archived`, `docrequest.created`, `docrequest.fulfilled`, `docrequest.declined`, `docrequest.cancelled` | `member.*`, `handshake.approved` |
@@ -443,14 +443,21 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
   - `packages/platform` — DynamoDB doc-client + key helpers, an EventBridge
     publisher, the HTTP handler adapter, structured logging with `correlationId`.
   - `packages/authz` — the pure permission/scope library.
-- **CDK:** `SharedStack` (EventBridge bus, the edge API Gateway HTTP API +
-  authorizer, Cognito user pool + hosted UI domain, SES identities, the SPA's
-  S3 + CloudFront) + one stack per service (`AccountsStack`, `DealsStack`, …)
-  wiring that service's Lambda(s), table, queue + DLQ, rule, IAM role, and route
-  integrations. Cross-stack references via CDK or SSM parameters.
-- **Observability:** structured JSON logs keyed by `correlationId`; **AWS X-Ray**
-  active tracing on API Gateway and every Lambda for the end-to-end distributed
-  trace; 1-week CloudWatch log retention.
+- **CDK:** `SharedStack` (EventBridge bus, the edge API Gateway HTTP API, SES
+  sender identity, the SPA's S3 + CloudFront) + one stack per service
+  (`AccountsStack`, `DealsStack`, …) wiring that service's Lambda(s), table,
+  queue + DLQ, rule, IAM role, and route integrations. **Cognito (user pool +
+  app client + hosted-UI domain + post-confirmation trigger) and the shared JWT
+  authorizer live in the Accounts stack**, not SharedStack — SharedStack has no
+  Cognito dependency, which keeps the stack graph acyclic (SharedStack →
+  Accounts → other services). All cross-stack references go through **SSM
+  parameters** (`infra/lib/param-names.ts`) so each stack deploys independently.
+- **Observability:** structured JSON logs keyed by `correlationId`, propagated
+  from the `x-correlation-id` request header through every event's metadata.
+  **AWS X-Ray** active tracing on every Lambda (HTTP APIs do not support X-Ray
+  active tracing — only REST APIs do — so the API-Gateway hop is covered by
+  access logs carrying the correlation id instead). 1-week CloudWatch log
+  retention.
 - **Local development:** unit tests run locally with no AWS. Integration is a
   **deploy-to-AWS loop** (`cdk deploy <service>` to a dev stack) — no LocalStack.
   Code always lives in the repo and is committed per module.
