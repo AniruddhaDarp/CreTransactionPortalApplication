@@ -234,3 +234,36 @@ integration available, so instead:
   layer. Open it at diagrams.net and export/save to Drive.
 - `docs/02-design.md` §7.1 also gets an inline **Mermaid** version so it renders
   on GitHub without opening draw.io.
+
+*(Follow-up: "It is a bit cluttered. Can you just increase the spacing …" —
+`architecture.drawio` was rebuilt on a larger canvas with bigger boxes, wider
+row pitch, the async backbone in its own band, rule filters moved off the arrows
+into a notes box, and white label backgrounds.)*
+
+---
+
+## 11 — Module 1: scaffold
+
+> We can move on to the implementation phase now. I want the implementation to be
+> one module/service at a time. Let's start small and implement it step by step.
+
+**Context:** design doc and diagram approved; beginning the build.
+
+**Outcome:** Module 1 — the monorepo scaffold, verified green:
+
+- **pnpm workspace** (`pnpm@9.15.9` via Corepack); `tsconfig.base.json` (strict,
+  ESM/NodeNext); ESLint 9 flat config + Prettier; Vitest.
+- **`packages/events`** — `@cre/events`: the `eventEnvelopeSchema` (zod) and
+  `eventSource()` helper; per-service event schemas added later.
+- **`packages/authz`** — `@cre/authz`: `Role` / `Side` / `Scope` types,
+  `ROLE_SIDE` map, `sideOf()`. The `can()` capability matrix + scope resolution
+  land in Module 4.
+- **`packages/platform`** — `@cre/platform`: structured JSON `log`; DynamoDB /
+  EventBridge / HTTP-adapter helpers land with the first service that needs them.
+- **`web/`** — Vite + React + TS SPA shell (one placeholder page + a render test).
+- **`infra/`** — CDK v2 app; `SharedStack` empty shell pinned to
+  `581759697181` / `us-east-2`; a synth test. Real resources in Module 2.
+- Verification: `pnpm install`, `pnpm -r typecheck`, `pnpm -r test`
+  (10 tests pass), `pnpm lint`, `pnpm --filter infra synth` — all green.
+- One fix along the way: pinned `web` to Vite 5 to match the Vite that `vitest@2`
+  bundles (Vite 6 caused a plugin-type mismatch).
