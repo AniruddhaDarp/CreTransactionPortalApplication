@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { App } from 'aws-cdk-lib';
 import { AccountsStack } from '../lib/accounts-stack.js';
+import { AuditStack } from '../lib/audit-stack.js';
 import { ChatStack } from '../lib/chat-stack.js';
 import { DealsStack } from '../lib/deals-stack.js';
 import { DocumentsStack } from '../lib/documents-stack.js';
@@ -36,3 +37,7 @@ documents.addStackDependency(
   accounts,
   'reads /cre-portal/accounts/* SSM parameters (JWT authorizer)',
 );
+
+const audit = new AuditStack(app, 'CrePortalAudit', { env });
+audit.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters + the bus');
+audit.addStackDependency(accounts, 'reads /cre-portal/accounts/* SSM parameters (JWT authorizer)');

@@ -145,7 +145,7 @@ export const handler = router({
       note: input.note,
     });
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'document.versioned', detail: { dealId, docId: doc.docId, n } },
+      { type: 'document.versioned', detail: { dealId, docId: doc.docId, n, scope: doc.scope } },
     ]);
     return { status: 201, body: { version: n, uploadUrl: await presignPut(key, input.contentType) } };
   },
@@ -166,7 +166,7 @@ export const handler = router({
     }
     const updated = await repo.promoteDocument(dealId, doc.docId);
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'document.promoted', detail: { dealId, docId: doc.docId } },
+      { type: 'document.promoted', detail: { dealId, docId: doc.docId, scope: 'deal_wide' } },
     ]);
     return { body: updated };
   },
@@ -257,7 +257,10 @@ export const handler = router({
     if (!doc) throw new HttpError(400, 'the fulfilling document does not exist');
     await repo.resolveDocRequest(dealId, req.reqId, { status: 'fulfilled', fulfilledDocId: docId });
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'docrequest.fulfilled', detail: { dealId, reqId: req.reqId, fulfilledDocId: docId } },
+      {
+        type: 'docrequest.fulfilled',
+        detail: { dealId, reqId: req.reqId, fulfilledDocId: docId, scope: req.scope },
+      },
     ]);
     return { body: { status: 'fulfilled' } };
   },
@@ -269,7 +272,7 @@ export const handler = router({
     const { reason } = parseBody(z.object({ reason: z.string().max(500).optional() }), ctx.body ?? {});
     await repo.resolveDocRequest(dealId, req.reqId, { status: 'declined', declineReason: reason });
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'docrequest.declined', detail: { dealId, reqId: req.reqId, reason } },
+      { type: 'docrequest.declined', detail: { dealId, reqId: req.reqId, reason, scope: req.scope } },
     ]);
     return { body: { status: 'declined' } };
   },
@@ -282,7 +285,7 @@ export const handler = router({
     if (req.createdBy !== ctx.userId) throw new HttpError(403, 'only the requester can cancel');
     await repo.resolveDocRequest(dealId, req.reqId, { status: 'cancelled' });
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'docrequest.cancelled', detail: { dealId, reqId: req.reqId } },
+      { type: 'docrequest.cancelled', detail: { dealId, reqId: req.reqId, scope: req.scope } },
     ]);
     return { body: { status: 'cancelled' } };
   },
@@ -305,7 +308,10 @@ async function access(ctx: RequestContext, mode: 'opened' | 'downloaded') {
     filename: version.filename,
   });
   await emit(dealId, ctx.correlationId, ctx.userId, [
-    { type: 'document.accessed', detail: { dealId, docId: doc.docId, n, mode, by: ctx.userId } },
+    {
+      type: 'document.accessed',
+      detail: { dealId, docId: doc.docId, n, mode, by: ctx.userId, scope: doc.scope },
+    },
   ]);
   return { body: { url, filename: version.filename } };
 }

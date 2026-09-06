@@ -1,0 +1,24 @@
+{
+  "name": "@cre/audit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/lib-dynamodb": "^3.717.0",
+    "@cre/authz": "workspace:*",
+    "@cre/events": "workspace:*",
+    "@cre/platform": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.717.0",
+    "@types/aws-lambda": "^8.10.147",
+    "aws-sdk-client-mock": "^4.1.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

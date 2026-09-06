@@ -212,13 +212,15 @@ export const handler = router({
     const dealId = param(ctx, 'dealId');
     const threadId = param(ctx, 'threadId');
     await requireViewer(dealId, ctx.userId);
+    const thread = await repo.getThread(dealId, threadId);
+    if (!thread) throw new HttpError(404, 'thread not found');
     const msg = await repo.getMessage(dealId, threadId, param(ctx, 'msgId'));
     if (!msg || msg.deletedAt) throw new HttpError(404, 'message not found');
     if (msg.authorId !== ctx.userId) throw new HttpError(403, 'only the author can edit a message');
     const { body } = parseBody(editMessageSchema, ctx.body ?? {});
     const updated = await repo.editMessage(dealId, threadId, msg, body);
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'message.edited', detail: { dealId, threadId, msgId: msg.msgId } },
+      { type: 'message.edited', detail: { dealId, threadId, msgId: msg.msgId, scope: thread.scope } },
     ]);
     return { body: { ...updated, history: undefined } };
   },
@@ -227,12 +229,14 @@ export const handler = router({
     const dealId = param(ctx, 'dealId');
     const threadId = param(ctx, 'threadId');
     await requireViewer(dealId, ctx.userId);
+    const thread = await repo.getThread(dealId, threadId);
+    if (!thread) throw new HttpError(404, 'thread not found');
     const msg = await repo.getMessage(dealId, threadId, param(ctx, 'msgId'));
     if (!msg) throw new HttpError(404, 'message not found');
     if (msg.authorId !== ctx.userId) throw new HttpError(403, 'only the author can delete a message');
     await repo.softDeleteMessage(dealId, threadId, msg);
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'message.deleted', detail: { dealId, threadId, msgId: msg.msgId } },
+      { type: 'message.deleted', detail: { dealId, threadId, msgId: msg.msgId, scope: thread.scope } },
     ]);
     return { body: { deleted: true } };
   },

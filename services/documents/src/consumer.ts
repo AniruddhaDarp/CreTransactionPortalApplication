@@ -43,6 +43,8 @@ async function dispatch(type: string, env: Envelope): Promise<void> {
     const docId = String(payload.docId ?? '');
     const hsId = String(d.hsId ?? '');
     if (!docId || !hsId) return;
+    const doc = await repo.getDocument(env.dealId, docId);
+    const scope = doc?.scope ?? 'deal_wide';
     await repo.archiveDocument(env.dealId, docId);
     await publish(BUS(), [
       {
@@ -51,7 +53,7 @@ async function dispatch(type: string, env: Envelope): Promise<void> {
         correlationId: env.correlationId,
         actorId: env.actorId,
         dealId: env.dealId,
-        detail: { dealId: env.dealId, docId, hsId },
+        detail: { dealId: env.dealId, docId, hsId, scope },
       },
     ]);
   }

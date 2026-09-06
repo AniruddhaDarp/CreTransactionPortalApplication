@@ -31,7 +31,19 @@ export class HttpError extends Error {
   }
 }
 
-export type RouteResult = { status?: number; body?: unknown } | void;
+/**
+ * Escape hatch for endpoints that must return something other than a JSON
+ * object — e.g. a `text/csv` file download. The router passes this through
+ * verbatim, only injecting the `x-correlation-id` header.
+ */
+export interface RawResponse {
+  statusCode: number;
+  headers?: Record<string, string>;
+  body: string;
+  isBase64Encoded?: boolean;
+}
+
+export type RouteResult = { status?: number; body?: unknown } | { raw: RawResponse } | void;
 export type RouteHandler = (ctx: RequestContext) => Promise<RouteResult>;
 
 /**
@@ -82,6 +94,14 @@ export function router(routes: Record<string, RouteHandler>) {
         pathParams: event.pathParameters ?? {},
         query: event.queryStringParameters ?? {},
       });
+
+      if (result && 'raw' in result) {
+        log.info('request ok', { status: result.raw.statusCode, raw: true });
+        return {
+          ...result.raw,
+          headers: { 'x-correlation-id': correlationId, ...result.raw.headers },
+        };
+      }
 
       const status = result?.status ?? 200;
       log.info('request ok', { status });

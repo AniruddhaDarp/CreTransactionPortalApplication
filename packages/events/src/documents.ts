@@ -30,14 +30,20 @@ export const documentVersionedSchema = z.object({
   dealId: z.string(),
   docId: z.string(),
   n: z.number().int(),
+  scope: scopeSchema,
 });
 
-export const documentPromotedSchema = z.object({ dealId: z.string(), docId: z.string() });
+export const documentPromotedSchema = z.object({
+  dealId: z.string(),
+  docId: z.string(),
+  scope: scopeSchema,
+});
 
 export const documentArchivedSchema = z.object({
   dealId: z.string(),
   docId: z.string(),
   hsId: z.string(),
+  scope: scopeSchema,
 });
 
 export const documentAccessedSchema = z.object({
@@ -46,6 +52,7 @@ export const documentAccessedSchema = z.object({
   n: z.number().int(),
   mode: z.enum(['opened', 'downloaded']),
   by: z.string(),
+  scope: scopeSchema,
 });
 
 export const documentDeleteRequestedSchema = z.object({
@@ -70,15 +77,21 @@ export const docrequestFulfilledSchema = z.object({
   dealId: z.string(),
   reqId: z.string(),
   fulfilledDocId: z.string(),
+  scope: scopeSchema,
 });
 
 export const docrequestDeclinedSchema = z.object({
   dealId: z.string(),
   reqId: z.string(),
   reason: z.string().optional(),
+  scope: scopeSchema,
 });
 
-export const docrequestCancelledSchema = z.object({ dealId: z.string(), reqId: z.string() });
+export const docrequestCancelledSchema = z.object({
+  dealId: z.string(),
+  reqId: z.string(),
+  scope: scopeSchema,
+});
 
 export const documentEventSchemas = {
   'document.uploaded': documentUploadedSchema,

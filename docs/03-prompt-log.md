@@ -544,3 +544,45 @@ design §6 **role→category visibility matrix**.
   list + add-version, view / download (opens the presigned URL),
   promote → deal-wide, request-delete (starts the handshake), and the
   document-request list with fulfil / decline / cancel.
+
+---
+
+## 18 — Module 8: Audit service (append-only trail, no god view)
+
+> [Four decisions on the plan] 1. Enrich events at the producer (recommended).
+> 2. IAM PutItem-only + deterministic-SK idempotency (recommended). 3. CSV +
+> JSON export, capped at latest 10k rows (recommended). 4. [on skipping
+> dealId-less events] "Which events wouldn't have any dealId?" → only
+> `account.created`. → **Skip it in v1, start building module 8.**
+
+**Outcome — 191 workspace tests green; `cdk synth --strict` clean:**
+
+- **Event enrichment (producers).** Added a `scope` field to every auditable
+  event that lacked one: `message.edited` / `message.deleted` (chat) and
+  `document.versioned` / `document.promoted` / `document.archived` /
+  `document.accessed` / `docrequest.fulfilled` / `.declined` / `.cancelled`
+  (documents). Scope is now authoritative from the service that holds the row —
+  the Audit consumer never guesses (a wrong guess would leak a side-private
+  action across sides).
+- **`services/audit`** — `consumer.ts` (SQS off a `source: [{prefix:'cre.'}]`
+  rule → every event; `member.*` also feed the projection; `dealId`-less events
+  skipped), `describe.ts` (`summarize` → human-readable action/target/summary
+  per event type, with a safe default), `scope.ts` (`deriveScope` +
+  `viewerScopes` = `@cre/authz` `visibleScopes`), `repo.ts` (deterministic
+  `AUDIT#<occurredAt>#<eventId>` SK + `attribute_not_exists` → idempotent, no
+  SEEN marker), `api.ts` (`GET /audit` scoped + filtered + cursor-paginated;
+  `GET /audit/export?format=csv|json` capped at 10k, returned as an `attachment`
+  download).
+- **`@cre/platform` router** — a `raw` `RouteResult` escape hatch so the export
+  endpoint can return real `text/csv` instead of a JSON envelope.
+- **`infra/lib/audit-stack.ts`** — **two** tables: `audit` (append-only —
+  consumer role gets `dynamodb:PutItem` and nothing else) and `audit-membership`
+  (the mutable `member.*` projection, kept out of the append-only grant so it
+  can `UpdateItem`). API Lambda is read-only on both. Queue + DLQ; rule matches
+  all `cre.*` via a source prefix.
+- **`web`** — an `Audit` panel: actor / action / date-range filters, a scoped
+  table ("no cross-side view"), and CSV / JSON export via a client-side Blob
+  download.
+- **docs** — `02-design.md` §7.2 / §8.6 (two-table split, deterministic SK) /
+  §8.8 (scope fields) / §9 (audit routes + filters) / §11 (IAM append-only) /
+  §16 (account-lifecycle audit + audit-at-scale as future work).

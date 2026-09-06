@@ -35,12 +35,14 @@ export const messageEditedSchema = z.object({
   dealId: z.string(),
   threadId: z.string(),
   msgId: z.string(),
+  scope: scopeSchema,
 });
 
 export const messageDeletedSchema = z.object({
   dealId: z.string(),
   threadId: z.string(),
   msgId: z.string(),
+  scope: scopeSchema,
 });
 
 export const chatEventSchemas = {

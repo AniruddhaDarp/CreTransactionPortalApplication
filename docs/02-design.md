@@ -406,7 +406,7 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
 | **Chat** | threads, messages, receipts, read markers; local `memberships` projection | `message.posted`, `message.edited`, `message.deleted`, `thread.created`, `thread.converted` | `member.*` |
 | **Documents** | documents + versions, document requests; S3 docs bucket; local `memberships` projection | `document.uploaded`, `document.versioned`, `document.promoted`, `document.archived`, `document.accessed`, `document.delete_requested`, `docrequest.created`, `docrequest.fulfilled`, `docrequest.declined`, `docrequest.cancelled` | `member.*`, `handshake.approved` |
 | **Notifications** | notification records, unread counts; SES dispatch for action-required + invitations | `notification.emailed` | ~all domain events (produces a notification per relevant one) |
-| **Audit** | append-only audit log; scoped read + export | — | **all** domain events |
+| **Audit** | append-only `audit` log (`PutItem`-only IAM) + a mutable `audit-membership` projection; scoped read + CSV/JSON export | — | **all** `cre.*` events (source-prefix rule); `member.*` also feed the projection; dealId-less events (`account.created`) are skipped in v1 |
 
 ### 7.3 Communication
 
@@ -563,18 +563,33 @@ noted. **No service reads another service's table.**
 - Patterns: my notifications newest-first (Query, `ScanIndexForward=false`);
   unread count (sparse GSI on `readAt` absent, or a maintained counter item).
 
-### 8.6 `audit` table (Audit svc)
+### 8.6 `audit` table + `audit-membership` table (Audit svc)
 
-| Entity | PK | SK | Key attributes |
+| Table | PK | SK | Key attributes |
 |---|---|---|---|
-| Audit event | `DEAL#<dealId>` | `AUDIT#<ts>#<eventId>` | actorId, action, targetType, targetId, scope, metadata, correlationId |
-| Dedupe marker | `DEAL#<dealId>` | `SEEN#<eventId>` | ttl |
+| **`audit`** — audit event | `DEAL#<dealId>` | `AUDIT#<occurredAt>#<eventId>` | actorId, detailType, action, targetType, targetId, scope, summary, metadata (raw `detail`), correlationId |
+| **`audit-membership`** — projection | `DEAL#<dealId>` | `MEMBERVIEW#<userId>` | role, side, status, version |
 
-- Append-only: the service's IAM role permits `PutItem` only (no
-  `UpdateItem`/`DeleteItem`) via an IAM condition on the `SK` prefix.
-- Patterns: audit for a deal newest-first (Query) → filter by scope in `authz`,
-  then `actor` / `action` / date range as a `FilterExpression`; export = paginate
-  the same query.
+- **Append-only, enforced by IAM.** The consumer Lambda's role has
+  `dynamodb:PutItem` on the `audit` table and **nothing else** — no
+  `UpdateItem`, `DeleteItem`, or `BatchWriteItem`. There is no code path that
+  mutates a row. Idempotency needs no separate dedupe marker: the SK is
+  deterministic (`occurredAt` + `eventId` both come from the event envelope), so
+  a redelivered SQS message is absorbed by `attribute_not_exists(SK)`.
+- **Why two tables.** The `member.*` projection the service also maintains
+  (for scoped reads) needs `UpdateItem`, which would break the append-only
+  grant. It lives in a separate, mutable `audit-membership` table the consumer
+  may read/write freely; the log itself stays untouchable. The projection is a
+  derived cache — losing it is a re-sync, not data loss.
+- **Scope.** Every auditable event now carries its own visibility `scope`
+  (chat + document/doc-request events were enriched in this module); deal-,
+  member-, stage- and handshake-domain events are inherently `deal_wide`. The
+  consumer never guesses a scope.
+- Patterns: audit for a deal newest-first (Query, `ScanIndexForward=false`),
+  optional `occurredAt` range on the SK; then filter by the reader's
+  `visibleScopes` (**the security boundary**) and the convenience filters
+  (`actor` / `action` / `targetType` / `targetId`) in the handler. Export
+  scans the deal partition (capped at 10k rows) and applies the same filter.
 
 ### 8.7 Within-service transactions (`TransactWriteItems`, single-region ACID)
 
@@ -600,7 +615,10 @@ are produced by the respective services from the published events, keyed on
 ### 8.8 Event catalog (`packages/events`)
 
 Every event: `{ eventId, occurredAt, correlationId, dealId, actorId, detail }`.
-`source = "cre.<service>"`, `detail-type` as below.
+`source = "cre.<service>"`, `detail-type` as below. Every event that concerns a
+scoped resource (chat threads/messages, documents, doc-requests) carries a
+`scope` field so the Audit service can filter reads without a lookup or a guess;
+deal-, member-, stage- and handshake-domain events are inherently `deal_wide`.
 
 | detail-type | Producer | Key `detail` fields | Main consumers |
 |---|---|---|---|
@@ -616,18 +634,18 @@ Every event: `{ eventId, occurredAt, correlationId, dealId, actorId, detail }`.
 | `handshake.requested` | Deals | hsId, action, payload, approverIds | Notifications, Audit |
 | `handshake.approved` | Deals | hsId, action, payload | Documents (delete saga), Notifications, Audit |
 | `handshake.rejected` | Deals | hsId, reason | Notifications, Audit |
-| `message.posted` | Chat | threadId, msgId, mentions[] | Notifications (@mentions), Audit |
-| `message.edited` / `message.deleted` | Chat | msgId | Audit |
-| `thread.created` | Chat | threadId, scope | Audit |
+| `message.posted` | Chat | threadId, msgId, scope, mentions[] | Notifications (@mentions), Audit |
+| `message.edited` / `message.deleted` | Chat | threadId, msgId, scope | Audit |
+| `thread.created` | Chat | threadId, scope, subject | Audit |
 | `thread.converted` | Chat | threadId, toScope, droppedUserId | Notifications, Audit |
 | `document.uploaded` | Documents | docId, category, scope | Audit |
 | `document.delete_requested` | Documents | docId, requestedBy, requesterRole, requesterSide | Deals (opens the delete handshake), Audit |
-| `document.versioned` | Documents | docId, n | Audit |
-| `document.promoted` | Documents | docId | Audit |
-| `document.archived` | Documents | docId, hsId | Deals (close saga), Audit |
-| `document.accessed` | Documents | docId, n, mode (`opened`/`downloaded`) | Audit |
-| `docrequest.created` | Documents | reqId, target | Notifications, Audit |
-| `docrequest.fulfilled` / `declined` / `cancelled` | Documents | reqId | Notifications, Audit |
+| `document.versioned` | Documents | docId, n, scope | Audit |
+| `document.promoted` | Documents | docId, scope (`deal_wide`) | Audit |
+| `document.archived` | Documents | docId, hsId, scope | Deals (close saga), Audit |
+| `document.accessed` | Documents | docId, n, mode (`opened`/`downloaded`), by, scope | Audit |
+| `docrequest.created` | Documents | reqId, category, scope, target | Notifications, Audit |
+| `docrequest.fulfilled` / `declined` / `cancelled` | Documents | reqId, scope | Notifications, Audit |
 | `notification.emailed` | Notifications | notifId, channel | Audit |
 
 ## 9. API surface
@@ -679,7 +697,12 @@ membership view before touching data.
   `POST /documents` and `…/versions` return a presigned S3 `PUT` — the browser
   uploads the bytes directly (optimistic: the `DOC#`/`DOCVER#` row and
   `document.uploaded` are written before the `PUT` completes).
-- **Audit svc:** `GET /deals/{id}/audit`, `GET /deals/{id}/audit/export`.
+- **Audit svc:** `GET /deals/{id}/audit` — newest-first, scoped to the caller's
+  `visibleScopes`, with `actor` / `action` / `targetType` / `targetId` /
+  `from` / `to` filters and `limit` + opaque `cursor` pagination.
+  `GET /deals/{id}/audit/export?format=csv|json` — the same scoped + filtered
+  rows (capped at 10k) returned as an `attachment` download (`text/csv` or a
+  JSON envelope), via the router's `raw` response escape hatch.
 - **Notifications svc:** `GET /notifications`, `POST /notifications/read`.
 
 ## 10. Key flows
@@ -757,9 +780,12 @@ issue short-TTL presigned `GET`s and write `AUDIT#` (`downloaded` / `opened`).
   actions is convenience, not a control.
 - **Per-service least-privilege IAM:** each service's Lambda role can access only
   its own table, publish to the bus, consume its own SQS queue, and (Documents)
-  presign its own bucket. The Audit role is `dynamodb:PutItem`-only on the
-  `audit` table (IAM condition on the `SK` prefix) — append-only is enforced by
-  IAM, not just code.
+  presign its own bucket. The Audit **consumer** role is `dynamodb:PutItem`-only
+  on the `audit` table — no `UpdateItem`, `DeleteItem`, or `BatchWriteItem` — so
+  append-only is enforced by the platform, not just by code. Its `member.*`
+  projection (which needs `UpdateItem`) is kept in a separate `audit-membership`
+  table so that grant can't touch the log. The Audit **API** role is
+  read-only on both tables.
 - **Eventual-consistency window:** a membership change reaches Chat/Documents/
   Audit within seconds via the bus. A removed member could in principle act in
   that window; the actions that matter (advance, delete, price, close) are all
@@ -768,13 +794,17 @@ issue short-TTL presigned `GET`s and write `AUDIT#` (`downloaded` / `opened`).
   intended. Acceptable for V1; a synchronous projection-invalidation call is the
   hardening step.
 - **No god view.** The admin's reach is deal-wide + sell-side only; cross-side
-  private content is unreachable by anyone.
+  private content is unreachable by anyone — including in the audit trail, where
+  each row's `scope` is checked against the reader's `visibleScopes` before it
+  is returned (list *and* export).
 - **Documents:** bucket has all public access blocked; access only via
   presigned URLs with a short TTL (≈ 5 min); the S3 key embeds `dealId`; every
   URL issue is audited.
-- **Audit integrity:** append-only in code; the Lambda role's IAM policy is
-  scoped so it can `PutItem` but not `UpdateItem`/`DeleteItem` on `AUDIT#`
-  items (condition on `SK` prefix). Hash-chaining is noted as future hardening.
+- **Audit integrity:** append-only enforced by IAM — the consumer role can
+  `PutItem` on the `audit` table and nothing else; there is no update/delete
+  code path. Redeliveries are idempotent via the deterministic
+  `AUDIT#<occurredAt>#<eventId>` SK + `attribute_not_exists`. Hash-chaining for
+  tamper-evidence is noted as future hardening.
 - **Soft-delete everywhere:** nothing is destroyed; disputes can always be
   reconstructed.
 - **Handshake** removes unilateral irreversible actions once the deal is firm.
@@ -883,6 +913,12 @@ assignment and for keeping the demo up afterward.
 - Multi-property / portfolio deals; richer deal state machine (e.g. `ON_HOLD`).
 - Identity verification / KYC for all parties; audit-log tamper-evidence via
   hash-chaining.
+- **Account-lifecycle audit:** a system/global audit view for `dealId`-less
+  events (sign-ups, profile edits, eventual sign-in / MFA events). The Audit
+  service skips these in v1 because its only surface is per-deal.
+- **Audit read at scale:** a GSI by `actorId` (and/or `action`) instead of the
+  deal-partition Query + in-handler filter; streamed / fully-paginated export
+  instead of the 10k-row cap.
 - Integrations: MLS, DocuSign, title production, lender LOS, county e-recording.
 - Multi-tenant brokerage/org accounts + billing; document OCR + full-text
   search; native mobile apps + SMS.

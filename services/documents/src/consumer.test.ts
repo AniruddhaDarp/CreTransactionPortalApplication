@@ -1,5 +1,5 @@
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
-import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handler } from './consumer.js';
@@ -16,6 +16,7 @@ beforeEach(() => {
   ddb.reset();
   eb.reset();
   ddb.on(UpdateCommand).resolves({});
+  ddb.on(GetCommand).resolves({ Item: { PK: 'DEAL#d1', SK: 'DOC#doc9', scope: 'side_private:buy' } });
   eb.on(PutEventsCommand).resolves({ FailedEntryCount: 0 });
 });
 
@@ -84,7 +85,11 @@ describe('documents consumer', () => {
 
     const entry = eb.commandCalls(PutEventsCommand)[0]!.args[0].input.Entries![0]!;
     expect(entry.DetailType).toBe('document.archived');
-    expect(JSON.parse(entry.Detail!).detail).toMatchObject({ docId: 'doc9', hsId: 'hs1' });
+    expect(JSON.parse(entry.Detail!).detail).toMatchObject({
+      docId: 'doc9',
+      hsId: 'hs1',
+      scope: 'side_private:buy',
+    });
   });
 
   it('ignores handshake.approved for non-document actions', async () => {

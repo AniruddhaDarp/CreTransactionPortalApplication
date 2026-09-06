@@ -39,8 +39,8 @@ describe('chat event schemas', () => {
         scope: 'deal_wide',
         mentions: [],
       },
-      'message.edited': { dealId: 'd', threadId: 't', msgId: 'm' },
-      'message.deleted': { dealId: 'd', threadId: 't', msgId: 'm' },
+      'message.edited': { dealId: 'd', threadId: 't', msgId: 'm', scope: 'deal_wide' },
+      'message.deleted': { dealId: 'd', threadId: 't', msgId: 'm', scope: 'side_private:buy' },
     };
     for (const [type, schema] of Object.entries(chatEventSchemas)) {
       expect(() => schema.parse(fixtures[type]), type).not.toThrow();

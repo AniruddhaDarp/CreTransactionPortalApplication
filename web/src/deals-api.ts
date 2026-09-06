@@ -125,6 +125,19 @@ export interface DocRequest {
   createdBy: string;
 }
 
+export interface AuditEvent {
+  eventId: string;
+  occurredAt: string;
+  actorId?: string;
+  detailType: string;
+  action: string;
+  targetType: string;
+  targetId?: string;
+  scope: string;
+  summary: string;
+  correlationId: string;
+}
+
 export function dealsApi(cfg: AppConfig, token: string) {
   const f = <T>(path: string, init?: RequestInit) => apiFetch<T>(cfg, token, path, init);
   return {
@@ -237,6 +250,24 @@ export function dealsApi(cfg: AppConfig, token: string) {
       }),
     cancelDocRequest: (id: string, reqId: string) =>
       f<{ status: string }>(`/v1/deals/${id}/doc-requests/${reqId}/cancel`, { method: 'POST' }),
+
+    // --- audit (Module 8) ---
+    audit: (id: string, params: Record<string, string> = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return f<{ events: AuditEvent[]; nextCursor?: string; scopes: string[] }>(
+        `/v1/deals/${id}/audit${qs ? `?${qs}` : ''}`,
+      );
+    },
+    auditExport: async (id: string, format: 'csv' | 'json', params: Record<string, string> = {}) => {
+      const qs = new URLSearchParams({ ...params, format }).toString();
+      const res = await fetch(`${cfg.apiBaseUrl}/v1/deals/${id}/audit/export?${qs}`, {
+        headers: { authorization: `Bearer ${token}`, 'x-correlation-id': crypto.randomUUID() },
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      const cd = res.headers.get('content-disposition') ?? '';
+      const filename = /filename="([^"]+)"/.exec(cd)?.[1] ?? `audit-${id}.${format}`;
+      return { blob: await res.blob(), filename };
+    },
   };
 }
 
