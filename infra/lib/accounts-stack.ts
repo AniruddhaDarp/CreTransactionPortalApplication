@@ -150,7 +150,11 @@ export class AccountsStack extends Stack {
       httpApiId,
       apiEndpoint: httpApiEndpoint,
     });
+    // One JWT authorizer per service stack (identical issuer/audience). API
+    // Gateway requires unique authorizer *names* on a shared API, hence the
+    // per-service suffix.
     const authorizer = new HttpJwtAuthorizer('JwtAuthorizer', userPool.userPoolProviderUrl, {
+      authorizerName: 'cre-portal-jwt-accounts',
       identitySource: ['$request.header.Authorization'],
       jwtAudience: [client.userPoolClientId],
     });

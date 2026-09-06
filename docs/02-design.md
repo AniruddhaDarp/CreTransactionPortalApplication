@@ -141,10 +141,17 @@ unilaterally while not firm; handshake once firm. **Status** `CLOSED`/`CANCELLED
 ### 5.3 Parties & membership
 
 Invite by email + role. Invitation → SES email → sign-up/login → join. Pending
-invites are resend/revoke-able. Sell-side roster + `TITLE_AGENT` are managed by
-the admin; the buy-side roster is self-managed by `BUYER`/`BUYER_AGENT` within
-the limits in §3; `OTHER` is invited by the lead of the side bringing them.
-Neither side can remove the other's people.
+invites are revoke-able. Sell-side roster + `TITLE_AGENT` are managed by the
+admin. The **admin also bootstraps the buy side** — there is no buy-side lead
+until a `BUYER` / `BUYER_AGENT` joins, so the admin sends that first
+invitation; from then on `BUYER` / `BUYER_AGENT` manage the rest of the buy-side
+roster, always within the §3 limits. `OTHER` is invited by the lead of the side
+bringing them. Neither side can remove the other's people, and the deal creator
+can be neither removed nor re-roled.
+
+For the prototype (SES email lands in Module 9), `POST …/invites` returns the
+`{ token, acceptUrl }` in its response so the inviter — or the seed script — can
+share the link directly; in production the token would travel only by email.
 
 ### 5.4 Handshake (dual approval)
 
@@ -282,7 +289,7 @@ few-seconds eventual-consistency window after a membership change; see
 | Advance milestone | Handshake, either side initiates |
 | Checklist items (add/check/uncheck) | Any active non-`OTHER` member |
 | Invite sell-side + `TITLE_AGENT` | Admin |
-| Invite buy-side | `BUYER` / `BUYER_AGENT` only, within limits |
+| Invite buy-side | Admin (to bootstrap the side) or `BUYER` / `BUYER_AGENT`, within limits |
 | Invite `OTHER` | Lead of the side bringing them |
 | Remove a member | Managing side of that member only |
 | Create deal-wide thread / upload deal-wide doc | Any active non-`OTHER` |
@@ -628,8 +635,10 @@ membership view before touching data.
 - **Deals svc — deal:** `POST /deals`, `GET /deals/{id}`, `PATCH /deals/{id}`,
   `POST /deals/{id}/status`, `GET /deals/{id}/dashboard`.
 - **Deals svc — members/invites:** `GET/POST /deals/{id}/invites`,
-  `POST /invites/{token}/accept`, `DELETE /deals/{id}/invites/{token}`,
-  `GET /deals/{id}/members`, `PATCH|DELETE /deals/{id}/members/{userId}`.
+  `GET|DELETE /deals/{id}/invites/{token}`,
+  `POST /deals/{id}/invites/{token}/accept` (the deal id is in the path so no
+  token→deal lookup is needed), `GET /deals/{id}/members`,
+  `PATCH|DELETE /deals/{id}/members/{userId}`.
 - **Deals svc — milestones:** `GET /deals/{id}/stages`,
   `PATCH /deals/{id}/stages/{n}`, `POST /deals/{id}/advance`,
   `GET/POST /deals/{id}/stages/{n}/checklist`,
@@ -660,10 +669,12 @@ their own table, guarded by a conditional write on `version` so out-of-order
 events converge. All subsequent authz checks in those services read the local
 `MEMBERVIEW#` rows — no call back to Deals.
 
-**Invitation.** Admin (or buy-side lead) `POST /invites` → `INVITE#` written +
-GSI2-indexed + `member.invited` published → Notifications sends the SES email
-with a tokenized link → invitee signs up / logs in → `POST /invites/{token}/accept`
-(email must match) → Deals writes `MEMBER#` (`active`) and publishes
+**Invitation.** Admin (bootstrap) or a buy-side lead `POST …/invites` →
+`INVITE#` written + GSI2-indexed + `member.invited` published; the response
+carries `{ token, acceptUrl }` (Module 9 will also send the SES email). The
+invitee signs up / logs in and `POST …/invites/{token}/accept` — the JWT `email`
+claim must match the invite (case-insensitive) — then Deals writes `MEMBER#`
+(`active`) + flips the invite to `accepted` in one transaction and publishes
 `member.joined` → projections + audit + a "you're in" notification follow.
 
 **Handshake (advance milestone) — saga.**

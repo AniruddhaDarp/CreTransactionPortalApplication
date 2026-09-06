@@ -25,3 +25,5 @@ export type EventEnvelope = z.infer<typeof eventEnvelopeSchema>;
 export function eventSource(service: string): string {
   return `${EVENT_SOURCE_PREFIX}.${service}`;
 }
+
+export * from './deals.js';

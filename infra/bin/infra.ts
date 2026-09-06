@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { App } from 'aws-cdk-lib';
 import { AccountsStack } from '../lib/accounts-stack.js';
+import { DealsStack } from '../lib/deals-stack.js';
 import { SharedStack } from '../lib/shared-stack.js';
 
 const app = new App();
@@ -18,3 +19,7 @@ const accounts = new AccountsStack(app, 'CrePortalAccounts', { env });
 // Accounts reads SharedStack's SSM parameters at deploy time; make the ordering
 // explicit for `cdk deploy --all`.
 accounts.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters');
+
+const deals = new DealsStack(app, 'CrePortalDeals', { env });
+deals.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters');
+deals.addStackDependency(accounts, 'reads /cre-portal/accounts/* SSM parameters (JWT authorizer)');

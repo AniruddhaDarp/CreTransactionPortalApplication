@@ -366,3 +366,50 @@ Post-deploy tidy-ups: enabled `USER_PASSWORD_AUTH` on the app client (needed for
 the seed script + E2E; hosted UI still uses PKCE); `repo` now strips DynamoDB
 key attributes (`PK`/`SK`/`GSI1PK`) from the `/v1/me` response; added Node
 globals for `.mjs` scripts in the ESLint flat config.
+
+---
+
+## 14 — Module 4: Deals service (core)
+
+> Done. Let's discuss the deals service now.
+>
+> 1. Yes [invite token in the response]. 2. Yes [accept requires matching email].
+> 3. Agreed [admin fixed = creator]. 4. Yes, go ahead — keep it response-only,
+> never trust it as input [capabilities map]. 5. Sure, okay with stubs which will
+> be featurized as part of future modules [authz matrix].
+
+**Outcome — 97 workspace tests + 13 live E2E checks pass:**
+
+- **`packages/authz`** — the real library: `roles` (predicates), `scope`
+  (`visibleScopes` / `canSee`, four-scope model, full), `permissions` (`can()`
+  matrix — deal + membership actions full; milestone/thread/document actions
+  best-guess with `// refined in Module N`; `inviteLimits`, `inviteActionFor`,
+  `capabilitiesFor`).
+- **`packages/events`** — `zod` schemas for `deal.*` and `member.*` + a
+  `dealEventSchemas` registry for contract tests.
+- **`services/deals`** — `repo` (single-table `deals`: META / MEMBER / INVITE,
+  GSI1 by-user, GSI2 by-email; `TransactWriteItems` for create + accept),
+  `context.buildCtx`, and a 14-route handler: deal CRUD + dashboard + status,
+  members list, invitations (create returns `{token, acceptUrl}`; who-can-invite
+  + ≤2/≤2/≤7 buy-side limits enforced), preview + email-matched accept, role
+  change + soft remove. Every mutation publishes its `deal.*` / `member.*` event.
+- **`infra/lib/deals-stack.ts`** — `deals` table (2 GSIs) + one `DealsFn`
+  (arm64 / Node 22 / X-Ray) + 14 JWT-authorized routes on the shared API +
+  least-privilege IAM.
+- **`web`** — `react-router-dom` enters: deals list, new-deal form, deal detail
+  (members, invite form + acceptUrl, revoke, remove), accept-invite page.
+- **Design refinement:** the admin *bootstraps* the buy side (there is no
+  buy-side lead until a `BUYER`/`BUYER_AGENT` joins); after that those leads
+  self-manage. §5.3, §6, §9, §10 updated. Route deviation from §9:
+  `POST /v1/deals/{dealId}/invites/{token}/accept` (deal id in the path — no
+  token→deal lookup).
+- Fixes en route: `declaration: false` for service tsconfigs (TS2742 "portable
+  type" on the Lambda handler); **per-service JWT authorizer names**
+  (`cre-portal-jwt-<service>`) — API Gateway rejects duplicate authorizer names,
+  which surfaced only on deploy (`CrePortalDeals` rolled back once, was deleted
+  and re-created).
+
+**Deployed** `CrePortalAccounts` (authorizer rename) + `CrePortalDeals`; SPA
+rebuilt + synced. E2E: create → list → capabilities → non-member 403 → PATCH →
+invite (acceptUrl) → preview → accept → buy-lead caps (2 ok, 3rd 409) →
+cross-side invite 403 → cross-side remove 403 → pre-firm cancel 200.

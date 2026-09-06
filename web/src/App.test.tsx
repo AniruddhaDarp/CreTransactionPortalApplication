@@ -29,19 +29,20 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it('renders the signed-in view and a Sign out button when authenticated', () => {
+  it('renders the deals router when authenticated', () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => new Promise(() => {})), // never resolves — Home stays on "Loading profile…"
+      vi.fn(() => new Promise(() => {})), // pending — DealsList stays on "Loading your deals…"
     );
     h.auth = {
       isLoading: false,
       isAuthenticated: true,
-      user: { id_token: 'tok' },
+      user: { id_token: 'tok', profile: { sub: 'u-1' } },
       removeUser: vi.fn(),
     };
     render(<App config={cfg} />);
-    expect(screen.getByText(/loading profile/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /my deals/i })).toBeInTheDocument();
+    expect(screen.getByText(/loading your deals/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
   });
 });

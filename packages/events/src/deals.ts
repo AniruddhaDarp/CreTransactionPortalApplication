@@ -1,0 +1,77 @@
+import { z } from 'zod';
+
+/** `detail` payload schemas for events published by the Deals service. */
+
+export const roleSchema = z.enum([
+  'SELLER_AGENT',
+  'SELLER',
+  'SELLER_ATTORNEY',
+  'BUYER',
+  'BUYER_AGENT',
+  'BUYER_ATTORNEY',
+  'LENDER',
+  'TITLE_AGENT',
+  'OTHER',
+]);
+export const sideSchema = z.enum(['buy', 'sell', 'neutral']);
+export const dealStatusSchema = z.enum(['ACTIVE', 'CLOSED', 'CANCELLED']);
+
+export const dealCreatedSchema = z.object({
+  dealId: z.string(),
+  createdBy: z.string(),
+  address: z.string(),
+  propertyType: z.string(),
+});
+
+export const dealUpdatedSchema = z.object({
+  dealId: z.string(),
+  changed: z.record(z.string(), z.object({ from: z.unknown(), to: z.unknown() })),
+});
+
+export const dealStatusChangedSchema = z.object({
+  dealId: z.string(),
+  status: dealStatusSchema,
+  reason: z.string().optional(),
+});
+
+export const memberInvitedSchema = z.object({
+  dealId: z.string(),
+  email: z.string(),
+  role: roleSchema,
+  side: sideSchema,
+  invitedBy: z.string(),
+  token: z.string(),
+});
+
+export const memberJoinedSchema = z.object({
+  dealId: z.string(),
+  userId: z.string(),
+  role: roleSchema,
+  side: sideSchema,
+});
+
+export const memberRoleChangedSchema = z.object({
+  dealId: z.string(),
+  userId: z.string(),
+  from: roleSchema,
+  to: roleSchema,
+});
+
+export const memberRemovedSchema = z.object({
+  dealId: z.string(),
+  userId: z.string(),
+  removedBy: z.string(),
+});
+
+/** Registry: `detail-type` -> schema, for producer/consumer contract tests. */
+export const dealEventSchemas = {
+  'deal.created': dealCreatedSchema,
+  'deal.updated': dealUpdatedSchema,
+  'deal.status_changed': dealStatusChangedSchema,
+  'member.invited': memberInvitedSchema,
+  'member.joined': memberJoinedSchema,
+  'member.role_changed': memberRoleChangedSchema,
+  'member.removed': memberRemovedSchema,
+} as const;
+
+export type DealEventType = keyof typeof dealEventSchemas;
