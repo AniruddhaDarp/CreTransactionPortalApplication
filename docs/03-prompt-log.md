@@ -300,3 +300,69 @@ via SSM parameters (`infra/lib/param-names.ts`).
 
 Not deployed yet (needs `aws login`); `pnpm --filter infra synth --strict` is
 clean and all 17 workspace tests pass.
+
+---
+
+## 13 — Module 3: Accounts service + Cognito
+
+> Should we get back to it? The auth module is the next one right? Let me take a
+> look before we start implementation.
+>
+> 1. Let's do the lightweight solution for now. However, make note of Amplify
+> being the better option since it provides MFA amongst other benefits.
+> 2. Fine using runtime configs. 3. Yes, that's ok. 4. Deploy now.
+
+**Context:** the auth module. User reviewed the plan first, then chose:
+`react-oidc-context` over Amplify (noting Amplify is the better production
+choice — MFA etc.), a runtime `/config.json`, Cognito's built-in email sender,
+and to deploy at the end.
+
+**Outcome — verified by 48 tests + `cdk synth --strict`:**
+
+- **`packages/platform`** grew real implementations: `logger` (structured JSON +
+  `child()`), `ddb` (memoized DocumentClient), `bus` (`publish()` — envelopes
+  each event, batches at 10, checks `FailedEntryCount`), `http` (`router()`
+  API-Gateway-v2 adapter: correlation id, JWT-claims → `userId`, JSON parse,
+  `HttpError` → response, structured logs; `parseBody()` zod guard).
+- **`services/accounts`** — `repo` (profile item: get / conditional create /
+  partial update), `handler` (`GET`/`PUT /v1/me` with a zod patch schema),
+  `post-confirmation` (Cognito trigger → provisions the profile row + publishes
+  `account.created`; idempotent on trigger retry).
+- **`infra/lib/accounts-stack.ts`** — `accounts` DynamoDB table + `gsi-email`;
+  Cognito user pool (self-sign-up, email alias, `DESTROY`), public SPA app
+  client (no secret, auth-code + PKCE, 1 h tokens, revocation on), hosted-UI
+  domain `cre-portal-<account>`; post-confirmation trigger; two `NodejsFunction`
+  Lambdas (arm64, Node 22, X-Ray); `HttpJwtAuthorizer` + JWT-authorized
+  `GET`/`PUT /v1/me` routes on the imported edge API; 4 SSM params.
+- **`web`** — runtime `/config.json` loader, `react-oidc-context` `AuthProvider`,
+  a sign-in/sign-out gate, and a `Home` view that reads and edits `/v1/me`.
+- Design doc: added an "SPA auth client" alternatives row and a Future-work
+  bullet — **Amplify Auth is the better production choice** (MFA, managed flows,
+  refresh-token rotation, `cookieStorage`).
+- Fixes en route: `esbuild` had to be a **root** dev-dependency for
+  `NodejsFunction`'s pnpm bundling to find it; `Stack.addDependency` →
+  `addStackDependency`.
+
+**Deployed** to `581759697181` / `us-east-2` (`aws login` done by the user):
+
+- `CrePortalShared` (~3.5 min, CloudFront) + `CrePortalAccounts` (~1 min).
+- Outputs: CloudFront `https://d2nvvjs357ot5x.cloudfront.net`, edge API
+  `https://d1016hsgh5.execute-api.us-east-2.amazonaws.com`, hosted UI
+  `https://cre-portal-581759697181.auth.us-east-2.amazoncognito.com`, user pool
+  `us-east-2_NEfKsWuON`.
+- `scripts/sync-config.mjs` (`pnpm sync-config`) wrote `web/public/config.json`
+  from the outputs (non-secret IDs, committed); `web` built + synced to the S3
+  bucket; CloudFront invalidated.
+
+**Verified live:**
+- `GET /v1/health` → 200; `GET /v1/me` without a token → 401 (JWT authorizer).
+- All 11 `/cre-portal/*` SSM parameters present.
+- End-to-end: `sign-up` → `admin-confirm-sign-up` fired the post-confirmation
+  trigger → profile row written to DynamoDB → `USER_PASSWORD_AUTH` login →
+  `GET /v1/me` → 200 → `PUT /v1/me` merged `company`/`phone`. Test users cleaned
+  up.
+
+Post-deploy tidy-ups: enabled `USER_PASSWORD_AUTH` on the app client (needed for
+the seed script + E2E; hosted UI still uses PKCE); `repo` now strips DynamoDB
+key attributes (`PK`/`SK`/`GSI1PK`) from the `/v1/me` response; added Node
+globals for `.mjs` scripts in the ESLint flat config.

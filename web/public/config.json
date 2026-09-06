@@ -1,0 +1,7 @@
+{
+  "region": "us-east-2",
+  "userPoolId": "us-east-2_NEfKsWuON",
+  "userPoolClientId": "2fdcqgqaqcqq9n49qv1qmjd8is",
+  "hostedUiDomain": "cre-portal-581759697181.auth.us-east-2.amazoncognito.com",
+  "apiBaseUrl": "https://d1016hsgh5.execute-api.us-east-2.amazonaws.com"
+}

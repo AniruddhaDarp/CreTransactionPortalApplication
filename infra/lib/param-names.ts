@@ -18,10 +18,11 @@ export const Param = {
   distributionId: `${SSM_PREFIX}/shared/distribution-id`,
   distributionDomain: `${SSM_PREFIX}/shared/distribution-domain`,
 
-  // Written by the Accounts stack (Module 3)
+  // Written by the Accounts stack (Module 3). Every service stack creates its
+  // own HttpJwtAuthorizer from the issuer + client id below (identical config,
+  // so no need to share one authorizer resource across stacks).
   userPoolId: `${SSM_PREFIX}/accounts/user-pool-id`,
   userPoolClientId: `${SSM_PREFIX}/accounts/user-pool-client-id`,
   userPoolIssuer: `${SSM_PREFIX}/accounts/user-pool-issuer-url`,
   hostedUiDomain: `${SSM_PREFIX}/accounts/hosted-ui-domain`,
-  jwtAuthorizerId: `${SSM_PREFIX}/accounts/http-jwt-authorizer-id`,
 } as const;

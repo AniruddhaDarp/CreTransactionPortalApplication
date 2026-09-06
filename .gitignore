@@ -10,6 +10,7 @@ build/
 # CDK
 infra/cdk.out/
 cdk.out/
+infra/cdk-outputs.json
 
 # test / coverage
 coverage/

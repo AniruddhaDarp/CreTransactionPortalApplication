@@ -472,6 +472,7 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
 | **Sync calls** | **None on the request path** (local projections) | A *central authz service* called per request is a hot-path dependency + SPOF. *Membership claims in the JWT* go stale and can't hold many deals. Local projections keep the hot path in-process at the cost of a seconds-long consistency window. |
 | **Compute** | **Lambda + one API Gateway HTTP API** | *Fargate/App Runner per service* = always-on cost × 6 + ALB/VPC wiring. *One API Gateway per service* = 6 endpoints for the SPA to juggle. Path-routing one HTTP API to 6 Lambdas is $0-idle and keeps a single origin. |
 | **Auth** | **Amazon Cognito user pool + hosted UI** | *Self-rolled* = avoidable security surface. *Auth0/Clerk* = external dependency + cost. Cognito integrates natively with the API Gateway JWT authorizer and is free at this user count. |
+| **SPA auth client** | **`react-oidc-context` + `oidc-client-ts`** (standard OIDC, auth-code + PKCE, ~small) | **AWS Amplify Auth (`aws-amplify`) is the better production choice** — it wraps MFA (TOTP/SMS), sign-up/confirmation/forgot-password flows, automatic token refresh + rotation, and `cookieStorage`. Chosen against here only to keep the bundle and surface area minimal for the prototype; see Future work. |
 | **Frontend hosting** | **SPA on S3 + CloudFront (OAC)** | *Amplify Hosting* = another managed layer. *SSR* = compute + complexity with no SEO/first-paint need. |
 | **Real-time** | **Short polling (~3–5 s)** | *WebSockets / AppSync subscriptions* = connection state + a second API paradigm; deferred to Future work. |
 | **Document transfer** | **Presigned S3 URLs** | *Proxying bytes through Lambda* hits payload limits and adds egress cost; every URL issue is still audited. |
@@ -843,3 +844,8 @@ assignment and for keeping the demo up afterward.
 - Per-document custom sharing; custom-participant threads; deal-wide promotion of
   threads.
 - Per-user notification preferences (mute, email level) — V2.
+- **Adopt AWS Amplify Auth** on the SPA for MFA (TOTP/SMS), managed
+  sign-up/confirm/forgot-password flows, automatic refresh-token rotation, and
+  `cookieStorage` (replacing `react-oidc-context` + `oidc-client-ts`). Also
+  enable Cognito threat protection (adaptive/risk-based MFA) once on a paid
+  feature plan.
