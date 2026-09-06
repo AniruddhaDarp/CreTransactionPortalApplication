@@ -454,3 +454,46 @@ before a buyer joined → **409** · advance handshake → buyer sees it in
 advance 2→3 → **firm flips true** · advance 3→4 rejected → stage unchanged ·
 firm deal `POST /status CLOSED` → **202 handshake** → buyer approves → deal
 `CLOSED`.
+
+---
+
+## 16 — Module 6: Chat service (first consumer)
+
+> [After discussing scope] 1. Yes, include [activity feed]. 2. [polling
+> clarified — 4 s on the open thread] Okay, 4s for #2 looks good. Go ahead with
+> implementation. 3. Yes [opaque attachment refs]. 4. Good [consumer event set].
+
+**Outcome — 133 workspace tests + a live E2E pass (after one fix):**
+
+- **`ChatStack`** — the consumer pattern the later modules copy: an **API
+  Lambda** on the shared HTTP API (10 routes) **plus** an **SQS-triggered
+  `ConsumerFn`** fed by an **EventBridge rule** on `cre-portal-bus` matching
+  `member.*` + `stage.advanced` / `handshake.approved`/`rejected` /
+  `deal.status_changed`. Queue + DLQ (`maxReceiveCount: 5`),
+  `reportBatchItemFailures` so only failed records retry.
+- **`chat` table** — `THREAD#`, `MSG#<threadId>#<createdAt>#<msgId>`, `RCPT#`,
+  `READ#`, `MEMBERVIEW#` (projection), `FEED#` (activity), `ttl`.
+- **`consumer.ts`** — `member.*` → version-guarded `MEMBERVIEW#` upsert;
+  system events → deduped `FEED#` items; `SQSBatchResponse` for partial retry.
+- **`api.ts`** — threads (4 scopes, create rules per scope), `GET /threads`
+  filtered by `visibleScopes` against the local projection, channel→side-private
+  conversion (drops the other side's agent/attorney, appends a system message),
+  messages (soft edit/delete + `history[]`), receipts (frozen recipient set at
+  send; `sent`/`received`/`read` rollup), `GET /activity`.
+- **`@cre/events`** — `chat.ts` (`thread.created`/`converted`,
+  `message.posted`/`edited`/`deleted`).
+- **`web`** — a `Chat` panel in the deal page: thread list, 4 s message poll +
+  auto mark-read, compose box, new-thread form, activity feed.
+- **Fix:** `upsertMemberView` tried to `SET PK`/`SET SK` in an
+  `UpdateExpression` — DynamoDB rejects assigning key attributes, so every
+  consumer record failed (`Cannot update attribute SK`). Dropped them; `dealId`/
+  `userId` set via `if_not_exists`. Consumer test now asserts the expression
+  never assigns `PK`/`SK`.
+
+**E2E:** admin's `member.joined` syncs the `MEMBERVIEW#` (a few seconds) → admin
+opens a deal-wide thread + posts → buyer + buyer-agent invited & synced → buyer
+sees the thread + message, replies → admin's receipt rolls up to `received` →
+buyer's `side_private:buy` thread is invisible to the sell-side admin →
+buyer-agent opens `channel:agent`, converts it to `side_private:buy` → admin
+(other-side agent) loses it, buyer gains it → activity feed shows the member
+joins.

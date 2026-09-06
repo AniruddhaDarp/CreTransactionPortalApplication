@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { App } from 'aws-cdk-lib';
 import { AccountsStack } from '../lib/accounts-stack.js';
+import { ChatStack } from '../lib/chat-stack.js';
 import { DealsStack } from '../lib/deals-stack.js';
 import { SharedStack } from '../lib/shared-stack.js';
 
@@ -23,3 +24,7 @@ accounts.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters')
 const deals = new DealsStack(app, 'CrePortalDeals', { env });
 deals.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters');
 deals.addStackDependency(accounts, 'reads /cre-portal/accounts/* SSM parameters (JWT authorizer)');
+
+const chat = new ChatStack(app, 'CrePortalChat', { env });
+chat.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters + the bus');
+chat.addStackDependency(accounts, 'reads /cre-portal/accounts/* SSM parameters (JWT authorizer)');

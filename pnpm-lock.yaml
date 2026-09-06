@@ -151,6 +151,43 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.1)(jsdom@25.0.1)
 
+  services/chat:
+    dependencies:
+      '@aws-sdk/client-eventbridge':
+        specifier: ^3.717.0
+        version: 3.1127.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.717.0
+        version: 3.1127.0(@aws-sdk/client-dynamodb@3.1127.0)
+      '@cre/authz':
+        specifier: workspace:*
+        version: link:../../packages/authz
+      '@cre/events':
+        specifier: workspace:*
+        version: link:../../packages/events
+      '@cre/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@aws-sdk/client-dynamodb':
+        specifier: ^3.717.0
+        version: 3.1127.0
+      '@types/aws-lambda':
+        specifier: ^8.10.147
+        version: 8.10.163
+      aws-sdk-client-mock:
+        specifier: ^4.1.0
+        version: 4.1.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)(jsdom@25.0.1)
+
   services/deals:
     dependencies:
       '@aws-sdk/client-eventbridge':

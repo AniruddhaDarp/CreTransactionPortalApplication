@@ -525,14 +525,17 @@ noted. **No service reads another service's table.**
 | Entity | PK | SK | Key attributes |
 |---|---|---|---|
 | Thread | `DEAL#<dealId>` | `THREAD#<threadId>` | subject, scope, stageTag, createdBy, createdAt, convertedFrom |
-| Message | `DEAL#<dealId>` | `MSG#<threadId>#<ts>#<msgId>` | authorId, body, mentions[], attachments[], editedAt, deletedAt |
-| Receipt | `DEAL#<dealId>` | `RCPT#<msgId>#<userId>` | deliveredAt, readAt |
+| Message | `DEAL#<dealId>` | `MSG#<threadId>#<createdAt>#<msgId>` | authorId, body (never wiped), mentions[], attachments[] (opaque `{docId,title}` refs until Module 7 validates them), editedAt, deletedAt, `history[]` (prior bodies), `system` |
+| Receipt | `DEAL#<dealId>` | `RCPT#<msgId>#<userId>` | deliveredAt, readAt — written per recipient at send (frozen set) |
 | Read marker | `DEAL#<dealId>` | `READ#<threadId>#<userId>` | lastReadTs |
-| Membership projection | `DEAL#<dealId>` | `MEMBERVIEW#<userId>` | role, side, status, version (from `member.*` events) |
+| Membership projection | `DEAL#<dealId>` | `MEMBERVIEW#<userId>` | role, side, status, version — upserted by the consumer from `member.*`, guarded by `version <= :occurredAt` |
+| Feed item | `DEAL#<dealId>` | `FEED#<occurredAt>#<eventId>` | kind, summary, actorId — written by the consumer from `stage.advanced` / `handshake.approved`/`rejected` / `deal.status_changed` / `member.joined`; `PutItem`-if-absent for idempotency |
 
 - Patterns: threads in a deal (Query prefix → filter by `authz`); messages in a
-  thread since `ts` (Query range, polling); receipts for a message (Query
-  prefix); a member's read marker (GetItem).
+  thread since `ts` (Query `BETWEEN`, polling); receipts for a message (Query
+  prefix); a member's read marker (GetItem); the activity feed
+  (`GET /deals/{id}/activity` → Query `FEED#` newest-first). V1's feed is
+  system events only; merging visible messages into it is a refinement.
 
 ### 8.4 `documents` table (Documents svc) + S3 docs bucket
 

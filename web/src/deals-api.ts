@@ -62,6 +62,32 @@ export interface Handshake {
   decisionReason?: string;
 }
 
+export interface ChatThread {
+  threadId: string;
+  subject: string;
+  scope: string;
+  stageTag?: number;
+  createdBy: string;
+}
+
+export interface ChatMessage {
+  msgId: string;
+  threadId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  editedAt?: string;
+  deletedAt?: string;
+  system?: boolean;
+}
+
+export interface FeedItem {
+  kind: string;
+  summary: string;
+  actorId?: string;
+  createdAt: string;
+}
+
 export function dealsApi(cfg: AppConfig, token: string) {
   const f = <T>(path: string, init?: RequestInit) => apiFetch<T>(cfg, token, path, init);
   return {
@@ -109,6 +135,28 @@ export function dealsApi(cfg: AppConfig, token: string) {
         method: 'POST',
         body: JSON.stringify({ reason }),
       }),
+
+    // --- chat (Module 6) ---
+    threads: (id: string) => f<{ threads: ChatThread[] }>(`/v1/deals/${id}/threads`),
+    createThread: (id: string, body: Record<string, unknown>) =>
+      f<ChatThread>(`/v1/deals/${id}/threads`, { method: 'POST', body: JSON.stringify(body) }),
+    messages: (id: string, tid: string, after?: string) =>
+      f<{ messages: ChatMessage[] }>(
+        `/v1/deals/${id}/threads/${tid}/messages${after ? `?after=${encodeURIComponent(after)}` : ''}`,
+      ),
+    postMessage: (id: string, tid: string, body: string) =>
+      f<{ msgId: string }>(`/v1/deals/${id}/threads/${tid}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      }),
+    markThreadRead: (id: string, tid: string) =>
+      f<{ readTs: string }>(`/v1/deals/${id}/threads/${tid}/read`, { method: 'POST' }),
+    convertThread: (id: string, tid: string, toSide: 'buy' | 'sell') =>
+      f<ChatThread>(`/v1/deals/${id}/threads/${tid}/convert`, {
+        method: 'POST',
+        body: JSON.stringify({ toSide }),
+      }),
+    activity: (id: string) => f<{ activity: FeedItem[] }>(`/v1/deals/${id}/activity`),
   };
 }
 

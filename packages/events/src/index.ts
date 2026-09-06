@@ -27,3 +27,4 @@ export function eventSource(service: string): string {
 }
 
 export * from './deals.js';
+export * from './chat.js';
