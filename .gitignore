@@ -15,6 +15,9 @@ infra/cdk-outputs.json
 # test / coverage
 coverage/
 
+# seed script output (contains the live deal URL + demo logins)
+scripts/seed-output.json
+
 # env & secrets
 .env
 .env.*

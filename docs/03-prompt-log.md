@@ -628,3 +628,39 @@ design §6 **role→category visibility matrix**.
   a domain + set `NOTIFY_EMAIL_FROM`.
 - **docs** — `02-design.md` §5.9 / §7.1 / §7.2 / §8.5 / §8.8 / §9 / §10
   (fan-out flow) / §11; `03-prompt-log.md` #19.
+
+---
+
+## 20 — Module 10: seed, verify, README, as-built reconciliation
+
+> That only leaves the last module then right? … wait for the E2E, then start
+> module 10 [decisions: full 9-role seed cast; fixed emails, delete + recreate
+> each run; one committed `scripts/verify.mjs`; a new design-doc §17 As-built
+> notes section].
+
+**Outcome — the assignment deliverables are complete:**
+
+- **`scripts/lib/portal.mjs`** — shared helper for the deploy-target scripts:
+  resolves stack ids from SSM, creates Cognito users (`admin-create-user` +
+  `SUPPRESS` + permanent password — the Cognito-default email sender's daily cap
+  is too low for a scripted cohort), an authenticated API client with a
+  `must()` assertion wrapper, presigned-`PUT` upload, invite+accept.
+- **`scripts/seed.mjs`** — provisions one fully-populated sample deal on the
+  deployed stack: the full 9-role cast, roster invited + accepted, two
+  milestones advanced through real handshakes with checklist items ticked,
+  threads in every scope (one with an @mention), documents across the category
+  matrix (one with a 2nd version), an open document request, and an `edit_price`
+  handshake left pending. Idempotent (fixed emails, delete + recreate). Prints
+  the logins + deal URL and writes `scripts/seed-output.json` (git-ignored).
+- **`scripts/verify.mjs`** — the design §14 acceptance checklist, end-to-end
+  against the live API, self-cleaning: no god view (threads / documents / audit
+  list *and* CSV export), unauthorized fetch denied + access logged, handshake
+  gating with per-step audit, receipts sent→received→read, buy-side invite
+  limits (≤2 / ≤2 / ≤7), close/cancel unilateral pre-firm and a handshake
+  post-firm, and a pending-handshake notification.
+- **`README.md`** — rewritten for the finished system: what/why, architecture,
+  live URLs, develop / deploy / seed / verify commands, known gaps, repo layout.
+- **`docs/02-design.md` §17 As-built notes** — every deviation from the design
+  and its rationale (event enrichment, deterministic-SK dedup, shared projection
+  helper, `raw` router hatch, link-based invites, two-table audit, disabled
+  email, the `admin-create-user` seeding trade-off, …).

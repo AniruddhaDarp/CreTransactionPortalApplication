@@ -960,3 +960,91 @@ assignment and for keeping the demo up afterward.
   `cookieStorage` (replacing `react-oidc-context` + `oidc-client-ts`). Also
   enable Cognito threat protection (adaptive/risk-based MFA) once on a paid
   feature plan.
+
+
+## 17. As-built notes
+
+Where the implementation diverged from the design above, and why. (The design
+sections have been updated to match; this section is the changelog.)
+
+### Architecture / cross-cutting
+
+- **Event enrichment for scope & attribution.** Every event that concerns a
+  scoped resource (chat threads/messages, documents, doc-requests) now carries a
+  `scope` field, and the handshake / doc-request *outcome* events carry the
+  originator (`initiatedBy` / `createdBy`). The Audit and Notifications
+  consumers therefore never infer a scope or look up an originator — the
+  producer, which has the row in hand, is authoritative. A wrong inference in
+  Audit would have leaked a side-private action across sides.
+- **Deterministic-SK idempotency instead of `SEEN#` markers.** Audit and
+  Notifications rows use a SK built from the event envelope
+  (`AUDIT#<occurredAt>#<eventId>`, `NOTIF#<occurredAt>#<eventId>`), so a
+  redelivered SQS message is absorbed by `attribute_not_exists(SK)`. The
+  separate per-consumer dedupe marker in the original data model was dropped.
+- **`@cre/platform/projection.ts`** — the `MEMBERVIEW#` upsert/get/list helper
+  (version-guarded on `occurredAt`) was extracted so Documents, Audit,
+  Notifications and the Deals delete-saga consumer share one implementation.
+  Chat keeps its own copy (written first; identical behaviour).
+- **`raw` router escape hatch.** `@cre/platform`'s HTTP router gained a
+  `{ raw: {...} }` result form so the audit CSV export can return real
+  `text/csv` with a `Content-Disposition` attachment header instead of a JSON
+  envelope.
+- **`httpApiEndpoint` SSM read removed** from the Chat and Documents stacks —
+  `HttpApi.fromHttpApiAttributes` only needs the id for route creation, and the
+  unused parameter tripped `cdk synth --strict` (W2001).
+
+### Accounts / auth
+
+- **Invitations are link-based, not emailed.** `POST …/invites` returns the
+  `acceptUrl`; the SPA shows it for the inviter to share. Email is implemented
+  in Notifications but flag-gated off (below).
+- **`USER_PASSWORD_AUTH`** is enabled on the SPA app client so the seed/verify
+  scripts can authenticate; the browser still uses the hosted UI (auth-code +
+  PKCE). Production should be SRP-only.
+- **Buy-side bootstrap.** The design first said only `BUYER` / `BUYER_AGENT`
+  invite the buy-side; that is a chicken-and-egg on a fresh deal, so the admin
+  (`SELLER_AGENT`) bootstraps the first buy-side lead, after which the buy-side
+  self-manages within the ≤2 / ≤2 / ≤7 limits. (§5.3 / §6 updated.)
+
+### Deals
+
+- The Deals stack gained a small **SQS consumer** (Module 7) that turns
+  `document.delete_requested` into a handshake and closes the saga on
+  `document.archived` — the document-delete flow is fully event-driven, with no
+  synchronous service-to-service call.
+- `allMembers` **broadcast notifications** (`stage.advanced`,
+  `deal.status_changed`) include the actor; a milestone is deal-wide news, not
+  feedback on one's own click. Targeted notifications still skip the actor.
+
+### Audit
+
+- **Two tables.** The append-only `audit` table's consumer role has
+  `dynamodb:PutItem` and nothing else. The `member.*` projection it also
+  maintains needs `UpdateItem`, so it lives in a separate `audit-membership`
+  table — append-only is enforced by IAM per-table, not by a code convention.
+- The consumer rule matches **`source: [{ prefix: "cre." }]`** (all events);
+  Notifications matches a fixed detail-type list across sources.
+
+### Notifications
+
+- **Email dispatch is wired but disabled.** SESv2 templates (invitation +
+  action-required), the `notification.emailed` event, and the `ses:SendEmail`
+  grant are all in place, unit-tested behind a mock, but the consumer no-ops
+  unless `NOTIFY_EMAIL_FROM` is set. No SES sender identity is verified in the
+  demo project and the SES sandbox only delivers to verified addresses.
+  Enabling in production is: verify a domain, set the env var — no code change.
+- **Unread count is derived** from the returned page (latest ~50), not a
+  maintained counter item — exact at any realistic volume, no drift.
+- **Profile projection.** `account.created` feeds a `PROFILE#<userId>` row
+  (email/name) used only for the action-required email lookup.
+
+### Scripts / seeding
+
+- `scripts/seed.mjs` and `scripts/verify.mjs` (+ `scripts/lib/portal.mjs`)
+  resolve stack identifiers from **SSM**, not `infra/cdk-outputs.json`.
+- They create Cognito users with **`admin-create-user` + `SUPPRESS` + a
+  permanent password**, because the Cognito-default email sender's daily cap is
+  low and a scripted cohort exhausts it. Consequence: those users do **not**
+  fire the `PostConfirmation` trigger, so they have no `accounts` profile row —
+  fine for every deal flow (which keys off membership + JWT claims), but
+  `GET /v1/me` 404s for a scripted login.
