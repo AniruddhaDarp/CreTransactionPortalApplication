@@ -700,6 +700,30 @@ export async function listMyPendingApprovals(userId: string): Promise<Handshake[
     .filter((hs) => hs.status === 'pending');
 }
 
+/**
+ * Close a saga-backed handshake once its downstream effect has been confirmed
+ * (e.g. the Documents service published `document.archived`). Idempotent: a
+ * replayed `document.archived` finds the handshake already `completed` and the
+ * conditional write is swallowed.
+ */
+export async function completeHandshakeSaga(dealId: string, hsId: string): Promise<void> {
+  try {
+    await docClient().send(
+      new UpdateCommand({
+        TableName: tableName(),
+        Key: hsKey(dealId, hsId),
+        UpdateExpression: 'SET #status = :done REMOVE sagaState',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: { ':done': 'completed', ':approved': 'approved' },
+        ConditionExpression: '#status = :approved',
+      }),
+    );
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') return;
+    throw err;
+  }
+}
+
 export async function runTransaction(items: TransactItem[]): Promise<void> {
   await docClient().send(new TransactWriteCommand({ TransactItems: items }));
 }

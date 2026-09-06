@@ -5,3 +5,4 @@
 export * from './roles.js';
 export * from './scope.js';
 export * from './permissions.js';
+export * from './documents.js';

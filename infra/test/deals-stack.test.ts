@@ -31,6 +31,20 @@ describe('DealsStack', () => {
     });
   });
 
+  it('routes the document delete-saga events from cre.documents into an SQS queue with a DLQ', () => {
+    t.hasResourceProperties('AWS::Events::Rule', {
+      EventPattern: {
+        source: ['cre.documents'],
+        'detail-type': Match.arrayWith(['document.delete_requested', 'document.archived']),
+      },
+    });
+    t.resourceCountIs('AWS::SQS::Queue', 2); // consumer queue + DLQ
+    t.hasResourceProperties('AWS::SQS::Queue', { RedrivePolicy: { maxReceiveCount: 5 } });
+    t.hasResourceProperties('AWS::Lambda::EventSourceMapping', {
+      FunctionResponseTypes: ['ReportBatchItemFailures'],
+    });
+  });
+
   it('registers all 26 JWT-authorized routes', () => {
     t.resourceCountIs('AWS::ApiGatewayV2::Route', 26);
     t.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', { AuthorizerType: 'JWT' });

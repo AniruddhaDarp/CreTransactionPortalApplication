@@ -385,8 +385,9 @@ Path routing (most-specific first): `/v1/deals/{id}/threads/*` → Chat,
 
 EventBridge rules: Audit matches every event; Notifications matches `@mention` /
 `handshake.*` / `docrequest.*` / `member.invited`; Chat and Documents match
-`member.*` (projection upkeep); Documents also `handshake.approved`; Deals
-matches `document.archived` (closes the delete saga). SES sends invitation and
+`member.*` (projection upkeep); Documents also `handshake.approved` (delete
+saga); Deals matches `document.delete_requested` (opens the delete handshake)
+and `document.archived` (closes the saga). SES sends invitation and
 action-required email.
 
 Everything regional is in **`us-east-2`**; CloudFront is global. IaC is **AWS
@@ -401,9 +402,9 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
 | Service | Owns | Publishes | Consumes |
 |---|---|---|---|
 | **Accounts** | user profiles; **the Cognito user pool + app client + hosted-UI domain + post-confirmation trigger + the shared JWT authorizer** (exported via SSM) | `account.created` | — |
-| **Deals** | deal record + status; membership + invitations; milestones (stages, checklists); handshake state machine | `deal.created`, `deal.updated`, `deal.status_changed`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed`, `stage.advanced`, `handshake.requested`, `handshake.approved`, `handshake.rejected` | `document.archived` (delete saga) |
+| **Deals** | deal record + status; membership + invitations; milestones (stages, checklists); handshake state machine | `deal.created`, `deal.updated`, `deal.status_changed`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed`, `stage.advanced`, `handshake.requested`, `handshake.approved`, `handshake.rejected` | `document.delete_requested` (opens the delete handshake), `document.archived` (closes the saga) |
 | **Chat** | threads, messages, receipts, read markers; local `memberships` projection | `message.posted`, `message.edited`, `message.deleted`, `thread.created`, `thread.converted` | `member.*` |
-| **Documents** | documents + versions, document requests; S3 docs bucket; local `memberships` projection | `document.uploaded`, `document.versioned`, `document.promoted`, `document.archived`, `docrequest.created`, `docrequest.fulfilled`, `docrequest.declined`, `docrequest.cancelled` | `member.*`, `handshake.approved` |
+| **Documents** | documents + versions, document requests; S3 docs bucket; local `memberships` projection | `document.uploaded`, `document.versioned`, `document.promoted`, `document.archived`, `document.accessed`, `document.delete_requested`, `docrequest.created`, `docrequest.fulfilled`, `docrequest.declined`, `docrequest.cancelled` | `member.*`, `handshake.approved` |
 | **Notifications** | notification records, unread counts; SES dispatch for action-required + invitations | `notification.emailed` | ~all domain events (produces a notification per relevant one) |
 | **Audit** | append-only audit log; scoped read + export | — | **all** domain events |
 
@@ -436,9 +437,10 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
   action that matters (advancing, deleting) and re-checks on its own data.
 - **The handshake is a saga** — see [§10](#10-key-flows). Deal-local effects are
   applied atomically inside the `deals` table; the single cross-service effect
-  (archiving a document on a delete-handshake) is choreographed via
-  `handshake.approved` → Documents → `document.archived` → Deals closes the saga.
-  No two-phase commit.
+  (archiving a document on a delete-handshake) is choreographed entirely over
+  the bus: `document.delete_requested` → Deals opens the handshake →
+  `handshake.approved` → Documents archives → `document.archived` → Deals closes
+  the saga. No two-phase commit, no synchronous service-to-service call.
 
 ### 7.5 Repo & infra
 
@@ -619,6 +621,7 @@ Every event: `{ eventId, occurredAt, correlationId, dealId, actorId, detail }`.
 | `thread.created` | Chat | threadId, scope | Audit |
 | `thread.converted` | Chat | threadId, toScope, droppedUserId | Notifications, Audit |
 | `document.uploaded` | Documents | docId, category, scope | Audit |
+| `document.delete_requested` | Documents | docId, requestedBy, requesterRole, requesterSide | Deals (opens the delete handshake), Audit |
 | `document.versioned` | Documents | docId, n | Audit |
 | `document.promoted` | Documents | docId | Audit |
 | `document.archived` | Documents | docId, hsId | Deals (close saga), Audit |
@@ -664,12 +667,18 @@ membership view before touching data.
   `GET/POST /deals/{id}/threads/{tid}/messages`,
   `PATCH|DELETE …/messages/{mid}`, `POST …/threads/{tid}/read`,
   `GET …/messages/{mid}/receipts`.
-- **Documents svc:** `GET/POST /deals/{id}/documents`,
+- **Documents svc** (13 routes): `GET/POST /deals/{id}/documents`,
+  `GET /deals/{id}/documents/{did}` (metadata + versions),
   `POST /deals/{id}/documents/{did}/versions`,
-  `GET …/versions/{n}/download`, `GET …/versions/{n}/view`,
+  `GET …/versions/{n}/download`, `GET …/versions/{n}/view` (both presign a
+  short-TTL S3 `GET` and publish `document.accessed`),
   `POST /deals/{id}/documents/{did}/promote`,
-  `DELETE /deals/{id}/documents/{did}` (→ handshake);
+  `DELETE /deals/{id}/documents/{did}` (publishes `document.delete_requested`,
+  returns `202` — the delete saga opens a handshake);
   `GET/POST /deals/{id}/doc-requests`, `POST …/{rid}/fulfill|decline|cancel`.
+  `POST /documents` and `…/versions` return a presigned S3 `PUT` — the browser
+  uploads the bytes directly (optimistic: the `DOC#`/`DOCVER#` row and
+  `document.uploaded` are written before the `PUT` completes).
 - **Audit svc:** `GET /deals/{id}/audit`, `GET /deals/{id}/audit/export`.
 - **Notifications svc:** `GET /notifications`, `POST /notifications/read`.
 
@@ -703,19 +712,30 @@ claim must match the invite (case-insensitive) — then Deals writes `MEMBER#`
    `META.firm = true`. Then it publishes `handshake.approved` + `stage.advanced`.
 3. Audit writes entries from those events; Notifications notifies both sides.
 
-**Handshake (delete a document) — cross-service saga.**
-1. `DELETE /deals/{id}/documents/{docId}` (Documents svc) → Documents asks Deals
-   to open a handshake (a thin internal `POST /deals/{id}/handshakes` with
-   `action=delete_document`), or the SPA calls Deals directly; `HS#` pending as
-   above.
-2. On `approve`, Deals sets `HS#` → `approved, sagaState=awaiting_document` and
-   publishes `handshake.approved`.
-3. Documents consumes it, sets `DOC#.archivedAt`, publishes `document.archived`.
-4. Deals consumes `document.archived`, sets `HS#` → `completed`. Audit records
-   every step. If Documents fails, the SQS redrive + DLR surface it; the `HS#`
-   stays `awaiting_document` (visible as an incomplete saga) — no partial
-   "deleted" state is ever shown because Documents only flips `archivedAt` on
-   success.
+**Handshake (delete a document) — cross-service saga.** Fully event-driven —
+no synchronous service-to-service call on the request path.
+1. `DELETE /deals/{id}/documents/{docId}` (Documents svc) checks
+   `can('deleteDocument', …)` against the local projection, then publishes
+   `document.delete_requested` `{docId, requestedBy, requesterRole,
+   requesterSide}` and returns `202`.
+2. A **Deals consumer** (SQS off `cre.documents`) picks it up, loads the deal,
+   rebuilds the `AuthzContext`, and runs `handshake.initiate(action=
+   delete_document)` on the requester's behalf — writing the `HS#` pending row +
+   `APPR#` pointers and publishing `handshake.requested`. It is idempotent: a
+   redelivered request whose `docId` already has a pending/approved
+   `delete_document` handshake is a no-op. A permanent rejection (`HttpError`:
+   requester not permitted, deal gone) is logged and dropped, not retried.
+3. An approver `POST …/handshakes/{hsId}/approve`. Deals sets `HS#` →
+   `approved, sagaState=awaiting_document` and publishes `handshake.approved`.
+4. The **Documents consumer** matches `handshake.approved` with
+   `action=delete_document`, sets `DOC#.archivedAt` (idempotent
+   `if_not_exists`), and publishes `document.archived` `{docId, hsId}`.
+5. The Deals consumer matches `document.archived` and sets `HS#` → `completed`
+   (`completeHandshakeSaga`, conditional on `status=approved`, so a replay is a
+   no-op). Audit records every step. If Documents fails, SQS redrive + DLQ
+   surface it and the `HS#` stays `awaiting_document` (visible as an incomplete
+   saga) — no partial "deleted" state is shown, because `archivedAt` is only set
+   on success.
 
 **Message receipts.** On send, `RCPT#` rows created for the frozen recipient set
 (`deliveredAt`/`readAt` null). Each client's `GET …/messages` stamps

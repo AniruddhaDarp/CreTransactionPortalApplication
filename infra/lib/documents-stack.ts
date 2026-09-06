@@ -11,48 +11,51 @@ import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { BlockPublicAccess, Bucket, HttpMethods } from 'aws-cdk-lib/aws-s3';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import { Param } from './param-names.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.join(HERE, '..', '..', 'services', 'chat', 'src');
+const SRC = path.join(HERE, '..', '..', 'services', 'documents', 'src');
 
 const ROUTES: Array<[HttpMethod, string]> = [
-  [HttpMethod.GET, '/v1/deals/{dealId}/threads'],
-  [HttpMethod.POST, '/v1/deals/{dealId}/threads'],
-  [HttpMethod.POST, '/v1/deals/{dealId}/threads/{threadId}/convert'],
-  [HttpMethod.GET, '/v1/deals/{dealId}/threads/{threadId}/messages'],
-  [HttpMethod.POST, '/v1/deals/{dealId}/threads/{threadId}/messages'],
-  [HttpMethod.PATCH, '/v1/deals/{dealId}/threads/{threadId}/messages/{msgId}'],
-  [HttpMethod.DELETE, '/v1/deals/{dealId}/threads/{threadId}/messages/{msgId}'],
-  [HttpMethod.GET, '/v1/deals/{dealId}/threads/{threadId}/messages/{msgId}/receipts'],
-  [HttpMethod.POST, '/v1/deals/{dealId}/threads/{threadId}/read'],
-  [HttpMethod.GET, '/v1/deals/{dealId}/activity'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/documents'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/documents'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/documents/{docId}'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/versions'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/documents/{docId}/versions/{n}/download'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/documents/{docId}/versions/{n}/view'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/promote'],
+  [HttpMethod.DELETE, '/v1/deals/{dealId}/documents/{docId}'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/doc-requests'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/fulfill'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/decline'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/cancel'],
 ];
 
-/** Events the chat consumer needs: `member.*` for the projection, the rest for the feed. */
+/** `member.*` feeds the local projection; `handshake.approved` drives the delete saga. */
 const CONSUMED_EVENTS = [
   'member.joined',
   'member.role_changed',
   'member.removed',
-  'stage.advanced',
   'handshake.approved',
-  'handshake.rejected',
-  'deal.status_changed',
 ];
 
 /**
- * ChatStack — the first *consumer* service. Two Lambdas: an API handler on the
- * shared HTTP API, and an SQS-triggered consumer fed by an EventBridge rule on
- * `cre-portal-bus`. Modules 7–9 copy this shape.
+ * DocumentsStack — the versioned, scope- and category-permissioned document
+ * room. Same consumer shape as ChatStack: an API Lambda on the shared HTTP API
+ * plus an SQS-triggered consumer. Adds a private S3 bucket; files are uploaded
+ * and fetched directly by the browser through short-lived presigned URLs, so the
+ * bucket carries a CORS rule for the SPA origins.
  */
-export class ChatStack extends Stack {
+export class DocumentsStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, {
       ...props,
-      description: 'CRE Transaction Portal — Chat service (threads, messages, receipts, activity)',
+      description: 'CRE Transaction Portal — Documents service (versioned room, requests, delete saga)',
     });
 
     const httpApiId = StringParameter.valueForStringParameter(this, Param.httpApiId);
@@ -60,22 +63,37 @@ export class ChatStack extends Stack {
     const busArn = StringParameter.valueForStringParameter(this, Param.busArn);
     const issuer = StringParameter.valueForStringParameter(this, Param.userPoolIssuer);
     const clientId = StringParameter.valueForStringParameter(this, Param.userPoolClientId);
+    const distributionDomain = StringParameter.valueForStringParameter(
+      this,
+      Param.distributionDomain,
+    );
 
     const table = new Table(this, 'Table', {
       partitionKey: { name: 'PK', type: AttributeType.STRING },
       sortKey: { name: 'SK', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
-      timeToLiveAttribute: 'ttl',
     });
 
-    const bundling = {
-      format: OutputFormat.ESM,
-      mainFields: ['module', 'main'],
-      target: 'node22',
-    };
+    const bucket = new Bucket(this, 'DocsBucket', {
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      cors: [
+        {
+          allowedMethods: [HttpMethods.PUT, HttpMethods.GET],
+          allowedOrigins: [`https://${distributionDomain}`, 'http://localhost:5173'],
+          allowedHeaders: ['*'],
+          exposedHeaders: ['ETag'],
+          maxAge: 3000,
+        },
+      ],
+    });
 
-    // --- API handler ----------------------------------------------------
+    const bundling = { format: OutputFormat.ESM, mainFields: ['module', 'main'], target: 'node22' };
+
+    // --- API handler --------------------------------------------------
     const apiLogs = new LogGroup(this, 'ApiFnLogs', {
       retention: RetentionDays.ONE_WEEK,
       removalPolicy: RemovalPolicy.DESTROY,
@@ -88,19 +106,24 @@ export class ChatStack extends Stack {
       tracing: Tracing.ACTIVE,
       logGroup: apiLogs,
       timeout: Duration.seconds(10),
-      environment: { CHAT_TABLE: table.tableName, EVENT_BUS_NAME: busName },
+      environment: {
+        DOCUMENTS_TABLE: table.tableName,
+        DOCS_BUCKET: bucket.bucketName,
+        EVENT_BUS_NAME: busName,
+      },
       bundling,
     });
     table.grantReadWriteData(apiFn);
+    bucket.grantReadWrite(apiFn);
     EventBus.fromEventBusArn(this, 'Bus', busArn).grantPutEventsTo(apiFn);
 
     const httpApi = HttpApi.fromHttpApiAttributes(this, 'EdgeApi', { httpApiId });
     const authorizer = new HttpJwtAuthorizer('JwtAuthorizer', issuer, {
-      authorizerName: 'cre-portal-jwt-chat',
+      authorizerName: 'cre-portal-jwt-documents',
       identitySource: ['$request.header.Authorization'],
       jwtAudience: [clientId],
     });
-    const integration = new HttpLambdaIntegration('ChatIntegration', apiFn);
+    const integration = new HttpLambdaIntegration('DocumentsIntegration', apiFn);
     for (const [method, routePath] of ROUTES) {
       new HttpRoute(this, `Route_${method}_${routePath.replace(/[^A-Za-z0-9]/g, '_')}`, {
         httpApi,
@@ -110,7 +133,7 @@ export class ChatStack extends Stack {
       });
     }
 
-    // --- event consumer ---------------------------------------------
+    // --- event consumer --------------------------------------------
     const dlq = new Queue(this, 'ConsumerDLQ', { retentionPeriod: Duration.days(14) });
     const queue = new Queue(this, 'ConsumerQueue', {
       visibilityTimeout: Duration.seconds(90),
@@ -135,10 +158,11 @@ export class ChatStack extends Stack {
       tracing: Tracing.ACTIVE,
       logGroup: consumerLogs,
       timeout: Duration.seconds(15),
-      environment: { CHAT_TABLE: table.tableName },
+      environment: { DOCUMENTS_TABLE: table.tableName, EVENT_BUS_NAME: busName },
       bundling,
     });
     table.grantReadWriteData(consumerFn);
+    EventBus.fromEventBusArn(this, 'BusForConsumer', busArn).grantPutEventsTo(consumerFn);
     consumerFn.addEventSource(
       new SqsEventSource(queue, {
         batchSize: 10,
@@ -147,7 +171,8 @@ export class ChatStack extends Stack {
       }),
     );
 
-    new CfnOutput(this, 'ChatTableName', { value: table.tableName });
-    new CfnOutput(this, 'ConsumerQueueUrl', { value: queue.queueUrl });
+    new CfnOutput(this, 'DocumentsTableName', { value: table.tableName });
+    new CfnOutput(this, 'DocsBucketName', { value: bucket.bucketName });
+    new CfnOutput(this, 'DocumentsConsumerQueueUrl', { value: queue.queueUrl });
   }
 }

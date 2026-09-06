@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { Capabilities, Deal, DealsApi, Invite, Member } from '../deals-api.js';
 import { Chat } from './Chat.js';
+import { Documents } from './Documents.js';
 import { Milestones } from './Milestones.js';
 
 const ROLES = [
@@ -72,6 +73,8 @@ export function DealDetail({ api, myUserId }: { api: DealsApi; myUserId: string 
       />
 
       <Chat api={api} dealId={id} myUserId={myUserId} />
+
+      <Documents api={api} dealId={id} capabilities={deal.capabilities} />
 
       <h3>Members</h3>
       <table>

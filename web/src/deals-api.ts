@@ -88,6 +88,43 @@ export interface FeedItem {
   createdAt: string;
 }
 
+export interface DocVersion {
+  n: number;
+  filename: string;
+  contentType: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  note?: string;
+}
+
+export interface DocumentRow {
+  docId: string;
+  category: string;
+  title: string;
+  description?: string;
+  scope: string;
+  stageTag?: number;
+  currentVersion: number;
+  versionCount: number;
+  uploadedBy: string;
+  createdAt: string;
+  archivedAt?: string;
+}
+
+export interface DocRequest {
+  reqId: string;
+  category: string;
+  note?: string;
+  targetUserId?: string;
+  targetRole?: string;
+  dueDate?: string;
+  scope: string;
+  status: 'open' | 'fulfilled' | 'declined' | 'cancelled';
+  fulfilledDocId?: string;
+  declineReason?: string;
+  createdBy: string;
+}
+
 export function dealsApi(cfg: AppConfig, token: string) {
   const f = <T>(path: string, init?: RequestInit) => apiFetch<T>(cfg, token, path, init);
   return {
@@ -157,6 +194,49 @@ export function dealsApi(cfg: AppConfig, token: string) {
         body: JSON.stringify({ toSide }),
       }),
     activity: (id: string) => f<{ activity: FeedItem[] }>(`/v1/deals/${id}/activity`),
+
+    // --- documents (Module 7) ---
+    documents: (id: string) => f<{ documents: DocumentRow[] }>(`/v1/deals/${id}/documents`),
+    document: (id: string, docId: string) =>
+      f<DocumentRow & { versions: DocVersion[] }>(`/v1/deals/${id}/documents/${docId}`),
+    createDocument: (id: string, body: Record<string, unknown>) =>
+      f<{ docId: string; version: number; uploadUrl: string }>(`/v1/deals/${id}/documents`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    addDocumentVersion: (id: string, docId: string, body: Record<string, unknown>) =>
+      f<{ version: number; uploadUrl: string }>(`/v1/deals/${id}/documents/${docId}/versions`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    documentDownloadUrl: (id: string, docId: string, n: number) =>
+      f<{ url: string; filename: string }>(
+        `/v1/deals/${id}/documents/${docId}/versions/${n}/download`,
+      ),
+    documentViewUrl: (id: string, docId: string, n: number) =>
+      f<{ url: string; filename: string }>(`/v1/deals/${id}/documents/${docId}/versions/${n}/view`),
+    promoteDocument: (id: string, docId: string) =>
+      f<DocumentRow>(`/v1/deals/${id}/documents/${docId}/promote`, { method: 'POST' }),
+    deleteDocument: (id: string, docId: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/documents/${docId}`, { method: 'DELETE' }),
+    docRequests: (id: string) => f<{ requests: DocRequest[] }>(`/v1/deals/${id}/doc-requests`),
+    createDocRequest: (id: string, body: Record<string, unknown>) =>
+      f<{ reqId: string }>(`/v1/deals/${id}/doc-requests`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    fulfillDocRequest: (id: string, reqId: string, docId: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/doc-requests/${reqId}/fulfill`, {
+        method: 'POST',
+        body: JSON.stringify({ docId }),
+      }),
+    declineDocRequest: (id: string, reqId: string, reason?: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/doc-requests/${reqId}/decline`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }),
+    cancelDocRequest: (id: string, reqId: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/doc-requests/${reqId}/cancel`, { method: 'POST' }),
   };
 }
 

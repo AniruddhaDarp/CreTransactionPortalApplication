@@ -9,3 +9,4 @@ export * from './logger.js';
 export * from './ddb.js';
 export * from './bus.js';
 export * from './http.js';
+export * from './projection.js';

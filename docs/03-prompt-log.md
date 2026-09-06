@@ -497,3 +497,50 @@ buyer's `side_private:buy` thread is invisible to the sell-side admin →
 buyer-agent opens `channel:agent`, converts it to `side_private:buy` → admin
 (other-side agent) loses it, buyer gains it → activity feed shows the member
 joins.
+
+---
+
+## 17 — Module 7: Documents service (versioned room, category matrix, delete saga)
+
+> 1, 2, 3 recommended. 4: matrix
+
+Four decisions on the Module 7 plan: (1) the **full event-driven delete saga**
+(adds a small Deals consumer) rather than a synchronous internal call;
+(2) **optimistic upload** — write the `DOC#` row + `document.uploaded` when
+metadata is submitted, the browser `PUT`s the bytes to S3 separately;
+(3) emit **`document.accessed`** on every view / download; (4) implement the
+design §6 **role→category visibility matrix**.
+
+**Outcome — 148 workspace tests green; `cdk synth --strict` clean:**
+
+- **`@cre/authz/documents.ts`** — `DOCUMENT_CATEGORIES` (8) + `categoryVisible`
+  / `canSeeDocument` implementing the §6 matrix: sell-side can't see Financing /
+  Appraisal and only sees deal-wide Inspection; `LENDER` sees all but
+  Inspection; `TITLE_AGENT` is limited to the shared categories; `OTHER` is
+  gated by scope only. `canSeeDocument = canSee(scope) ∧ categoryVisible`.
+- **`@cre/events/documents.ts`** — 10 zod event schemas incl.
+  `document.delete_requested`, `document.archived {docId,hsId}`,
+  `document.accessed {n,mode}`.
+- **`@cre/platform/projection.ts`** — the `MEMBERVIEW#` upsert/getter/list
+  helper extracted so Documents and the Deals consumer share it (takes the
+  table name as a param; the Module 6 chat copy is left as-is).
+- **`services/documents`** — `repo.ts` (`DOC#` / `DOCVER#<n>` / `DOCREQ#`,
+  `TransactWriteItems` create, version bump, `archivedAt` via `if_not_exists`),
+  `s3.ts` (presigned `PUT` / `GET`, 300 s TTL, `attachment` vs `inline`
+  disposition), `api.ts` (13 routes), `consumer.ts` (`member.*` → projection;
+  `handshake.approved`/`delete_document` → archive + `document.archived`).
+- **`services/deals/consumer.ts`** (new) — SQS off `cre.documents`:
+  `document.delete_requested` → rebuild `AuthzContext` from the deal +
+  `handshake.initiate(delete_document)` (idempotent per `docId`; permanent
+  `HttpError` dropped, transient retried); `document.archived` →
+  `completeHandshakeSaga`.
+- **`infra`** — `DocumentsStack` (table + **private S3 bucket**, BLOCK_ALL +
+  CORS `PUT`/`GET` for the SPA origins, `autoDeleteObjects`; API Lambda +
+  consumer Lambda + queue/DLQ/rule). `DealsStack` gains the delete-saga
+  consumer + queue/DLQ/rule. Dropped the now-unreferenced `httpApiEndpoint`
+  SSM read from both the chat and documents stacks so `cdk synth --strict`
+  is warning-free.
+- **`web`** — a `Documents` panel: upload (metadata → presigned `PUT`), version
+  list + add-version, view / download (opens the presigned URL),
+  promote → deal-wide, request-delete (starts the handshake), and the
+  document-request list with fulfil / decline / cancel.

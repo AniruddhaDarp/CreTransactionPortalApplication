@@ -5,10 +5,13 @@ import { HttpApi, HttpMethod, HttpRoute, HttpRouteKey } from 'aws-cdk-lib/aws-ap
 import { HttpJwtAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
-import { EventBus } from 'aws-cdk-lib/aws-events';
+import { EventBus, Rule } from 'aws-cdk-lib/aws-events';
+import { SqsQueue } from 'aws-cdk-lib/aws-events-targets';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import { Param } from './param-names.js';
@@ -73,6 +76,8 @@ export class DealsStack extends Stack {
       Param.distributionDomain,
     );
 
+    const bundling = { format: OutputFormat.ESM, mainFields: ['module', 'main'], target: 'node22' };
+
     const table = new Table(this, 'Table', {
       partitionKey: { name: 'PK', type: AttributeType.STRING },
       sortKey: { name: 'SK', type: AttributeType.STRING },
@@ -107,7 +112,7 @@ export class DealsStack extends Stack {
         EVENT_BUS_NAME: busName,
         WEB_ORIGIN: `https://${distributionDomain}`,
       },
-      bundling: { format: OutputFormat.ESM, mainFields: ['module', 'main'], target: 'node22' },
+      bundling,
     });
     table.grantReadWriteData(dealsFn);
     EventBus.fromEventBusArn(this, 'Bus', busArn).grantPutEventsTo(dealsFn);
@@ -132,7 +137,52 @@ export class DealsStack extends Stack {
       });
     }
 
+    // --- document delete-saga consumer ---------------------------------
+    // Documents can't call Deals synchronously, so it emits
+    // `document.delete_requested`; this consumer opens the handshake on its
+    // behalf and closes the saga when `document.archived` comes back.
+    const dlq = new Queue(this, 'ConsumerDLQ', { retentionPeriod: Duration.days(14) });
+    const queue = new Queue(this, 'ConsumerQueue', {
+      visibilityTimeout: Duration.seconds(90),
+      deadLetterQueue: { queue: dlq, maxReceiveCount: 5 },
+    });
+
+    new Rule(this, 'ConsumerRule', {
+      eventBus: EventBus.fromEventBusArn(this, 'BusForRule', busArn),
+      eventPattern: {
+        source: ['cre.documents'],
+        detailType: ['document.delete_requested', 'document.archived'],
+      },
+      targets: [new SqsQueue(queue)],
+    });
+
+    const consumerLogs = new LogGroup(this, 'ConsumerFnLogs', {
+      retention: RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    const consumerFn = new NodejsFunction(this, 'ConsumerFn', {
+      entry: path.join(DEALS_SRC, 'consumer.ts'),
+      handler: 'handler',
+      runtime: Runtime.NODEJS_22_X,
+      architecture: Architecture.ARM_64,
+      tracing: Tracing.ACTIVE,
+      logGroup: consumerLogs,
+      timeout: Duration.seconds(15),
+      environment: { DEALS_TABLE: table.tableName, EVENT_BUS_NAME: busName },
+      bundling,
+    });
+    table.grantReadWriteData(consumerFn);
+    EventBus.fromEventBusArn(this, 'BusForConsumer', busArn).grantPutEventsTo(consumerFn);
+    consumerFn.addEventSource(
+      new SqsEventSource(queue, {
+        batchSize: 10,
+        maxBatchingWindow: Duration.seconds(5),
+        reportBatchItemFailures: true,
+      }),
+    );
+
     new CfnOutput(this, 'DealsTableName', { value: table.tableName });
     new CfnOutput(this, 'DealsEndpoint', { value: `${httpApiEndpoint}/v1/deals` });
+    new CfnOutput(this, 'DealsConsumerQueueUrl', { value: queue.queueUrl });
   }
 }
