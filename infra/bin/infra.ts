@@ -5,6 +5,7 @@ import { AuditStack } from '../lib/audit-stack.js';
 import { ChatStack } from '../lib/chat-stack.js';
 import { DealsStack } from '../lib/deals-stack.js';
 import { DocumentsStack } from '../lib/documents-stack.js';
+import { NotificationsStack } from '../lib/notifications-stack.js';
 import { SharedStack } from '../lib/shared-stack.js';
 
 const app = new App();
@@ -41,3 +42,10 @@ documents.addStackDependency(
 const audit = new AuditStack(app, 'CrePortalAudit', { env });
 audit.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters + the bus');
 audit.addStackDependency(accounts, 'reads /cre-portal/accounts/* SSM parameters (JWT authorizer)');
+
+const notifications = new NotificationsStack(app, 'CrePortalNotifications', { env });
+notifications.addStackDependency(shared, 'reads /cre-portal/shared/* SSM parameters + the bus');
+notifications.addStackDependency(
+  accounts,
+  'reads /cre-portal/accounts/* SSM parameters (JWT authorizer)',
+);

@@ -259,7 +259,7 @@ export const handler = router({
     await emit(dealId, ctx.correlationId, ctx.userId, [
       {
         type: 'docrequest.fulfilled',
-        detail: { dealId, reqId: req.reqId, fulfilledDocId: docId, scope: req.scope },
+        detail: { dealId, reqId: req.reqId, fulfilledDocId: docId, scope: req.scope, createdBy: req.createdBy },
       },
     ]);
     return { body: { status: 'fulfilled' } };
@@ -272,7 +272,10 @@ export const handler = router({
     const { reason } = parseBody(z.object({ reason: z.string().max(500).optional() }), ctx.body ?? {});
     await repo.resolveDocRequest(dealId, req.reqId, { status: 'declined', declineReason: reason });
     await emit(dealId, ctx.correlationId, ctx.userId, [
-      { type: 'docrequest.declined', detail: { dealId, reqId: req.reqId, reason, scope: req.scope } },
+      {
+        type: 'docrequest.declined',
+        detail: { dealId, reqId: req.reqId, reason, scope: req.scope, createdBy: req.createdBy },
+      },
     ]);
     return { body: { status: 'declined' } };
   },

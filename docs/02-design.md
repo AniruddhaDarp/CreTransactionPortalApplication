@@ -255,9 +255,13 @@ converted (you were dropped). Each links to its target; mark one/all read.
 
 Plain messages raise unread counts only — no notification. @mentions notify.
 
-**Email (SES):** invitations always; plus "action required" — a handshake or a
-document request assigned to you. Nothing else emails. Per-user notification
-preferences are V2.
+**Email (SESv2):** invitations always; plus "action required" — a handshake or a
+document request assigned to you. Nothing else emails. The dispatch path is
+implemented and unit-tested behind a mock, but **gated off** (`NOTIFY_EMAIL_FROM`
+unset) — no SES sender identity is verified in the demo project, and the SES
+sandbox only delivers to verified addresses. Enabling it in production is
+verifying a domain and setting the env var; no code change. Per-user
+notification preferences are V2.
 
 ## 6. Permission & visibility model
 
@@ -383,12 +387,14 @@ Path routing (most-specific first): `/v1/deals/{id}/threads/*` → Chat,
 `/v1/deals/{id}/audit*` → Audit, `/v1/notifications/*` → Notifications,
 `/v1/me` → Accounts, everything else under `/v1/deals/*` → Deals.
 
-EventBridge rules: Audit matches every event; Notifications matches `@mention` /
-`handshake.*` / `docrequest.*` / `member.invited`; Chat and Documents match
-`member.*` (projection upkeep); Documents also `handshake.approved` (delete
-saga); Deals matches `document.delete_requested` (opens the delete handshake)
-and `document.archived` (closes the saga). SES sends invitation and
-action-required email.
+EventBridge rules: Audit matches every event (source prefix `cre.`);
+Notifications matches a fixed detail-type list (`member.*`, `account.created`,
+`handshake.*`, `message.posted`, `docrequest.*`, `stage.advanced`,
+`deal.status_changed`, `thread.converted`) across sources; Chat and Documents
+match `member.*` (projection upkeep); Documents also `handshake.approved`
+(delete saga); Deals matches `document.delete_requested` (opens the delete
+handshake) and `document.archived` (closes the saga). SESv2 sends invitation and
+action-required email when enabled.
 
 Everything regional is in **`us-east-2`**; CloudFront is global. IaC is **AWS
 CDK v2 (TypeScript)** — one stack per service plus a `SharedStack`.
@@ -405,7 +411,7 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
 | **Deals** | deal record + status; membership + invitations; milestones (stages, checklists); handshake state machine | `deal.created`, `deal.updated`, `deal.status_changed`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed`, `stage.advanced`, `handshake.requested`, `handshake.approved`, `handshake.rejected` | `document.delete_requested` (opens the delete handshake), `document.archived` (closes the saga) |
 | **Chat** | threads, messages, receipts, read markers; local `memberships` projection | `message.posted`, `message.edited`, `message.deleted`, `thread.created`, `thread.converted` | `member.*` |
 | **Documents** | documents + versions, document requests; S3 docs bucket; local `memberships` projection | `document.uploaded`, `document.versioned`, `document.promoted`, `document.archived`, `document.accessed`, `document.delete_requested`, `docrequest.created`, `docrequest.fulfilled`, `docrequest.declined`, `docrequest.cancelled` | `member.*`, `handshake.approved` |
-| **Notifications** | notification records, unread counts; SES dispatch for action-required + invitations | `notification.emailed` | ~all domain events (produces a notification per relevant one) |
+| **Notifications** | per-user notification rows (bell + unread) + `MEMBERVIEW#` / `PROFILE#` projections; SESv2 dispatch for invitations + action-required (flag-gated on `NOTIFY_EMAIL_FROM`) | `notification.emailed` | `member.*`, `account.created`, `handshake.*`, `message.posted`, `docrequest.*`, `stage.advanced`, `deal.status_changed`, `thread.converted` (matched by detail-type across sources) |
 | **Audit** | append-only `audit` log (`PutItem`-only IAM) + a mutable `audit-membership` projection; scoped read + CSV/JSON export | — | **all** `cre.*` events (source-prefix rule); `member.*` also feed the projection; dealId-less events (`account.created`) are skipped in v1 |
 
 ### 7.3 Communication
@@ -557,11 +563,20 @@ noted. **No service reads another service's table.**
 
 | Entity | PK | SK | Key attributes |
 |---|---|---|---|
-| Notification | `USER#<userId>` | `NOTIF#<ts>#<notifId>` | type, dealId, actorId, targetType, targetId, body, readAt, sourceEventId |
-| Dedupe marker | `USER#<userId>` | `SEEN#<sourceEventId>` | ttl |
+| Notification | `USER#<userId>` | `NOTIF#<occurredAt>#<eventId>` | type, title, dealId, actorId, targetType, targetId, readAt, sourceEventId |
+| Membership projection | `DEAL#<dealId>` | `MEMBERVIEW#<userId>` | role, side, status, version |
+| Profile projection | `USER#<userId>` | `PROFILE` | email, name |
 
-- Patterns: my notifications newest-first (Query, `ScanIndexForward=false`);
-  unread count (sparse GSI on `readAt` absent, or a maintained counter item).
+- One row **per (recipient, source event)**. The SK is deterministic
+  (`occurredAt` + `eventId` from the envelope), so `attribute_not_exists(SK)`
+  absorbs a redelivered event — no separate dedupe marker.
+- The consumer keeps two projections in the same table: `member.*` →
+  `MEMBERVIEW#` (for `allMembers` / `role` fan-out) and `account.created` →
+  `PROFILE#` (email/name, for the action-required email).
+- Patterns: my notifications newest-first (Query on `USER#<id>` /
+  `begins_with(NOTIF#)`, `ScanIndexForward=false`, `Limit`); the bell's unread
+  count is derived from that page (no counter item — exact at any realistic
+  volume, no drift).
 
 ### 8.6 `audit` table + `audit-membership` table (Audit svc)
 
@@ -632,8 +647,8 @@ deal-, member-, stage- and handshake-domain events are inherently `deal_wide`.
 | `member.removed` | Deals | userId | Chat, Documents, Audit |
 | `stage.advanced` | Deals | from, to, firmNowTrue? | Notifications, Audit |
 | `handshake.requested` | Deals | hsId, action, payload, approverIds | Notifications, Audit |
-| `handshake.approved` | Deals | hsId, action, payload | Documents (delete saga), Notifications, Audit |
-| `handshake.rejected` | Deals | hsId, reason | Notifications, Audit |
+| `handshake.approved` | Deals | hsId, action, payload, initiatedBy, initiatedSide | Documents (delete saga), Notifications, Audit |
+| `handshake.rejected` | Deals | hsId, reason, initiatedBy, initiatedSide | Notifications, Audit |
 | `message.posted` | Chat | threadId, msgId, scope, mentions[] | Notifications (@mentions), Audit |
 | `message.edited` / `message.deleted` | Chat | threadId, msgId, scope | Audit |
 | `thread.created` | Chat | threadId, scope, subject | Audit |
@@ -644,8 +659,9 @@ deal-, member-, stage- and handshake-domain events are inherently `deal_wide`.
 | `document.promoted` | Documents | docId, scope (`deal_wide`) | Audit |
 | `document.archived` | Documents | docId, hsId, scope | Deals (close saga), Audit |
 | `document.accessed` | Documents | docId, n, mode (`opened`/`downloaded`), by, scope | Audit |
-| `docrequest.created` | Documents | reqId, category, scope, target | Notifications, Audit |
-| `docrequest.fulfilled` / `declined` / `cancelled` | Documents | reqId, scope | Notifications, Audit |
+| `docrequest.created` | Documents | reqId, category, scope, targetUserId?/targetRole?, createdBy | Notifications, Audit |
+| `docrequest.fulfilled` / `declined` | Documents | reqId, scope, createdBy (+ fulfilledDocId / reason) | Notifications, Audit |
+| `docrequest.cancelled` | Documents | reqId, scope | Audit |
 | `notification.emailed` | Notifications | notifId, channel | Audit |
 
 ## 9. API surface
@@ -703,7 +719,10 @@ membership view before touching data.
   `GET /deals/{id}/audit/export?format=csv|json` — the same scoped + filtered
   rows (capped at 10k) returned as an `attachment` download (`text/csv` or a
   JSON envelope), via the router's `raw` response escape hatch.
-- **Notifications svc:** `GET /notifications`, `POST /notifications/read`.
+- **Notifications svc:** `GET /v1/notifications?limit=` — this user's rows
+  newest-first with `unreadCount`; `POST /v1/notifications/read` — `{ id }`
+  (the `<occurredAt>#<eventId>` composite from the list) or `{ all: true }`.
+  Cross-deal, per-user (no `dealId` in the path).
 
 ## 10. Key flows
 
@@ -771,6 +790,17 @@ returns a presigned `PUT`. New versions: `POST …/versions` → `DOCVER#n` +
 `currentVersion` bump. `POST …/promote` flips `scope` from `side_private:*` to
 `deal_wide` (non-`OTHER` member of that side only) + audit. Downloads/views
 issue short-TTL presigned `GET`s and write `AUDIT#` (`downloaded` / `opened`).
+
+**Notification fan-out.** The Notifications consumer maps each event to a
+recipient *directive* — explicit user ids (`approverIds`, `mentions`,
+`initiatedBy`, `createdBy`, `droppedUserId`), `allMembers`, or a `role` — and
+resolves the last two against its `MEMBERVIEW#` projection. It writes one
+`NOTIF#<occurredAt>#<eventId>` row per recipient (skipping the actor), guarded
+by `attribute_not_exists`. `handshake.requested` and `docrequest.created` are
+also "action required": if email is enabled it looks up the recipient's
+`PROFILE#` email, sends via SESv2, and publishes `notification.emailed` (which
+Audit records). `member.invited` is email-only — the invitee has no account, so
+there is no in-app row. The SPA bell polls `GET /v1/notifications` every 30 s.
 
 ## 11. Security considerations
 

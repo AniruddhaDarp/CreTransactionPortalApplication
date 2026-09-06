@@ -78,6 +78,7 @@ export const docrequestFulfilledSchema = z.object({
   reqId: z.string(),
   fulfilledDocId: z.string(),
   scope: scopeSchema,
+  createdBy: z.string(),
 });
 
 export const docrequestDeclinedSchema = z.object({
@@ -85,6 +86,7 @@ export const docrequestDeclinedSchema = z.object({
   reqId: z.string(),
   reason: z.string().optional(),
   scope: scopeSchema,
+  createdBy: z.string(),
 });
 
 export const docrequestCancelledSchema = z.object({

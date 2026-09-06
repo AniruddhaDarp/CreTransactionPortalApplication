@@ -95,12 +95,16 @@ export const handshakeApprovedSchema = z.object({
   hsId: z.string(),
   action: z.string(),
   payload: z.record(z.string(), z.unknown()),
+  initiatedBy: z.string(),
+  initiatedSide: sideSchema,
 });
 
 export const handshakeRejectedSchema = z.object({
   dealId: z.string(),
   hsId: z.string(),
   reason: z.string().optional(),
+  initiatedBy: z.string(),
+  initiatedSide: sideSchema,
 });
 
 export const checklistItemAddedSchema = z.object({

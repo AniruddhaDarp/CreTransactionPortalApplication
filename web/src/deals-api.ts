@@ -125,6 +125,18 @@ export interface DocRequest {
   createdBy: string;
 }
 
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  dealId?: string;
+  actorId?: string;
+  targetType?: string;
+  targetId?: string;
+  readAt?: string;
+  occurredAt: string;
+}
+
 export interface AuditEvent {
   eventId: string;
   occurredAt: string;
@@ -258,6 +270,20 @@ export function dealsApi(cfg: AppConfig, token: string) {
         `/v1/deals/${id}/audit${qs ? `?${qs}` : ''}`,
       );
     },
+    // --- notifications (Module 9) ---
+    notifications: () =>
+      f<{ notifications: NotificationItem[]; unreadCount: number }>('/v1/notifications'),
+    markNotificationRead: (notifId: string) =>
+      f<{ marked: number }>('/v1/notifications/read', {
+        method: 'POST',
+        body: JSON.stringify({ id: notifId }),
+      }),
+    markAllNotificationsRead: () =>
+      f<{ marked: number }>('/v1/notifications/read', {
+        method: 'POST',
+        body: JSON.stringify({ all: true }),
+      }),
+
     auditExport: async (id: string, format: 'csv' | 'json', params: Record<string, string> = {}) => {
       const qs = new URLSearchParams({ ...params, format }).toString();
       const res = await fetch(`${cfg.apiBaseUrl}/v1/deals/${id}/audit/export?${qs}`, {

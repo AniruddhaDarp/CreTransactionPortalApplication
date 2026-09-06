@@ -586,3 +586,45 @@ design §6 **role→category visibility matrix**.
 - **docs** — `02-design.md` §7.2 / §8.6 (two-table split, deterministic SK) /
   §8.8 (scope fields) / §9 (audit routes + filters) / §11 (IAM append-only) /
   §16 (account-lifecycle audit + audit-at-scale as future work).
+
+---
+
+## 19 — Module 9: Notifications service (bell + unread + action-required email)
+
+> [Four decisions on the plan, all the recommended option] 1. Wire SES but flag
+> it off by default (NOTIFY_EMAIL_FROM unset). 2. Enrich the events at the
+> producer so Notifications can notify the originator. 3. Unread count from the
+> returned page (no counter). 4. Bell is global, in the app shell.
+
+**Outcome — 216 workspace tests green; `cdk synth --strict` clean:**
+
+- **Event enrichment (producers).** `handshake.approved` / `handshake.rejected`
+  now carry `initiatedBy` + `initiatedSide`; `docrequest.fulfilled` /
+  `docrequest.declined` now carry `createdBy` — so Notifications can notify the
+  handshake initiator / request creator of the outcome without its own
+  projection. Schemas + fixtures updated.
+- **`services/notifications`** — `fanout.ts` (pure `plan(detailType, detail)` →
+  `{recipients, type, title, target, email?}`; recipients is a directive:
+  explicit `users`, `allMembers`, `role`, or `inviteEmail`), `consumer.ts` (SQS
+  off a detail-type rule; `member.*` → `MEMBERVIEW#` and `account.created` →
+  `PROFILE#` projections; resolves the directive, writes one
+  `NOTIF#<occurredAt>#<eventId>` row per recipient minus the actor, deterministic
+  SK → idempotent), `email.ts` (SESv2, no-op unless `NOTIFY_EMAIL_FROM` set),
+  `api.ts` (`GET /v1/notifications` → rows + `unreadCount`; `POST …/read`
+  `{id}` | `{all:true}`).
+- **`infra/lib/notifications-stack.ts`** — `notifications` table; API Lambda
+  (RW, 2 routes); consumer Lambda (RW + `ses:SendEmail` + PutEvents) + queue/DLQ
+  + a rule matching the fixed detail-type list across sources. Registered in
+  `bin/infra.ts`.
+- **`web`** — a global `NotificationsBell` in the app nav: 30 s poll, unread
+  badge, dropdown list, click-through to the deal, "mark all read".
+- **E2E refinement:** the `allMembers` broadcasts (`stage.advanced`,
+  `deal.status_changed`) now include the actor — a milestone is news for the
+  whole deal, not feedback on one's own click; every *targeted* notification
+  still skips the actor.
+- **Email** is wired end-to-end (templates, `notification.emailed` event, IAM
+  grant) but **disabled** — no verified SES sender exists in the demo project
+  and the sandbox only delivers to verified addresses. Enabling in prod = verify
+  a domain + set `NOTIFY_EMAIL_FROM`.
+- **docs** — `02-design.md` §5.9 / §7.1 / §7.2 / §8.5 / §8.8 / §9 / §10
+  (fan-out flow) / §11; `03-prompt-log.md` #19.

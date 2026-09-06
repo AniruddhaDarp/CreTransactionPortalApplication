@@ -280,7 +280,18 @@ export async function decide(args: {
       ...apprDeletes,
     ]);
     return {
-      events: [{ type: 'handshake.rejected', detail: { dealId: deal.dealId, hsId: hs.hsId, reason } }],
+      events: [
+        {
+          type: 'handshake.rejected',
+          detail: {
+            dealId: deal.dealId,
+            hsId: hs.hsId,
+            reason,
+            initiatedBy: hs.initiatedBy,
+            initiatedSide: hs.initiatedSide,
+          },
+        },
+      ],
     };
   }
 
@@ -300,7 +311,14 @@ export async function decide(args: {
     events: [
       {
         type: 'handshake.approved',
-        detail: { dealId: deal.dealId, hsId: hs.hsId, action: hs.action, payload: hs.payload },
+        detail: {
+          dealId: deal.dealId,
+          hsId: hs.hsId,
+          action: hs.action,
+          payload: hs.payload,
+          initiatedBy: hs.initiatedBy,
+          initiatedSide: hs.initiatedSide,
+        },
       },
       ...result.events,
     ],

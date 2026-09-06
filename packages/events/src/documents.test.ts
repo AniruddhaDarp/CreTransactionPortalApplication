@@ -28,8 +28,20 @@ describe('document event schemas', () => {
         requesterSide: 'buy',
       },
       'docrequest.created': { dealId: 'd', reqId: 'r', category: 'Financing', scope: 'deal_wide', createdBy: 'u' },
-      'docrequest.fulfilled': { dealId: 'd', reqId: 'r', fulfilledDocId: 'x', scope: 'deal_wide' },
-      'docrequest.declined': { dealId: 'd', reqId: 'r', reason: 'wrong doc', scope: 'deal_wide' },
+      'docrequest.fulfilled': {
+        dealId: 'd',
+        reqId: 'r',
+        fulfilledDocId: 'x',
+        scope: 'deal_wide',
+        createdBy: 'u',
+      },
+      'docrequest.declined': {
+        dealId: 'd',
+        reqId: 'r',
+        reason: 'wrong doc',
+        scope: 'deal_wide',
+        createdBy: 'u',
+      },
       'docrequest.cancelled': { dealId: 'd', reqId: 'r', scope: 'side_private:buy' },
     };
     for (const [type, schema] of Object.entries(documentEventSchemas)) {
