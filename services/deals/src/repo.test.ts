@@ -24,13 +24,17 @@ describe('deals repo', () => {
       createdBy: 'u1',
     });
     const items = ddb.commandCalls(TransactWriteCommand)[0]!.args[0].input.TransactItems!;
-    expect(items).toHaveLength(2);
+    expect(items).toHaveLength(8); // META + creator MEMBER + 6 STAGE rows
     expect((items[0]!.Put!.Item as Record<string, unknown>).SK).toBe('META');
     expect(items[0]!.Put!.ConditionExpression).toContain('attribute_not_exists');
     const member = items[1]!.Put!.Item as Record<string, unknown>;
     expect(member.SK).toBe('MEMBER#u1');
     expect(member.GSI1PK).toBe('USER#u1');
     expect(member.GSI1SK).toBe('DEAL#d1');
+    const stageSks = items.slice(2).map((it) => (it.Put!.Item as Record<string, unknown>).SK);
+    expect(stageSks).toEqual(['STAGE#1', 'STAGE#2', 'STAGE#3', 'STAGE#4', 'STAGE#5', 'STAGE#6']);
+    expect((items[2]!.Put!.Item as Record<string, unknown>).status).toBe('in_progress');
+    expect((items[3]!.Put!.Item as Record<string, unknown>).status).toBe('not_started');
     expect(deal.status).toBe('ACTIVE');
     expect(deal.currentStage).toBe(1);
     expect(membership.isAdmin).toBe(true);

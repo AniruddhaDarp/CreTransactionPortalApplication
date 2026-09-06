@@ -1,13 +1,28 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from 'react-oidc-context';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { hostedLogoutUrl, isConfigured, type AppConfig } from './config.js';
-import { dealsApi } from './deals-api.js';
+import { dealsApi, type DealsApi } from './deals-api.js';
 import { AcceptInvite } from './routes/AcceptInvite.js';
 import { DealDetail } from './routes/DealDetail.js';
 import { DealsList } from './routes/DealsList.js';
 import { Home } from './routes/Home.js';
 import { NewDeal } from './routes/NewDeal.js';
+
+function ApprovalsBadge({ api }: { api: DealsApi }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let live = true;
+    api
+      .myApprovals()
+      .then((r) => live && setCount(r.handshakes.length))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [api]);
+  return count > 0 ? <strong> · {count} approval{count > 1 ? 's' : ''} waiting</strong> : null;
+}
 
 function Shell({ children }: { children: ReactNode }) {
   return (
@@ -65,6 +80,7 @@ export function App({ config }: { config: AppConfig }) {
         <nav style={{ marginBottom: '1.5rem' }}>
           <Link to="/">My deals</Link> · <Link to="/profile">Profile</Link> ·{' '}
           <button onClick={signOut}>Sign out</button>
+          <ApprovalsBadge api={api} />
         </nav>
         <Routes>
           <Route path="/" element={<DealsList api={api} />} />

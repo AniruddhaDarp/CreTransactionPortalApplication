@@ -1,17 +1,24 @@
 import {
   BatchGetCommand,
+  DeleteCommand,
   GetCommand,
   PutCommand,
   QueryCommand,
   TransactWriteCommand,
   UpdateCommand,
+  type TransactWriteCommandInput,
 } from '@aws-sdk/lib-dynamodb';
-import type { Role, Side } from '@cre/authz';
+import type { HandshakeAction, Role, Side } from '@cre/authz';
 import { docClient } from '@cre/platform';
+import { CHECKLIST_TEMPLATES, STAGES } from './pipeline.js';
 
 export type DealStatus = 'ACTIVE' | 'CLOSED' | 'CANCELLED';
 export type MemberStatus = 'invited' | 'active' | 'removed';
 export type InviteStatus = 'pending' | 'accepted' | 'revoked';
+export type StageStatus = 'not_started' | 'in_progress' | 'completed';
+export type HandshakeStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+
+export type TransactItem = NonNullable<TransactWriteCommandInput['TransactItems']>[number];
 
 export interface DealMeta {
   dealId: string;
@@ -54,7 +61,47 @@ export interface Invite {
   expiresAt: string;
 }
 
-function table(): string {
+export interface Stage {
+  dealId: string;
+  n: number;
+  key: string;
+  name: string;
+  status: StageStatus;
+  targetDate?: string;
+  notes?: string;
+  completedBy?: string;
+  completedAt?: string;
+}
+
+export interface ChecklistItem {
+  dealId: string;
+  n: number;
+  itemId: string;
+  title: string;
+  assigneeUserId?: string;
+  dueDate?: string;
+  done: boolean;
+  doneBy?: string;
+  doneAt?: string;
+  fromTemplate: boolean;
+}
+
+export interface Handshake {
+  dealId: string;
+  hsId: string;
+  action: HandshakeAction;
+  payload: Record<string, unknown>;
+  initiatedBy: string;
+  initiatedSide: Side;
+  status: HandshakeStatus;
+  sagaState?: 'awaiting_document';
+  decidedBy?: string;
+  decisionReason?: string;
+  createdAt: string;
+  decidedAt?: string;
+}
+
+export function tableName(): string {
   const t = process.env.DEALS_TABLE;
   if (!t) throw new Error('DEALS_TABLE env var is not set');
   return t;
@@ -63,6 +110,16 @@ function table(): string {
 const dealKey = (id: string) => ({ PK: `DEAL#${id}`, SK: 'META' });
 const memberKey = (id: string, uid: string) => ({ PK: `DEAL#${id}`, SK: `MEMBER#${uid}` });
 const inviteKey = (id: string, token: string) => ({ PK: `DEAL#${id}`, SK: `INVITE#${token}` });
+const stageKey = (id: string, n: number) => ({ PK: `DEAL#${id}`, SK: `STAGE#${n}` });
+const checkKey = (id: string, n: number, itemId: string) => ({
+  PK: `DEAL#${id}`,
+  SK: `CHECK#${n}#${itemId}`,
+});
+const hsKey = (id: string, hsId: string) => ({ PK: `DEAL#${id}`, SK: `HS#${hsId}` });
+const apprKey = (id: string, hsId: string, uid: string) => ({
+  PK: `DEAL#${id}`,
+  SK: `APPR#${hsId}#${uid}`,
+});
 
 const KEY_ATTRS = new Set(['PK', 'SK', 'GSI1PK', 'GSI1SK', 'GSI2PK', 'GSI2SK']);
 function clean<T>(item: Record<string, unknown>): T {
@@ -110,19 +167,33 @@ export async function createDeal(input: {
     isAdmin: true,
     joinedAt: now,
   };
+  const stageItems: TransactItem[] = STAGES.map((s) => ({
+    Put: {
+      TableName: tableName(),
+      Item: {
+        ...stageKey(input.dealId, s.n),
+        dealId: input.dealId,
+        n: s.n,
+        key: s.key,
+        name: s.name,
+        status: s.n === 1 ? 'in_progress' : 'not_started',
+      },
+    },
+  }));
+
   await docClient().send(
     new TransactWriteCommand({
       TransactItems: [
         {
           Put: {
-            TableName: table(),
+            TableName: tableName(),
             Item: { ...dealKey(input.dealId), ...deal },
             ConditionExpression: 'attribute_not_exists(PK)',
           },
         },
         {
           Put: {
-            TableName: table(),
+            TableName: tableName(),
             Item: {
               ...memberKey(input.dealId, input.createdBy),
               GSI1PK: `USER#${input.createdBy}`,
@@ -131,6 +202,7 @@ export async function createDeal(input: {
             },
           },
         },
+        ...stageItems,
       ],
     }),
   );
@@ -138,7 +210,7 @@ export async function createDeal(input: {
 }
 
 export async function getDeal(dealId: string): Promise<DealMeta | undefined> {
-  const r = await docClient().send(new GetCommand({ TableName: table(), Key: dealKey(dealId) }));
+  const r = await docClient().send(new GetCommand({ TableName: tableName(), Key: dealKey(dealId) }));
   return r.Item ? clean<DealMeta>(r.Item) : undefined;
 }
 
@@ -157,7 +229,7 @@ export async function updateDealFields(
   }
   const r = await docClient().send(
     new UpdateCommand({
-      TableName: table(),
+      TableName: tableName(),
       Key: dealKey(dealId),
       UpdateExpression: `SET ${sets.join(', ')}`,
       ExpressionAttributeNames: names,
@@ -188,7 +260,7 @@ export async function setDealStatus(
   }
   const r = await docClient().send(
     new UpdateCommand({
-      TableName: table(),
+      TableName: tableName(),
       Key: dealKey(dealId),
       UpdateExpression: expr,
       ExpressionAttributeNames: names,
@@ -207,7 +279,7 @@ export async function getMembership(
   userId: string,
 ): Promise<Membership | undefined> {
   const r = await docClient().send(
-    new GetCommand({ TableName: table(), Key: memberKey(dealId, userId) }),
+    new GetCommand({ TableName: tableName(), Key: memberKey(dealId, userId) }),
   );
   return r.Item ? clean<Membership>(r.Item) : undefined;
 }
@@ -215,7 +287,7 @@ export async function getMembership(
 export async function listMembers(dealId: string): Promise<Membership[]> {
   const r = await docClient().send(
     new QueryCommand({
-      TableName: table(),
+      TableName: tableName(),
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': 'MEMBER#' },
     }),
@@ -228,7 +300,7 @@ export async function listMyDeals(
 ): Promise<Array<DealMeta & { myRole: Role }>> {
   const r = await docClient().send(
     new QueryCommand({
-      TableName: table(),
+      TableName: tableName(),
       IndexName: 'gsi1',
       KeyConditionExpression: 'GSI1PK = :pk AND begins_with(GSI1SK, :sk)',
       ExpressionAttributeValues: { ':pk': `USER#${userId}`, ':sk': 'DEAL#' },
@@ -240,11 +312,11 @@ export async function listMyDeals(
   if (memberships.length === 0) return [];
   const batch = await docClient().send(
     new BatchGetCommand({
-      RequestItems: { [table()]: { Keys: memberships.map((m) => dealKey(m.dealId)) } },
+      RequestItems: { [tableName()]: { Keys: memberships.map((m) => dealKey(m.dealId)) } },
     }),
   );
   const byId = new Map(
-    (batch.Responses?.[table()] ?? []).map((i) => {
+    (batch.Responses?.[tableName()] ?? []).map((i) => {
       const d = clean<DealMeta>(i);
       return [d.dealId, d] as const;
     }),
@@ -263,7 +335,7 @@ export async function updateMemberRole(
 ): Promise<Membership> {
   const r = await docClient().send(
     new UpdateCommand({
-      TableName: table(),
+      TableName: tableName(),
       Key: memberKey(dealId, userId),
       UpdateExpression: 'SET #role = :role, #side = :side',
       ExpressionAttributeNames: { '#role': 'role', '#side': 'side', '#status': 'status' },
@@ -278,7 +350,7 @@ export async function updateMemberRole(
 export async function removeMember(dealId: string, userId: string): Promise<void> {
   await docClient().send(
     new UpdateCommand({
-      TableName: table(),
+      TableName: tableName(),
       Key: memberKey(dealId, userId),
       UpdateExpression: 'SET #status = :removed',
       ExpressionAttributeNames: { '#status': 'status' },
@@ -293,7 +365,7 @@ export async function removeMember(dealId: string, userId: string): Promise<void
 export async function putInvite(inv: Invite): Promise<void> {
   await docClient().send(
     new PutCommand({
-      TableName: table(),
+      TableName: tableName(),
       Item: {
         ...inviteKey(inv.dealId, inv.token),
         GSI2PK: `EMAIL#${inv.email}`,
@@ -306,7 +378,7 @@ export async function putInvite(inv: Invite): Promise<void> {
 
 export async function getInvite(dealId: string, token: string): Promise<Invite | undefined> {
   const r = await docClient().send(
-    new GetCommand({ TableName: table(), Key: inviteKey(dealId, token) }),
+    new GetCommand({ TableName: tableName(), Key: inviteKey(dealId, token) }),
   );
   return r.Item ? clean<Invite>(r.Item) : undefined;
 }
@@ -314,7 +386,7 @@ export async function getInvite(dealId: string, token: string): Promise<Invite |
 export async function listInvites(dealId: string): Promise<Invite[]> {
   const r = await docClient().send(
     new QueryCommand({
-      TableName: table(),
+      TableName: tableName(),
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': 'INVITE#' },
     }),
@@ -325,7 +397,7 @@ export async function listInvites(dealId: string): Promise<Invite[]> {
 export async function revokeInvite(dealId: string, token: string): Promise<void> {
   await docClient().send(
     new UpdateCommand({
-      TableName: table(),
+      TableName: tableName(),
       Key: inviteKey(dealId, token),
       UpdateExpression: 'SET #status = :revoked',
       ExpressionAttributeNames: { '#status': 'status' },
@@ -358,7 +430,7 @@ export async function acceptInvite(args: {
       TransactItems: [
         {
           Put: {
-            TableName: table(),
+            TableName: tableName(),
             Item: {
               ...memberKey(args.dealId, args.userId),
               GSI1PK: `USER#${args.userId}`,
@@ -370,7 +442,7 @@ export async function acceptInvite(args: {
         },
         {
           Update: {
-            TableName: table(),
+            TableName: tableName(),
             Key: inviteKey(args.dealId, args.token),
             UpdateExpression: 'SET #status = :accepted',
             ExpressionAttributeNames: { '#status': 'status' },
@@ -396,3 +468,240 @@ export async function listBuySideRoster(
   }
   return out;
 }
+
+// --- stages ---------------------------------------------------------------
+
+export async function listStages(dealId: string): Promise<Stage[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': 'STAGE#' },
+    }),
+  );
+  return (r.Items ?? []).map((i) => clean<Stage>(i)).sort((a, b) => a.n - b.n);
+}
+
+export async function getStage(dealId: string, n: number): Promise<Stage | undefined> {
+  const r = await docClient().send(
+    new GetCommand({ TableName: tableName(), Key: stageKey(dealId, n) }),
+  );
+  return r.Item ? clean<Stage>(r.Item) : undefined;
+}
+
+export async function updateStageMeta(
+  dealId: string,
+  n: number,
+  patch: { notes?: string; targetDate?: string },
+): Promise<Stage> {
+  const sets: string[] = [];
+  const names: Record<string, string> = {};
+  const values: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    sets.push(`#${k} = :${k}`);
+    names[`#${k}`] = k;
+    values[`:${k}`] = v;
+  }
+  const r = await docClient().send(
+    new UpdateCommand({
+      TableName: tableName(),
+      Key: stageKey(dealId, n),
+      UpdateExpression: `SET ${sets.join(', ')}`,
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+      ConditionExpression: 'attribute_exists(PK)',
+      ReturnValues: 'ALL_NEW',
+    }),
+  );
+  return clean<Stage>(r.Attributes ?? {});
+}
+
+// --- checklist ------------------------------------------------------------
+
+export async function listChecklist(dealId: string, n: number): Promise<ChecklistItem[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': `CHECK#${n}#` },
+    }),
+  );
+  return (r.Items ?? []).map((i) => clean<ChecklistItem>(i));
+}
+
+/** Write the template items for a stage the first time its checklist is requested. */
+export async function materializeChecklist(dealId: string, n: number): Promise<ChecklistItem[]> {
+  const existing = await listChecklist(dealId, n);
+  if (existing.length > 0) return existing;
+  const titles = CHECKLIST_TEMPLATES[n] ?? [];
+  const items: ChecklistItem[] = titles.map((title, idx) => ({
+    dealId,
+    n,
+    itemId: `t${idx}`,
+    title,
+    done: false,
+    fromTemplate: true,
+  }));
+  await docClient().send(
+    new TransactWriteCommand({
+      TransactItems: items.map((it) => ({
+        Put: { TableName: tableName(), Item: { ...checkKey(dealId, n, it.itemId), ...it } },
+      })),
+    }),
+  );
+  return items;
+}
+
+export async function putChecklistItem(item: ChecklistItem): Promise<void> {
+  await docClient().send(
+    new PutCommand({
+      TableName: tableName(),
+      Item: { ...checkKey(item.dealId, item.n, item.itemId), ...item },
+    }),
+  );
+}
+
+export async function updateChecklistItem(
+  dealId: string,
+  n: number,
+  itemId: string,
+  patch: {
+    title?: string;
+    assigneeUserId?: string;
+    dueDate?: string;
+    done?: boolean;
+    doneBy?: string;
+    doneAt?: string;
+  },
+): Promise<ChecklistItem> {
+  const sets: string[] = [];
+  const removes: string[] = [];
+  const names: Record<string, string> = {};
+  const values: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(patch)) {
+    names[`#${k}`] = k;
+    if (v === undefined) removes.push(`#${k}`);
+    else {
+      sets.push(`#${k} = :${k}`);
+      values[`:${k}`] = v;
+    }
+  }
+  const parts: string[] = [];
+  if (sets.length) parts.push(`SET ${sets.join(', ')}`);
+  if (removes.length) parts.push(`REMOVE ${removes.join(', ')}`);
+  const r = await docClient().send(
+    new UpdateCommand({
+      TableName: tableName(),
+      Key: checkKey(dealId, n, itemId),
+      UpdateExpression: parts.join(' '),
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: Object.keys(values).length ? values : undefined,
+      ConditionExpression: 'attribute_exists(PK)',
+      ReturnValues: 'ALL_NEW',
+    }),
+  );
+  return clean<ChecklistItem>(r.Attributes ?? {});
+}
+
+export async function deleteChecklistItem(dealId: string, n: number, itemId: string): Promise<void> {
+  await docClient().send(
+    new DeleteCommand({
+      TableName: tableName(),
+      Key: checkKey(dealId, n, itemId),
+      ConditionExpression: 'attribute_exists(PK)',
+    }),
+  );
+}
+
+// --- handshakes ---------------------------------------------------------
+
+export async function putHandshake(hs: Handshake, approverIds: string[]): Promise<void> {
+  const items: TransactItem[] = [
+    { Put: { TableName: tableName(), Item: { ...hsKey(hs.dealId, hs.hsId), ...hs } } },
+    ...approverIds.map((uid) => ({
+      Put: {
+        TableName: tableName(),
+        Item: {
+          ...apprKey(hs.dealId, hs.hsId, uid),
+          GSI1PK: `USER#${uid}`,
+          GSI1SK: `APPR#${hs.createdAt}#${hs.hsId}`,
+          dealId: hs.dealId,
+          hsId: hs.hsId,
+          userId: uid,
+        },
+      },
+    })),
+  ];
+  await docClient().send(new TransactWriteCommand({ TransactItems: items }));
+}
+
+export async function getHandshake(dealId: string, hsId: string): Promise<Handshake | undefined> {
+  const r = await docClient().send(new GetCommand({ TableName: tableName(), Key: hsKey(dealId, hsId) }));
+  return r.Item ? clean<Handshake>(r.Item) : undefined;
+}
+
+export async function listHandshakes(dealId: string): Promise<Handshake[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': 'HS#' },
+    }),
+  );
+  return (r.Items ?? []).map((i) => clean<Handshake>(i));
+}
+
+export async function listApprovalPointers(
+  dealId: string,
+  hsId: string,
+): Promise<Array<{ userId: string }>> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': `APPR#${hsId}#` },
+    }),
+  );
+  return (r.Items ?? []).map((i) => ({ userId: String((i as { userId: string }).userId) }));
+}
+
+export function apprDeleteItems(
+  dealId: string,
+  hsId: string,
+  userIds: string[],
+): TransactItem[] {
+  return userIds.map((uid) => ({
+    Delete: { TableName: tableName(), Key: apprKey(dealId, hsId, uid) },
+  }));
+}
+
+/** "My pending approvals" across all deals (GSI1 by user). */
+export async function listMyPendingApprovals(userId: string): Promise<Handshake[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      IndexName: 'gsi1',
+      KeyConditionExpression: 'GSI1PK = :pk AND begins_with(GSI1SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `USER#${userId}`, ':sk': 'APPR#' },
+    }),
+  );
+  const pointers = (r.Items ?? []).map((i) => i as { dealId: string; hsId: string });
+  if (pointers.length === 0) return [];
+  const batch = await docClient().send(
+    new BatchGetCommand({
+      RequestItems: {
+        [tableName()]: { Keys: pointers.map((p) => hsKey(p.dealId, p.hsId)) },
+      },
+    }),
+  );
+  return (batch.Responses?.[tableName()] ?? [])
+    .map((i) => clean<Handshake>(i))
+    .filter((hs) => hs.status === 'pending');
+}
+
+export async function runTransaction(items: TransactItem[]): Promise<void> {
+  await docClient().send(new TransactWriteCommand({ TransactItems: items }));
+}
+
+export const keys = { dealKey, stageKey, hsKey };

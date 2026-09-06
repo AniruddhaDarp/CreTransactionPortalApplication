@@ -3,8 +3,11 @@ import type { Role, Side } from './roles.js';
 import {
   can,
   capabilitiesFor,
+  handshakeApproverSide,
+  initiateActionFor,
   inviteActionFor,
   inviteLimits,
+  isHandshakeApprover,
   type AuthzContext,
 } from './permissions.js';
 
@@ -102,6 +105,26 @@ describe('inviteLimits', () => {
       { role: 'BUYER_AGENT' as Role, status: 'active' as const },
     ];
     expect(inviteLimits(withRemoved, 'BUYER_AGENT').ok).toBe(true);
+  });
+});
+
+describe('handshake approval', () => {
+  it('routes approval to the opposite side’s lead', () => {
+    expect(handshakeApproverSide('sell')).toBe('buy');
+    expect(handshakeApproverSide('buy')).toBe('sell');
+    // sell initiated -> a buy-side lead approves
+    expect(isHandshakeApprover(ctx({ role: 'BUYER', side: 'buy' }), 'sell')).toBe(true);
+    expect(isHandshakeApprover(ctx({ role: 'BUYER_ATTORNEY', side: 'buy' }), 'sell')).toBe(false);
+    // buy initiated -> the admin approves
+    expect(isHandshakeApprover(ctx({ isAdmin: true }), 'buy')).toBe(true);
+    expect(isHandshakeApprover(ctx({ role: 'SELLER', isAdmin: false }), 'buy')).toBe(false);
+  });
+
+  it('maps each handshake action to its initiating capability', () => {
+    expect(initiateActionFor('advance_stage')).toBe('advanceMilestone');
+    expect(initiateActionFor('close_deal')).toBe('changeDealStatus');
+    expect(initiateActionFor('edit_price')).toBe('editPurchasePrice');
+    expect(initiateActionFor('delete_document')).toBe('deleteDocument');
   });
 });
 

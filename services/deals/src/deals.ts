@@ -7,14 +7,16 @@ import {
   type Role,
 } from '@cre/authz';
 import { roleSchema, sideSchema } from '@cre/events';
-import { HttpError, parseBody, publish, router, type RequestContext } from '@cre/platform';
+import { HttpError, parseBody, router, type RouteHandler } from '@cre/platform';
 import { z } from 'zod';
 import { buildCtx } from './context.js';
-import type { DealMeta, Membership } from './repo.js';
+import * as handshake from './handshake.js';
+import { handshakeRoutes } from './handshakes.js';
+import type { DealMeta } from './repo.js';
 import * as repo from './repo.js';
+import { emit, param, requireMember, WEB_ORIGIN } from './shared.js';
+import { stageRoutes } from './stages.js';
 
-const BUS = () => process.env.EVENT_BUS_NAME ?? '';
-const WEB_ORIGIN = () => process.env.WEB_ORIGIN ?? '';
 const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
 const PROPERTY_TYPES = [
@@ -51,6 +53,12 @@ const statusSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
+const termsSchema = z
+  .object({ price: z.number().positive().optional(), targetClosingDate: isoDate.optional() })
+  .refine((v) => (v.price === undefined) !== (v.targetClosingDate === undefined), {
+    message: 'provide exactly one of price or targetClosingDate',
+  });
+
 const inviteSchema = z
   .object({ email: z.string().email(), role: roleSchema, side: sideSchema.optional() })
   .refine((v) => v.role !== 'OTHER' || (v.side === 'buy' || v.side === 'sell'), {
@@ -60,25 +68,6 @@ const inviteSchema = z
 const memberPatchSchema = z.object({ role: roleSchema });
 
 // --- helpers ---------------------------------------------------------------
-
-async function requireMember(
-  dealId: string,
-  userId: string,
-): Promise<{ deal: DealMeta; membership: Membership }> {
-  const deal = await repo.getDeal(dealId);
-  if (!deal) throw new HttpError(404, 'deal not found');
-  const membership = await repo.getMembership(dealId, userId);
-  if (!membership || membership.status !== 'active') {
-    throw new HttpError(403, 'not an active member of this deal');
-  }
-  return { deal, membership };
-}
-
-const param = (ctx: RequestContext, name: string): string => {
-  const v = ctx.pathParams[name];
-  if (!v) throw new HttpError(400, `missing path parameter: ${name}`);
-  return v;
-};
 
 function diff(before: DealMeta, patch: Record<string, unknown>) {
   const changed: Record<string, { from: unknown; to: unknown }> = {};
@@ -92,18 +81,14 @@ function diff(before: DealMeta, patch: Record<string, unknown>) {
 
 // --- routes --------------------------------------------------------------
 
-export const handler = router({
+const dealRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals': async (ctx) => {
     const input = parseBody(createDealSchema, ctx.body ?? {});
     const dealId = crypto.randomUUID();
     const { deal, membership } = await repo.createDeal({ dealId, ...input, createdBy: ctx.userId });
-    await publish(BUS(), [
+    await emit(dealId, ctx.correlationId, ctx.userId, [
       {
-        service: 'deals',
         type: 'deal.created',
-        correlationId: ctx.correlationId,
-        actorId: ctx.userId,
-        dealId,
         detail: {
           dealId,
           createdBy: ctx.userId,
@@ -112,11 +97,7 @@ export const handler = router({
         },
       },
       {
-        service: 'deals',
         type: 'member.joined',
-        correlationId: ctx.correlationId,
-        actorId: ctx.userId,
-        dealId,
         detail: { dealId, userId: ctx.userId, role: 'SELLER_AGENT', side: 'sell' },
       },
     ]);
@@ -141,15 +122,8 @@ export const handler = router({
     if (Object.keys(patch).length === 0) throw new HttpError(400, 'no fields to update');
     const changed = diff(deal, patch);
     const updated = await repo.updateDealFields(deal.dealId, patch);
-    await publish(BUS(), [
-      {
-        service: 'deals',
-        type: 'deal.updated',
-        correlationId: ctx.correlationId,
-        actorId: ctx.userId,
-        dealId: deal.dealId,
-        detail: { dealId: deal.dealId, changed },
-      },
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
+      { type: 'deal.updated', detail: { dealId: deal.dealId, changed } },
     ]);
     return { body: updated };
   },
@@ -160,27 +134,82 @@ export const handler = router({
     if (!can('changeDealStatus', authz)) {
       throw new HttpError(403, 'not allowed to change this deal’s status');
     }
-    if (authz.isFirm) {
-      throw new HttpError(
-        400,
-        'the deal is firm — closing or cancelling now requires a handshake (milestones module)',
-      );
-    }
     if (deal.status !== 'ACTIVE') throw new HttpError(409, `deal is already ${deal.status}`);
     const { status, reason } = parseBody(statusSchema, ctx.body ?? {});
+
+    if (authz.isFirm) {
+      // firm deal: closing/cancelling needs the counterparty's approval
+      const { hs, event } = await handshake.initiate({
+        deal,
+        authz,
+        action: status === 'CLOSED' ? 'close_deal' : 'cancel_deal',
+        payload: { reason },
+        actorId: ctx.userId,
+      });
+      await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+      return {
+        status: 202,
+        body: { handshakeId: hs.hsId, action: hs.action, status: 'pending' },
+      };
+    }
+
     const updated = await repo.setDealStatus(
       deal.dealId,
       status,
       status === 'CLOSED' ? new Date().toISOString().slice(0, 10) : undefined,
     );
-    await publish(BUS(), [
-      {
-        service: 'deals',
-        type: 'deal.status_changed',
-        correlationId: ctx.correlationId,
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
+      { type: 'deal.status_changed', detail: { dealId: deal.dealId, status, reason } },
+    ]);
+    return { body: updated };
+  },
+
+  'POST /v1/deals/{dealId}/terms': async (ctx) => {
+    const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    const authz = buildCtx(deal, membership);
+    const input = parseBody(termsSchema, ctx.body ?? {});
+
+    if (input.price !== undefined) {
+      // a price change is always a handshake
+      const { hs, event } = await handshake.initiate({
+        deal,
+        authz,
+        action: 'edit_price',
+        payload: { price: input.price },
         actorId: ctx.userId,
-        dealId: deal.dealId,
-        detail: { dealId: deal.dealId, status, reason },
+      });
+      await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+      return { status: 202, body: { handshakeId: hs.hsId, action: 'edit_price', status: 'pending' } };
+    }
+
+    // targetClosingDate: admin-unilateral pre-firm, handshake once firm
+    if (deal.firm) {
+      const { hs, event } = await handshake.initiate({
+        deal,
+        authz,
+        action: 'edit_dates',
+        payload: { targetClosingDate: input.targetClosingDate },
+        actorId: ctx.userId,
+      });
+      await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+      return { status: 202, body: { handshakeId: hs.hsId, action: 'edit_dates', status: 'pending' } };
+    }
+    if (!can('editDates', authz)) throw new HttpError(403, 'not allowed to change the closing date');
+    const updated = await repo.updateDealFields(deal.dealId, {
+      targetClosingDate: input.targetClosingDate,
+    });
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
+      {
+        type: 'deal.updated',
+        detail: {
+          dealId: deal.dealId,
+          changed: {
+            targetClosingDate: {
+              from: deal.targetClosingDate ?? null,
+              to: input.targetClosingDate,
+            },
+          },
+        },
       },
     ]);
     return { body: updated };
@@ -250,13 +279,9 @@ export const handler = router({
       createdAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + INVITE_TTL_MS).toISOString(),
     });
-    await publish(BUS(), [
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
       {
-        service: 'deals',
         type: 'member.invited',
-        correlationId: ctx.correlationId,
-        actorId: ctx.userId,
-        dealId: deal.dealId,
         detail: {
           dealId: deal.dealId,
           email,
@@ -333,13 +358,9 @@ export const handler = router({
       side: invite.side,
       invitedBy: invite.invitedBy,
     });
-    await publish(BUS(), [
+    await emit(dealId, ctx.correlationId, ctx.userId, [
       {
-        service: 'deals',
         type: 'member.joined',
-        correlationId: ctx.correlationId,
-        actorId: ctx.userId,
-        dealId,
         detail: { dealId, userId: ctx.userId, role: invite.role, side: invite.side },
       },
     ]);
@@ -365,13 +386,9 @@ export const handler = router({
       if (!limit.ok) throw new HttpError(409, limit.reason ?? 'buy-side limit reached');
     }
     const updated = await repo.updateMemberRole(deal.dealId, targetUserId, newRole, newSide);
-    await publish(BUS(), [
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
       {
-        service: 'deals',
         type: 'member.role_changed',
-        correlationId: ctx.correlationId,
-        actorId: ctx.userId,
-        dealId: deal.dealId,
         detail: { dealId: deal.dealId, userId: targetUserId, from: target.role, to: newRole as Role },
       },
     ]);
@@ -389,16 +406,14 @@ export const handler = router({
       throw new HttpError(403, 'not allowed to remove this member');
     }
     await repo.removeMember(deal.dealId, targetUserId);
-    await publish(BUS(), [
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
       {
-        service: 'deals',
         type: 'member.removed',
-        correlationId: ctx.correlationId,
-        actorId: ctx.userId,
-        dealId: deal.dealId,
         detail: { dealId: deal.dealId, userId: targetUserId, removedBy: ctx.userId },
       },
     ]);
     return { body: { removed: true } };
   },
-});
+};
+
+export const handler = router({ ...dealRoutes, ...stageRoutes, ...handshakeRoutes });

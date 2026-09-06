@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { Capabilities, Deal, DealsApi, Invite, Member } from '../deals-api.js';
+import { Milestones } from './Milestones.js';
 
 const ROLES = [
   'SELLER',
@@ -61,6 +62,13 @@ export function DealDetail({ api, myUserId }: { api: DealsApi; myUserId: string 
           {deal.currentStage} / 6{deal.firm ? ' · firm' : ''}
         </dd>
       </dl>
+
+      <Milestones
+        api={api}
+        dealId={id}
+        capabilities={deal.capabilities}
+        dealActive={deal.status === 'ACTIVE'}
+      />
 
       <h3>Members</h3>
       <table>

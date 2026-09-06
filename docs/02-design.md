@@ -510,7 +510,10 @@ noted. **No service reads another service's table.**
 | Invitation | `DEAL#<dealId>` | `INVITE#<token>` | email, role, side, invitedBy, status, expiresAt · **GSI2** `EMAIL#<email>` / `INVITE#<dealId>` |
 | Stage state | `DEAL#<dealId>` | `STAGE#<n>` (1–6) | name, status, targetDate, notes, completedBy, completedAt |
 | Checklist item | `DEAL#<dealId>` | `CHECK#<n>#<itemId>` | title, assigneeUserId, dueDate, done, doneBy, doneAt, fromTemplate |
-| Handshake | `DEAL#<dealId>` | `HS#<hsId>` | action, payload, initiatedBy, initiatedSide, status, sagaState, decidedBy, decisionReason, createdAt, decidedAt · **GSI1** `USER#<approverId>` / `HS#<createdAt>` while pending |
+| Handshake | `DEAL#<dealId>` | `HS#<hsId>` | action, payload, initiatedBy, initiatedSide, status (`pending`→`approved`/`rejected`/`completed`), sagaState, decidedBy, decisionReason, createdAt, decidedAt |
+| Approval pointer | `DEAL#<dealId>` | `APPR#<hsId>#<userId>` | one per eligible approver (a lead on the counterparty side) · **GSI1** `USER#<userId>` / `APPR#<createdAt>#<hsId>` — serves "my pending approvals"; all pointers for an `hsId` are deleted when it is decided |
+| Stage | `DEAL#<dealId>` | `STAGE#<n>` (1–6) | key, name, status, targetDate, notes, completedBy, completedAt — the 6 rows are written by `createDeal` |
+| Checklist item | `DEAL#<dealId>` | `CHECK#<n>#<itemId>` | title, assigneeUserId, dueDate, done, doneBy/At, fromTemplate — template items are materialized the first time a stage's checklist is read |
 
 - **GSI1 "by user"** → my deals (memberships); my pending approvals (handshakes).
 - **GSI2 "by email"** → pending invites for an email at login.
@@ -640,11 +643,19 @@ membership view before touching data.
   token→deal lookup is needed), `GET /deals/{id}/members`,
   `PATCH|DELETE /deals/{id}/members/{userId}`.
 - **Deals svc — milestones:** `GET /deals/{id}/stages`,
-  `PATCH /deals/{id}/stages/{n}`, `POST /deals/{id}/advance`,
-  `GET/POST /deals/{id}/stages/{n}/checklist`,
+  `PATCH /deals/{id}/stages/{n}` (notes / target date — target dates are
+  handshake-gated once firm), `POST /deals/{id}/advance` (opens an advance
+  handshake), `GET/POST /deals/{id}/stages/{n}/checklist`,
   `PATCH|DELETE /deals/{id}/stages/{n}/checklist/{itemId}`.
+- **Deals svc — terms & status:** `POST /deals/{id}/status` (close/cancel —
+  unilateral pre-firm, opens a handshake once firm), `POST /deals/{id}/terms`
+  (price change → always a handshake; closing-date change → unilateral pre-firm,
+  handshake once firm).
 - **Deals svc — handshakes:** `GET /deals/{id}/handshakes`, `GET /handshakes`
-  (mine), `POST /deals/{id}/handshakes/{hsId}/approve|reject`.
+  (my pending approvals across every deal, via the `APPR#` pointers on GSI1),
+  `POST /deals/{id}/handshakes/{hsId}/approve|reject`. Approve/reject applies the
+  effect and clears the pointers in one `TransactWriteItems`; the initiator may
+  also reject to withdraw.
 - **Chat svc:** `GET/POST /deals/{id}/threads`,
   `POST /deals/{id}/threads/{tid}/convert`,
   `GET/POST /deals/{id}/threads/{tid}/messages`,

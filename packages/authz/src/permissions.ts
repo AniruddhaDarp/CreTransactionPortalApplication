@@ -33,8 +33,9 @@ export type Action =
   | 'changeMemberRole'
   | 'removeMember'
   | 'viewAudit'
-  // --- milestones (refined in Module 5) ---
+  // --- milestones (Module 5) ---
   | 'advanceMilestone'
+  | 'editStageMeta'
   | 'editChecklist'
   // --- communication (refined in Module 6) ---
   | 'createThreadDealWide'
@@ -104,9 +105,11 @@ export function can(action: Action, ctx: AuthzContext): boolean {
     case 'viewAudit':
       return true; // results still filtered by scope at the query layer
 
-    // --- milestones (refined in Module 5) ---
+    // --- milestones (Module 5) ---
     case 'advanceMilestone':
       return admin || buyLead; // "may initiate the advance handshake"
+    case 'editStageMeta':
+      return admin || buyLead; // stage notes / target dates
     case 'editChecklist':
       return notOther;
 
@@ -178,6 +181,59 @@ export function inviteActionFor(role: Role): Action {
   if (role === 'TITLE_AGENT') return 'inviteTitle';
   if (role === 'OTHER') return 'inviteOther';
   return ROLE_SIDE[role] === 'sell' ? 'inviteSellSide' : 'inviteBuySide';
+}
+
+// --- handshake approval --------------------------------------------------
+
+export type HandshakeAction =
+  | 'advance_stage'
+  | 'close_deal'
+  | 'cancel_deal'
+  | 'edit_price'
+  | 'edit_dates'
+  | 'delete_document';
+
+export const HANDSHAKE_ACTIONS: readonly HandshakeAction[] = [
+  'advance_stage',
+  'close_deal',
+  'cancel_deal',
+  'edit_price',
+  'edit_dates',
+  'delete_document',
+];
+
+/** The side that must approve a handshake initiated by `initiatedSide`. */
+export function handshakeApproverSide(initiatedSide: Side): Side {
+  return initiatedSide === 'buy' ? 'sell' : 'buy';
+}
+
+/**
+ * Whether this member may approve/reject a handshake initiated by
+ * `initiatedSide`. The approver is a *lead* on the opposite side: the admin on
+ * the sell side, a `BUYER` / `BUYER_AGENT` on the buy side.
+ */
+export function isHandshakeApprover(ctx: AuthzContext, initiatedSide: Side): boolean {
+  if (ctx.status !== 'active') return false;
+  return handshakeApproverSide(initiatedSide) === 'sell'
+    ? ctx.isAdmin
+    : isBuySideLead(ctx.role);
+}
+
+/** The `can()` action that authorizes *initiating* a given handshake. */
+export function initiateActionFor(action: HandshakeAction): Action {
+  switch (action) {
+    case 'advance_stage':
+      return 'advanceMilestone';
+    case 'close_deal':
+    case 'cancel_deal':
+      return 'changeDealStatus';
+    case 'edit_price':
+      return 'editPurchasePrice';
+    case 'edit_dates':
+      return 'editDates';
+    case 'delete_document':
+      return 'deleteDocument';
+  }
 }
 
 // --- capability map for the SPA -------------------------------------------

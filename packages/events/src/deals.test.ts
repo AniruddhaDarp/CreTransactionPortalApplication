@@ -34,6 +34,14 @@ describe('deal event schemas', () => {
         'member.joined',
         'member.removed',
         'member.role_changed',
+        'stage.advanced',
+        'stage.updated',
+        'handshake.requested',
+        'handshake.approved',
+        'handshake.rejected',
+        'checklist.item_added',
+        'checklist.item_toggled',
+        'checklist.item_removed',
       ].sort(),
     );
   });
@@ -54,6 +62,22 @@ describe('deal event schemas', () => {
       'member.joined': { dealId: 'd', userId: 'u', role: 'BUYER', side: 'buy' },
       'member.role_changed': { dealId: 'd', userId: 'u', from: 'BUYER', to: 'BUYER_AGENT' },
       'member.removed': { dealId: 'd', userId: 'u', removedBy: 'admin' },
+      'stage.advanced': { dealId: 'd', from: 2, to: 3, firmNow: true },
+      'stage.updated': { dealId: 'd', n: 3, changed: { notes: { from: null, to: 'x' } } },
+      'handshake.requested': {
+        dealId: 'd',
+        hsId: 'h',
+        action: 'advance_stage',
+        payload: {},
+        initiatedBy: 'u',
+        initiatedSide: 'sell',
+        approverIds: ['b1'],
+      },
+      'handshake.approved': { dealId: 'd', hsId: 'h', action: 'advance_stage', payload: {} },
+      'handshake.rejected': { dealId: 'd', hsId: 'h', reason: 'not yet' },
+      'checklist.item_added': { dealId: 'd', n: 3, itemId: 'i', title: 'Phase I' },
+      'checklist.item_toggled': { dealId: 'd', n: 3, itemId: 'i', done: true },
+      'checklist.item_removed': { dealId: 'd', n: 3, itemId: 'i' },
     };
     for (const [type, schema] of Object.entries(dealEventSchemas)) {
       expect(() => schema.parse(fixtures[type]), type).not.toThrow();

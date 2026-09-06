@@ -19,11 +19,13 @@ const DEALS_SRC = path.join(HERE, '..', '..', 'services', 'deals', 'src');
 type RouteSpec = [HttpMethod, string];
 
 const ROUTES: RouteSpec[] = [
+  // deals + membership (Module 4)
   [HttpMethod.POST, '/v1/deals'],
   [HttpMethod.GET, '/v1/deals'],
   [HttpMethod.GET, '/v1/deals/{dealId}'],
   [HttpMethod.PATCH, '/v1/deals/{dealId}'],
   [HttpMethod.POST, '/v1/deals/{dealId}/status'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/terms'],
   [HttpMethod.GET, '/v1/deals/{dealId}/dashboard'],
   [HttpMethod.GET, '/v1/deals/{dealId}/members'],
   [HttpMethod.GET, '/v1/deals/{dealId}/invites'],
@@ -33,6 +35,18 @@ const ROUTES: RouteSpec[] = [
   [HttpMethod.POST, '/v1/deals/{dealId}/invites/{token}/accept'],
   [HttpMethod.PATCH, '/v1/deals/{dealId}/members/{userId}'],
   [HttpMethod.DELETE, '/v1/deals/{dealId}/members/{userId}'],
+  // milestones + checklists + handshakes (Module 5)
+  [HttpMethod.GET, '/v1/deals/{dealId}/stages'],
+  [HttpMethod.PATCH, '/v1/deals/{dealId}/stages/{n}'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/advance'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/stages/{n}/checklist'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/stages/{n}/checklist'],
+  [HttpMethod.PATCH, '/v1/deals/{dealId}/stages/{n}/checklist/{itemId}'],
+  [HttpMethod.DELETE, '/v1/deals/{dealId}/stages/{n}/checklist/{itemId}'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/handshakes'],
+  [HttpMethod.GET, '/v1/handshakes'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/handshakes/{hsId}/approve'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/handshakes/{hsId}/reject'],
 ];
 
 /**

@@ -34,6 +34,34 @@ export interface Invite {
 
 export type Capabilities = Record<string, boolean>;
 
+export interface Stage {
+  n: number;
+  key: string;
+  name: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  targetDate?: string;
+  notes?: string;
+}
+
+export interface ChecklistItem {
+  itemId: string;
+  n: number;
+  title: string;
+  done: boolean;
+  doneBy?: string;
+  fromTemplate: boolean;
+}
+
+export interface Handshake {
+  hsId: string;
+  dealId: string;
+  action: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  initiatedBy: string;
+  initiatedSide: string;
+  decisionReason?: string;
+}
+
 export function dealsApi(cfg: AppConfig, token: string) {
   const f = <T>(path: string, init?: RequestInit) => apiFetch<T>(cfg, token, path, init);
   return {
@@ -59,6 +87,28 @@ export function dealsApi(cfg: AppConfig, token: string) {
       ),
     accept: (id: string, tok: string) =>
       f<Member>(`/v1/deals/${id}/invites/${tok}/accept`, { method: 'POST' }),
+
+    // --- milestones + handshakes (Module 5) ---
+    stages: (id: string) =>
+      f<{ stages: Stage[]; currentStage: number; firm: boolean }>(`/v1/deals/${id}/stages`),
+    advance: (id: string) =>
+      f<{ handshakeId: string; status: string }>(`/v1/deals/${id}/advance`, { method: 'POST' }),
+    checklist: (id: string, n: number) =>
+      f<{ items: ChecklistItem[] }>(`/v1/deals/${id}/stages/${n}/checklist`),
+    toggleChecklistItem: (id: string, n: number, itemId: string, done: boolean) =>
+      f<ChecklistItem>(`/v1/deals/${id}/stages/${n}/checklist/${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ done }),
+      }),
+    handshakes: (id: string) => f<{ handshakes: Handshake[] }>(`/v1/deals/${id}/handshakes`),
+    myApprovals: () => f<{ handshakes: Handshake[] }>('/v1/handshakes'),
+    approveHandshake: (id: string, hsId: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/handshakes/${hsId}/approve`, { method: 'POST' }),
+    rejectHandshake: (id: string, hsId: string, reason?: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/handshakes/${hsId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }),
   };
 }
 

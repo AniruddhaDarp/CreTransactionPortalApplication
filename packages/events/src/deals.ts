@@ -63,6 +63,66 @@ export const memberRemovedSchema = z.object({
   removedBy: z.string(),
 });
 
+// --- milestones + handshakes (Module 5) ---------------------------------
+
+const changeMap = z.record(z.string(), z.object({ from: z.unknown(), to: z.unknown() }));
+
+export const stageAdvancedSchema = z.object({
+  dealId: z.string(),
+  from: z.number().int(),
+  to: z.number().int(),
+  firmNow: z.boolean(),
+});
+
+export const stageUpdatedSchema = z.object({
+  dealId: z.string(),
+  n: z.number().int(),
+  changed: changeMap,
+});
+
+export const handshakeRequestedSchema = z.object({
+  dealId: z.string(),
+  hsId: z.string(),
+  action: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+  initiatedBy: z.string(),
+  initiatedSide: sideSchema,
+  approverIds: z.array(z.string()),
+});
+
+export const handshakeApprovedSchema = z.object({
+  dealId: z.string(),
+  hsId: z.string(),
+  action: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+});
+
+export const handshakeRejectedSchema = z.object({
+  dealId: z.string(),
+  hsId: z.string(),
+  reason: z.string().optional(),
+});
+
+export const checklistItemAddedSchema = z.object({
+  dealId: z.string(),
+  n: z.number().int(),
+  itemId: z.string(),
+  title: z.string(),
+});
+
+export const checklistItemToggledSchema = z.object({
+  dealId: z.string(),
+  n: z.number().int(),
+  itemId: z.string(),
+  done: z.boolean(),
+});
+
+export const checklistItemRemovedSchema = z.object({
+  dealId: z.string(),
+  n: z.number().int(),
+  itemId: z.string(),
+});
+
 /** Registry: `detail-type` -> schema, for producer/consumer contract tests. */
 export const dealEventSchemas = {
   'deal.created': dealCreatedSchema,
@@ -72,6 +132,14 @@ export const dealEventSchemas = {
   'member.joined': memberJoinedSchema,
   'member.role_changed': memberRoleChangedSchema,
   'member.removed': memberRemovedSchema,
+  'stage.advanced': stageAdvancedSchema,
+  'stage.updated': stageUpdatedSchema,
+  'handshake.requested': handshakeRequestedSchema,
+  'handshake.approved': handshakeApprovedSchema,
+  'handshake.rejected': handshakeRejectedSchema,
+  'checklist.item_added': checklistItemAddedSchema,
+  'checklist.item_toggled': checklistItemToggledSchema,
+  'checklist.item_removed': checklistItemRemovedSchema,
 } as const;
 
 export type DealEventType = keyof typeof dealEventSchemas;

@@ -413,3 +413,44 @@ globals for `.mjs` scripts in the ESLint flat config.
 rebuilt + synced. E2E: create → list → capabilities → non-member 403 → PATCH →
 invite (acceptUrl) → preview → accept → buy-lead caps (2 ok, 3rd 409) →
 cross-side invite 403 → cross-side remove 403 → pre-firm cancel 200.
+
+---
+
+## 15 — Module 5: milestones, checklists, handshake state machine
+
+> [After discussing scope] 1. Yes [advance needs a buy-side lead]. 2. Yes [stage
+> notes/dates: admin + buy-side lead]. 3. All five [handshake actions]. 4. Build
+> it now [`GET /handshakes`].
+
+**Outcome — 113 workspace tests + 11 live E2E checks pass:**
+
+- **`services/deals/src/pipeline.ts`** — the fixed 6 stages + per-stage checklist
+  templates.
+- **`repo`** — `createDeal` now writes the 6 `STAGE#` rows in the create
+  transaction; added stage / checklist (materialize-on-first-read) / handshake /
+  `APPR#`-pointer functions + a generic `runTransaction`.
+- **`services/deals/src/handshake.ts`** — the state machine: an applier registry
+  (`advance_stage`, `close_deal`, `cancel_deal`, `edit_price`, `edit_dates`,
+  `delete_document`), `initiate` (checks `can()`, pre-flights the effect,
+  computes the counterparty-lead approvers, writes `HS#` + `APPR#` pointers) and
+  `decide` (one `TransactWriteItems`: HS status + effect + pointer deletes;
+  non-saga → `completed`, `delete_document` → `approved` + `awaiting_document`).
+- **`stages.ts` / `handshakes.ts`** — 11 new routes; `deals.ts` recomposed as
+  `router({ ...dealRoutes, ...stageRoutes, ...handshakeRoutes })`, its ad-hoc
+  `publish` calls replaced with a shared `emit()`, `POST /status` now opens a
+  handshake once firm, new `POST /terms` for price/date changes.
+- **`@cre/events`** — 8 new schemas (`stage.*`, `handshake.*`, `checklist.*`).
+- **`@cre/authz`** — `editStageMeta`, `handshakeApproverSide`,
+  `isHandshakeApprover`, `initiateActionFor`, `HANDSHAKE_ACTIONS`.
+- **`web`** — `Milestones` component in the deal page (stage rail, request-advance
+  button, current-stage checklist toggles, pending-handshake approve/reject) and
+  a nav "N approvals waiting" badge from `GET /v1/handshakes`.
+- Fix en route: `repo.table()` → exported `repo.tableName()` so the appliers can
+  build `TransactItem`s without importing the private helper.
+
+**E2E:** 6 stages · checklist materialized + toggled (doneBy stamped) · advance
+before a buyer joined → **409** · advance handshake → buyer sees it in
+`GET /v1/handshakes` → approves → stage 1 completed, stage 2 in progress ·
+advance 2→3 → **firm flips true** · advance 3→4 rejected → stage unchanged ·
+firm deal `POST /status CLOSED` → **202 handshake** → buyer approves → deal
+`CLOSED`.

@@ -31,15 +31,16 @@ describe('DealsStack', () => {
     });
   });
 
-  it('registers all 14 JWT-authorized routes', () => {
-    t.resourceCountIs('AWS::ApiGatewayV2::Route', 14);
+  it('registers all 26 JWT-authorized routes', () => {
+    t.resourceCountIs('AWS::ApiGatewayV2::Route', 26);
     t.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', { AuthorizerType: 'JWT' });
     for (const rk of [
       'POST /v1/deals',
-      'GET /v1/deals/{dealId}',
-      'POST /v1/deals/{dealId}/invites',
       'POST /v1/deals/{dealId}/invites/{token}/accept',
-      'DELETE /v1/deals/{dealId}/members/{userId}',
+      'POST /v1/deals/{dealId}/advance',
+      'GET /v1/deals/{dealId}/stages/{n}/checklist',
+      'POST /v1/deals/{dealId}/handshakes/{hsId}/approve',
+      'GET /v1/handshakes',
     ]) {
       t.hasResourceProperties('AWS::ApiGatewayV2::Route', {
         RouteKey: rk,
