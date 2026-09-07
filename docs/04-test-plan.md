@@ -409,7 +409,10 @@ PASS: 33 passed, 0 failed`, and its `verify-*` cohort is deleted afterward
 (`aws cognito-idp list-users …` shows only `seed-*` users).
 
 **T9.4 `[CLI]` Verify is self-contained** — run it twice back to back; no
-residue, no dependence on seed state.
+residue, no dependence on seed state. Each run mints a uniquely-suffixed cohort
+and its own deals; `inviteAndAccept` now blocks on each member's projection
+landing in chat + documents + audit (`waitMemberSync`), so a backlogged bus
+slows the run but doesn't crash it on a `403 "may not be synced yet"`.
 
 ---
 

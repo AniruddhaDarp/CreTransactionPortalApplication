@@ -437,10 +437,21 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
 ### 7.4 Cross-service consistency
 
 - **Authorization** is eventually consistent: each enforcing service (Chat,
-  Documents, Audit) rebuilds a `memberships` view from Deals' `member.*` events.
-  Window is seconds. Sensitive one-shot actions (e.g. a just-removed member) are
-  additionally guarded by the fact that Deals is the source of truth for the
-  action that matters (advancing, deleting) and re-checks on its own data.
+  Documents, Audit, Notifications) rebuilds a `memberships` view from Deals'
+  `member.*` events, and each does so from its **own** SQS queue + consumer.
+  The window is a few seconds when the bus is quiet, but under sustained
+  membership churn (many `member.*` events in a short burst — e.g. a scripted
+  test run) the consumers fall behind and it stretches into **tens of seconds**.
+  During that window a scoped read/write by the fresh member returns
+  `403 "membership may not be synced yet"`. A client that adds a member and
+  then immediately acts as them must tolerate this — poll a scoped endpoint for
+  readiness or retry the 403 with backoff (`scripts/lib/portal.mjs`
+  `waitMemberSync` does exactly this for the seed/verify scripts). Sensitive
+  one-shot actions (e.g. a just-removed member) are additionally guarded by the
+  fact that Deals is the source of truth for the action that matters (advancing,
+  deleting) and re-checks on its own data. A synchronous projection-invalidation
+  call, or including the member's projection version in the `accept` response so
+  the client can wait precisely, is the hardening step — see §16.
 - **The handshake is a saga** — see [§10](#10-key-flows). Deal-local effects are
   applied atomically inside the `deals` table; the single cross-service effect
   (archiving a document on a delete-handshake) is choreographed entirely over
@@ -1048,3 +1059,12 @@ sections have been updated to match; this section is the changelog.)
   fire the `PostConfirmation` trigger, so they have no `accounts` profile row —
   fine for every deal flow (which keys off membership + JWT claims), but
   `GET /v1/me` 404s for a scripted login.
+- `inviteAndAccept` blocks on `waitMemberSync` — it polls `/threads`,
+  `/documents` and `/audit` as the new member until all three return `200` —
+  before returning, so a script never acts as a member whose projection is
+  still catching up. This was added after `verify.mjs` intermittently crashed on
+  the projection-lag `403` when run repeatedly against a churned bus (§7.4).
+  `verify.mjs` also cancels every deal it creates on the way out (there is no
+  deal-delete API, so cancelled deals still linger — orphan reduction, not
+  elimination), and its final "counterparty is notified" check is a soft warning
+  rather than a hard failure since it rides the at-least-once notification bus.

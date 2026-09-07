@@ -25,7 +25,17 @@ export const handler = router({
 
   'PUT /v1/me': async (ctx) => {
     const patch = parseBody(patchSchema, ctx.body ?? {});
-    const updated = await updateProfile(ctx.userId, patch);
-    return { body: updated };
+    try {
+      const updated = await updateProfile(ctx.userId, patch);
+      return { body: updated };
+    } catch (err) {
+      // `updateProfile` is guarded by `attribute_exists(PK)`; if the profile
+      // row was never provisioned (no post-confirmation trigger) this is a
+      // missing resource, not a server error.
+      if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
+        throw new HttpError(404, 'profile not provisioned yet');
+      }
+      throw err;
+    }
   },
 });

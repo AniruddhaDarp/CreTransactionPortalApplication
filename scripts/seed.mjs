@@ -22,7 +22,7 @@ import {
   makeUser,
   putToS3,
   resolveConfig,
-  waitFor,
+  waitMemberSync,
 } from './lib/portal.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -84,12 +84,11 @@ async function main() {
     side: 'buy',
   });
   await U.inspector.must('POST', `/v1/deals/${id}/invites/${inviteOther.token}/accept`, undefined, [200, 201]);
+  await waitMemberSync(U.inspector, id); // the OTHER invite bypasses inviteAndAccept (needs a `side`)
   console.log('  9 members joined');
 
-  console.log('· waiting for the Chat / Documents / Notifications projections to sync');
-  await waitFor(async () => (await U.buyerAgent.call('GET', `/v1/deals/${id}/threads`)).status === 200, 'chat sync');
-  await waitFor(async () => (await U.buyerAgent.call('GET', `/v1/deals/${id}/documents`)).status === 200, 'docs sync');
-  await waitFor(async () => (await U.title.call('GET', `/v1/deals/${id}/documents`)).status === 200, 'title docs sync');
+  // inviteAndAccept() already blocked on each member's projection landing in
+  // chat + documents + audit, so everyone below can act immediately.
 
   console.log('· milestones — advance PSA → Attorney Review → Due Diligence via handshakes');
   const advance = async (approver) => {

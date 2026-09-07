@@ -79,20 +79,48 @@ export const handler = router({
     const filters = readFilters(ctx);
 
     const limit = Math.min(Math.max(Number(ctx.query.limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
-    // Over-fetch a little so scope/attribute filtering doesn't routinely yield a
-    // short page; the cursor is DynamoDB's, so pagination stays correct even
-    // when a page filters down to nothing.
-    const page = await repo.queryDeal(dealId, {
-      from: filters.from,
-      to: filters.to,
-      cursor: ctx.query.cursor,
-      limit: Math.min(limit + 50, MAX_LIMIT),
-    });
-    const visible = scopedRows(page.rows, viewer, filters);
+
+    // Scope + attribute filtering happens *after* the DynamoDB read, so a page
+    // can shrink to nothing — keep paging the partition until we have `limit`
+    // visible rows or run out (bounded by SCAN_CAP for a pathological viewer
+    // whose scopes match almost nothing). The cursor we return points exactly
+    // after the last row we hand back, not at a DynamoDB page boundary.
+    const SCAN_CAP = 4000;
+    const BATCH = 200;
+    const gathered: AuditRow[] = [];
+    let cursor = ctx.query.cursor;
+    let scanned = 0;
+    let exhausted = false;
+    while (gathered.length < limit && scanned < SCAN_CAP) {
+      const page = await repo.queryDeal(dealId, {
+        from: filters.from,
+        to: filters.to,
+        cursor,
+        limit: BATCH,
+      });
+      scanned += page.rows.length;
+      for (const row of scopedRows(page.rows, viewer, filters)) {
+        gathered.push(row);
+        if (gathered.length >= limit) break;
+      }
+      cursor = page.nextCursor;
+      if (!cursor) {
+        exhausted = true;
+        break;
+      }
+    }
+
+    const events = gathered.slice(0, limit);
+    const last = events[events.length - 1];
+    // Hand back a cursor whenever more rows could follow the last one returned:
+    // the page filled, or we bailed on the safety cap before running dry.
+    const maybeMore = events.length === limit || (events.length > 0 && !exhausted && scanned >= SCAN_CAP);
+    const nextCursor = maybeMore && last ? repo.rowCursor(last) : undefined;
+
     return {
       body: {
-        events: visible.slice(0, limit),
-        nextCursor: visible.length > limit ? undefined : page.nextCursor,
+        events,
+        nextCursor,
         scopes: [...viewerScopes(viewer)],
       },
     };

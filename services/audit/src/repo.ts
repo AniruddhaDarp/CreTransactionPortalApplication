@@ -81,6 +81,18 @@ const enc = (k: Record<string, unknown> | undefined) =>
 const dec = (c: string | undefined) =>
   c ? (JSON.parse(Buffer.from(c, 'base64').toString()) as Record<string, unknown>) : undefined;
 
+/**
+ * An opaque cursor that resumes *exactly after* a given row — used by the list
+ * endpoint, which post-filters by scope and so cannot rely on DynamoDB's own
+ * page boundary. The SK is fully determined by the row, so
+ * `ExclusiveStartKey = {PK, SK}` is a valid resume point even though it is not a
+ * `LastEvaluatedKey`.
+ */
+export const rowCursor = (row: AuditRow): string =>
+  Buffer.from(
+    JSON.stringify({ PK: `DEAL#${row.dealId}`, SK: `AUDIT#${row.occurredAt}#${row.eventId}` }),
+  ).toString('base64');
+
 /** Newest-first page of a deal's audit rows, optionally bounded by a time range. */
 export async function queryDeal(dealId: string, opts: QueryOpts = {}): Promise<QueryPage> {
   // '￿' as an upper-bound suffix so a date-only `to` still includes that

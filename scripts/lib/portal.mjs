@@ -159,9 +159,36 @@ export async function putToS3(url, bytes, contentType) {
   if (!r.ok) throw new Error(`S3 PUT failed (${r.status})`);
 }
 
-/** Invite `invitee` to a deal as `role` and have them accept (email must match). */
+/**
+ * Block until a just-added member's membership has propagated to every scoped
+ * service (chat / documents / audit). Each runs its own EventBridge → SQS
+ * consumer, so a fresh member can 403 ("membership may not be synced yet") on
+ * any of them for a while — and under sustained membership churn (many
+ * `member.*` events in a short window) that window stretches from a few seconds
+ * into tens of seconds. Any code that acts as a member right after
+ * `inviteAndAccept` relies on this.
+ */
+export async function waitMemberSync(client, dealId, { tries = 60, gapMs = 2000 } = {}) {
+  const paths = [
+    `/v1/deals/${dealId}/threads`,
+    `/v1/deals/${dealId}/documents`,
+    `/v1/deals/${dealId}/audit`,
+  ];
+  await waitFor(
+    async () => {
+      const codes = await Promise.all(paths.map((p) => client.call('GET', p).then((r) => r.status)));
+      return codes.every((c) => c === 200);
+    },
+    `projection sync for ${client.email} on ${dealId}`,
+    { tries, gapMs },
+  );
+}
+
+/** Invite `invitee` to a deal as `role`, have them accept (email must match),
+ *  and wait until they can actually act in every scoped service. */
 export async function inviteAndAccept(inviter, invitee, dealId, role) {
   const inv = await inviter.must('POST', `/v1/deals/${dealId}/invites`, { email: invitee.email, role });
   await invitee.must('POST', `/v1/deals/${dealId}/invites/${inv.token}/accept`, undefined, [200, 201]);
+  await waitMemberSync(invitee, dealId);
   return inv.token;
 }

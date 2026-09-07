@@ -56,4 +56,12 @@ describe('accounts handler', () => {
     );
     expect(res.statusCode).toBe(400);
   });
+
+  it('PUT /v1/me 404s (not 500) when the profile row was never provisioned', async () => {
+    ddb.on(UpdateCommand).rejects(
+      Object.assign(new Error('conditional failed'), { name: 'ConditionalCheckFailedException' }),
+    );
+    const res = await run(event({ routeKey: 'PUT /v1/me', body: JSON.stringify({ company: 'Acme' }) }));
+    expect(res.statusCode).toBe(404);
+  });
 });

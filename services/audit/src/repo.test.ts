@@ -1,7 +1,7 @@
 import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { putEvent, queryDeal, scanDeal, type AuditRow } from './repo.js';
+import { putEvent, queryDeal, rowCursor, scanDeal, type AuditRow } from './repo.js';
 
 const ddb = mockClient(DynamoDBDocumentClient);
 process.env.AUDIT_TABLE = 'audit-test';
@@ -65,6 +65,19 @@ describe('queryDeal', () => {
     expect(ddb.commandCalls(QueryCommand)[0]!.args[0].input.ExclusiveStartKey).toEqual({
       PK: 'DEAL#d1',
       SK: 'AUDIT#x',
+    });
+  });
+});
+
+describe('rowCursor', () => {
+  it('encodes a resume-after key derived purely from the row, usable as ExclusiveStartKey', async () => {
+    const c = rowCursor(row({ occurredAt: '2026-05-05T12:00:00.000Z', eventId: 'evt-9' }));
+    expect(typeof c).toBe('string');
+    ddb.on(QueryCommand).resolves({ Items: [] });
+    await queryDeal('d1', { cursor: c });
+    expect(ddb.commandCalls(QueryCommand)[0]!.args[0].input.ExclusiveStartKey).toEqual({
+      PK: 'DEAL#d1',
+      SK: 'AUDIT#2026-05-05T12:00:00.000Z#evt-9',
     });
   });
 });

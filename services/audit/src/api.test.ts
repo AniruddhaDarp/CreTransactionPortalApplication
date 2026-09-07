@@ -108,6 +108,53 @@ describe('GET /audit — scoped read', () => {
   });
 });
 
+describe('GET /audit — pagination', () => {
+  beforeEach(() => {
+    vi.mocked(repo.rowCursor).mockImplementation((r) => `cur-${r.eventId}`);
+  });
+  const many = (n: number, over: Partial<AuditRow> = {}) =>
+    Array.from({ length: n }, (_, i) =>
+      row({ scope: 'deal_wide', eventId: `e${i}`, occurredAt: `2026-01-01T00:00:${String(i).padStart(2, '0')}.000Z`, ...over }),
+    );
+
+  it('returns a resume cursor when the page fills, even with no DynamoDB LastEvaluatedKey', async () => {
+    vi.mocked(requireViewer).mockResolvedValue(viewer({ role: 'BUYER', side: 'buy' }));
+    vi.mocked(repo.queryDeal).mockResolvedValue({ rows: many(40), nextCursor: undefined });
+    const r = await run(
+      event({ routeKey: 'GET /v1/deals/{dealId}/audit', path: { dealId: 'd1' }, query: { limit: '5' } }),
+    );
+    const body = JSON.parse(r.body);
+    expect(body.events).toHaveLength(5);
+    expect(typeof body.nextCursor).toBe('string'); // was `undefined` before the fix
+  });
+
+  it('keeps paging the partition when scope filtering empties a page', async () => {
+    vi.mocked(requireViewer).mockResolvedValue(viewer({ role: 'BUYER', side: 'buy' }));
+    vi.mocked(repo.queryDeal)
+      .mockResolvedValueOnce({ rows: many(3, { scope: 'side_private:sell' }), nextCursor: 'c1' }) // all filtered out
+      .mockResolvedValueOnce({ rows: many(3, { scope: 'side_private:sell' }), nextCursor: 'c2' }) // filtered out
+      .mockResolvedValueOnce({ rows: many(4, { scope: 'deal_wide' }), nextCursor: undefined }); // visible
+    const r = await run(
+      event({ routeKey: 'GET /v1/deals/{dealId}/audit', path: { dealId: 'd1' }, query: { limit: '5' } }),
+    );
+    const body = JSON.parse(r.body);
+    expect(body.events).toHaveLength(4);
+    expect(body.nextCursor).toBeUndefined(); // ran out
+    expect(vi.mocked(repo.queryDeal)).toHaveBeenCalledTimes(3);
+  });
+
+  it('no cursor once the data is exhausted within one page', async () => {
+    vi.mocked(requireViewer).mockResolvedValue(viewer({ role: 'BUYER', side: 'buy' }));
+    vi.mocked(repo.queryDeal).mockResolvedValue({ rows: many(3), nextCursor: undefined });
+    const r = await run(
+      event({ routeKey: 'GET /v1/deals/{dealId}/audit', path: { dealId: 'd1' }, query: { limit: '50' } }),
+    );
+    const body = JSON.parse(r.body);
+    expect(body.events).toHaveLength(3);
+    expect(body.nextCursor).toBeUndefined();
+  });
+});
+
 describe('GET /audit/export', () => {
   beforeEach(() => {
     vi.mocked(requireViewer).mockResolvedValue(viewer({ role: 'BUYER', side: 'buy' }));
