@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Capabilities, DocRequest, DocumentRow, DocVersion, DealsApi } from '../deals-api.js';
 import { scopeTag } from '../theme.js';
+import { SignaturePanel } from './SignaturePanel.js';
 
 const CATEGORIES = [
   'Purchase Agreement',
@@ -28,10 +29,12 @@ export function Documents({
   api,
   dealId,
   capabilities,
+  myUserId,
 }: {
   api: DealsApi;
   dealId: string;
   capabilities: Capabilities;
+  myUserId: string;
 }) {
   const [docs, setDocs] = useState<DocumentRow[]>([]);
   const [requests, setRequests] = useState<DocRequest[]>([]);
@@ -296,6 +299,14 @@ export function Documents({
               Add version
             </button>
           </div>
+
+          <SignaturePanel
+            api={api}
+            dealId={dealId}
+            docId={openId}
+            myUserId={myUserId}
+            canSend={!!capabilities.sendForSignature}
+          />
         </div>
       )}
 

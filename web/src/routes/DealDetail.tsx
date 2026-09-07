@@ -136,7 +136,7 @@ export function DealDetail({ api, myUserId }: { api: DealsApi; myUserId: string 
           <h3>Document room</h3>
         </div>
         <div className="panel__body">
-          <Documents api={api} dealId={id} capabilities={deal.capabilities} />
+          <Documents api={api} dealId={id} capabilities={deal.capabilities} myUserId={myUserId} />
         </div>
       </div>
 

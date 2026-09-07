@@ -45,6 +45,9 @@ const CONSUMED_EVENTS = [
   'thread.converted',
   'payment.confirmed',
   'payment.voided',
+  'signature.requested',
+  'signature.completed',
+  'signature.declined',
 ];
 
 /**

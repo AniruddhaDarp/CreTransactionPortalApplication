@@ -136,11 +136,16 @@ Deliberate scope cuts for the prototype — the full list with rationale is in
   deposits, closing funds); the portal never moves money and does no payer
   identity verification. Wire-fraud prevention and deadline/contingency
   automation remain named as the next problems to tackle, not built.
+- **E-signature is provider-pluggable.** Module 12 (stretch) sends a document
+  for signature and writes the executed PDF back as a new version. It ships an
+  in-process fake provider (the demo default) and a real DocuSign JWT-grant
+  implementation gated off behind `ESIGN_PROVIDER=docusign` + `DOCUSIGN_*`
+  secrets, mirroring the flag-gated email path.
 
 ## Build history
 
 Built in reviewable modules, one commit each — ten core modules plus Module 11
-(payments, stretch) — see [`docs/03-prompt-log.md`](docs/03-prompt-log.md) for
-the prompt, context, and outcome of each. Every module ends green
-(`pnpm -r test`, `pnpm lint`, `cdk synth --strict`) and was deployed +
-E2E-verified against the live stack.
+(payments) and Module 12 (e-signature), both stretch — see
+[`docs/03-prompt-log.md`](docs/03-prompt-log.md) for the prompt, context, and
+outcome of each. Every module ends green (`pnpm -r test`, `pnpm lint`,
+`cdk synth --strict`) and was deployed + E2E-verified against the live stack.

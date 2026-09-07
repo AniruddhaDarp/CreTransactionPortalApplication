@@ -45,6 +45,19 @@ describe('summarize', () => {
     );
   });
 
+  it('describes e-signature lifecycle events', () => {
+    expect(
+      summarize('signature.requested', { envId: 'e1', provider: 'fake', recipientUserIds: ['a', 'b'] }).summary,
+    ).toBe('Sent for signature (2 signer(s), via fake)');
+    expect(summarize('signature.completed', { envId: 'e1', signedVersion: 3 }).summary).toBe(
+      'Signature complete — signed copy saved as v3',
+    );
+    expect(summarize('signature.declined', { envId: 'e1', reason: 'wrong party' }).summary).toBe(
+      'Signature declined — wrong party',
+    );
+    expect(summarize('signature.voided', { envId: 'e1' }).targetType).toBe('signature');
+  });
+
   it('falls back to the detail-type for unknown events', () => {
     expect(summarize('mystery.event', {})).toEqual({
       action: 'mystery.event',

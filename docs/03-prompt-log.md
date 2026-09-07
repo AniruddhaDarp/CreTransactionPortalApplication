@@ -707,3 +707,43 @@ design §6 **role→category visibility matrix**.
   `payment.*` summaries.
 
 **DocuSign is the next stretch item** (not started).
+
+## 22 — Module 12 (stretch): document e-signature (DocuSign)
+
+> Pushed changes. Let's draw up the DocuSign plan.
+>
+> [Four decisions on the plan] 1. Provider abstraction — fake default + real
+> DocusignProvider wired but gated (recommended). 2. In the Documents service
+> (recommended). 3. Any non-OTHER member who can see the document may send it
+> (recommended). 4. A completed signature has no automatic milestone effect
+> (recommended). [Design refinement during build: no webhook / no unauthenticated
+> route — GET …/signature reconciles via provider.getStatus() instead.]
+
+**Outcome — the e-signature stretch feature is live and E2E-verified:**
+
+- **`services/documents/src/provider/`** — `ESignatureProvider` seam;
+  `FakeProvider` (default, `ESIGN_PROVIDER=fake`) runs the flow in-process and
+  synthesises a real "SIGNED COPY" PDF; `DocusignProvider` is the real eSignature
+  REST v2.1 + JWT-Grant integration (RS256 via `node:crypto`, no new dep), gated
+  off like the SES path.
+- **`services/documents`** — `SIG#` / `SIGR#` rows; `signatures.ts` route module
+  (`POST`/`GET /signature`, `POST …/{envId}/sign` [fake-only], `POST …/{envId}/
+  void`) merged into the API handler; the signed PDF is written back as
+  version N+1 of the source document. 13 → 17 routes.
+- **`@cre/events`** — 5 `signature.*` schemas + registry (10 → 15 document event
+  types). **`@cre/authz`** — `sendForSignature` action (non-OTHER) + SPA
+  capability. **`services/audit`** — `signature.*` summaries.
+  **`services/notifications`** — `signature.requested` → signers (+email),
+  `signature.completed` → all, `signature.declined` → requester; 3 detail-types
+  added to the consumed set.
+- **SPA** — a Signatures block inside the per-document drawer (send form,
+  per-recipient status chips, sign / decline / void); `signature.*` added to the
+  Audit filter.
+- **`docs/02-design.md`** — §16 e-signature marked delivered; §17 gains an
+  "E-signature (Module 12, stretch)" subsection (provider seam, no-webhook
+  rationale, signer-visibility validation, lifecycle).
+- **Deployed** `CrePortalDocuments` + `CrePortalNotifications` + `CrePortalAudit`
+  + the SPA. Live E2E: upload a PSA → send to 2 signers → non-signer blocked 403
+  → both sign → envelope completed, signed copy saved as v2, downloads as a real
+  PDF containing "SIGNED COPY" → a 2nd envelope declined → a 3rd voided → audit
+  carries every `signature.*` event.

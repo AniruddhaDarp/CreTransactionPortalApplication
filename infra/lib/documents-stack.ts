@@ -34,6 +34,11 @@ const ROUTES: Array<[HttpMethod, string]> = [
   [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/fulfill'],
   [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/decline'],
   [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/cancel'],
+  // e-signature (Module 12, stretch)
+  [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/signature'],
+  [HttpMethod.GET, '/v1/deals/{dealId}/documents/{docId}/signature'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/signature/{envId}/sign'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/signature/{envId}/void'],
 ];
 
 /** `member.*` feeds the local projection; `handshake.approved` drives the delete saga. */
@@ -110,6 +115,15 @@ export class DocumentsStack extends Stack {
         DOCUMENTS_TABLE: table.tableName,
         DOCS_BUCKET: bucket.bucketName,
         EVENT_BUS_NAME: busName,
+        // e-signature (Module 12): 'fake' drives the demo end-to-end in-process.
+        // Set to 'docusign' + the DOCUSIGN_* vars (from a Secret) to go live.
+        ESIGN_PROVIDER: 'fake',
+        DOCUSIGN_OAUTH_BASE: '',
+        DOCUSIGN_REST_BASE: '',
+        DOCUSIGN_INTEGRATION_KEY: '',
+        DOCUSIGN_USER_ID: '',
+        DOCUSIGN_ACCOUNT_ID: '',
+        DOCUSIGN_PRIVATE_KEY: '',
       },
       bundling,
     });

@@ -191,6 +191,43 @@ export function summarize(detailType: string, d: Record<string, unknown>): Descr
         summary: 'Request cancelled',
       };
 
+    // --- e-signature (Module 12) ---
+    case 'signature.requested':
+      return {
+        action: detailType,
+        targetType: 'signature',
+        targetId: s(d.envId),
+        summary: `Sent for signature (${(d.recipientUserIds as unknown[])?.length ?? 0} signer(s), via ${s(d.provider)})`,
+      };
+    case 'signature.recipient_completed':
+      return {
+        action: detailType,
+        targetType: 'signature',
+        targetId: s(d.envId),
+        summary: `A signer completed the envelope`,
+      };
+    case 'signature.completed':
+      return {
+        action: detailType,
+        targetType: 'signature',
+        targetId: s(d.envId),
+        summary: `Signature complete — signed copy saved as v${s(d.signedVersion)}`,
+      };
+    case 'signature.declined':
+      return {
+        action: detailType,
+        targetType: 'signature',
+        targetId: s(d.envId),
+        summary: `Signature declined${d.reason ? ` — ${s(d.reason)}` : ''}`,
+      };
+    case 'signature.voided':
+      return {
+        action: detailType,
+        targetType: 'signature',
+        targetId: s(d.envId),
+        summary: `Signature request voided${d.reason ? ` — ${s(d.reason)}` : ''}`,
+      };
+
     // --- payments (Module 11) ---
     case 'payment.recorded':
       return {

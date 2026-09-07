@@ -55,6 +55,40 @@ export interface DocRequest {
   resolvedAt?: string;
 }
 
+export type SignatureStatus = 'sent' | 'completed' | 'declined' | 'voided';
+export type RecipientStatus = 'sent' | 'completed' | 'declined';
+
+export interface SignatureEnvelope {
+  dealId: string;
+  docId: string;
+  envId: string;
+  version: number;
+  scope: Scope;
+  provider: string;
+  providerEnvelopeId: string;
+  subject: string;
+  message?: string;
+  status: SignatureStatus;
+  createdBy: string;
+  createdAt: string;
+  signedVersion?: number;
+  completedAt?: string;
+  declineReason?: string;
+  voidReason?: string;
+}
+
+export interface SignatureRecipient {
+  dealId: string;
+  envId: string;
+  userId: string;
+  email?: string;
+  name?: string;
+  routingOrder: number;
+  status: RecipientStatus;
+  signedAt?: string;
+  declineReason?: string;
+}
+
 export function tableName(): string {
   const t = process.env.DOCUMENTS_TABLE;
   if (!t) throw new Error('DOCUMENTS_TABLE env var is not set');
@@ -64,6 +98,14 @@ export function tableName(): string {
 const docKey = (d: string, id: string) => ({ PK: `DEAL#${d}`, SK: `DOC#${id}` });
 const verKey = (d: string, id: string, n: number) => ({ PK: `DEAL#${d}`, SK: `DOCVER#${id}#${n}` });
 const reqKey = (d: string, id: string) => ({ PK: `DEAL#${d}`, SK: `DOCREQ#${id}` });
+const sigKey = (d: string, docId: string, envId: string) => ({
+  PK: `DEAL#${d}`,
+  SK: `SIG#${docId}#${envId}`,
+});
+const sigrKey = (d: string, envId: string, uid: string) => ({
+  PK: `DEAL#${d}`,
+  SK: `SIGR#${envId}#${uid}`,
+});
 
 const KEY_ATTRS = new Set(['PK', 'SK']);
 function strip<T>(item: Record<string, unknown>): T {
@@ -179,6 +221,148 @@ export async function archiveDocument(dealId: string, docId: string): Promise<vo
       ConditionExpression: 'attribute_exists(SK)',
     }),
   );
+}
+
+// --- signature envelopes (Module 12) ---------------------------------
+
+export async function createEnvelope(
+  env: SignatureEnvelope,
+  recipients: SignatureRecipient[],
+): Promise<void> {
+  await docClient().send(
+    new TransactWriteCommand({
+      TransactItems: [
+        {
+          Put: {
+            TableName: tableName(),
+            Item: { ...sigKey(env.dealId, env.docId, env.envId), ...env },
+            ConditionExpression: 'attribute_not_exists(SK)',
+          },
+        },
+        ...recipients.map((r) => ({
+          Put: {
+            TableName: tableName(),
+            Item: { ...sigrKey(r.dealId, r.envId, r.userId), ...r },
+          },
+        })),
+      ],
+    }),
+  );
+}
+
+export async function getEnvelope(
+  dealId: string,
+  docId: string,
+  envId: string,
+): Promise<SignatureEnvelope | undefined> {
+  const r = await docClient().send(
+    new GetCommand({ TableName: tableName(), Key: sigKey(dealId, docId, envId) }),
+  );
+  return r.Item ? strip<SignatureEnvelope>(r.Item) : undefined;
+}
+
+export async function listEnvelopesForDoc(
+  dealId: string,
+  docId: string,
+): Promise<SignatureEnvelope[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': `SIG#${docId}#` },
+    }),
+  );
+  return (r.Items ?? [])
+    .map((i) => strip<SignatureEnvelope>(i))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+export async function listRecipients(
+  dealId: string,
+  envId: string,
+): Promise<SignatureRecipient[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': `SIGR#${envId}#` },
+    }),
+  );
+  return (r.Items ?? [])
+    .map((i) => strip<SignatureRecipient>(i))
+    .sort((a, b) => a.routingOrder - b.routingOrder);
+}
+
+/** Mark one recipient completed/declined — no-op (swallowed) if already terminal. */
+export async function setRecipientOutcome(
+  dealId: string,
+  envId: string,
+  userId: string,
+  status: 'completed' | 'declined',
+  declineReason?: string,
+): Promise<boolean> {
+  const sets = ['#s = :s', 'signedAt = :now'];
+  const values: Record<string, unknown> = { ':s': status, ':now': new Date().toISOString(), ':sent': 'sent' };
+  if (declineReason !== undefined) {
+    sets.push('declineReason = :r');
+    values[':r'] = declineReason;
+  }
+  try {
+    await docClient().send(
+      new UpdateCommand({
+        TableName: tableName(),
+        Key: sigrKey(dealId, envId, userId),
+        UpdateExpression: `SET ${sets.join(', ')}`,
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: values,
+        ConditionExpression: 'attribute_exists(SK) AND #s = :sent',
+      }),
+    );
+    return true;
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') return false;
+    throw err;
+  }
+}
+
+/** Advance the envelope from `sent` to a terminal status. Idempotent via the guard. */
+export async function setEnvelopeStatus(
+  dealId: string,
+  docId: string,
+  envId: string,
+  patch: { status: SignatureStatus; signedVersion?: number; declineReason?: string; voidReason?: string },
+): Promise<boolean> {
+  const sets = ['#s = :s'];
+  const values: Record<string, unknown> = { ':s': patch.status, ':sent': 'sent' };
+  if (patch.status === 'completed') {
+    sets.push('completedAt = :now', 'signedVersion = :sv');
+    values[':now'] = new Date().toISOString();
+    values[':sv'] = patch.signedVersion;
+  }
+  if (patch.declineReason !== undefined) {
+    sets.push('declineReason = :dr');
+    values[':dr'] = patch.declineReason;
+  }
+  if (patch.voidReason !== undefined) {
+    sets.push('voidReason = :vr');
+    values[':vr'] = patch.voidReason;
+  }
+  try {
+    await docClient().send(
+      new UpdateCommand({
+        TableName: tableName(),
+        Key: sigKey(dealId, docId, envId),
+        UpdateExpression: `SET ${sets.join(', ')}`,
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: values,
+        ConditionExpression: 'attribute_exists(SK) AND #s = :sent',
+      }),
+    );
+    return true;
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') return false;
+    throw err;
+  }
 }
 
 // --- document requests ---------------------------------------------

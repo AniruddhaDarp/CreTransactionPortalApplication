@@ -137,6 +137,29 @@ export interface NotificationItem {
   occurredAt: string;
 }
 
+export interface SignatureRecipient {
+  userId: string;
+  email?: string;
+  name?: string;
+  routingOrder: number;
+  status: 'sent' | 'completed' | 'declined';
+  signedAt?: string;
+}
+
+export interface SignatureEnvelope {
+  envId: string;
+  docId: string;
+  version: number;
+  scope: string;
+  provider: string;
+  subject: string;
+  status: 'sent' | 'completed' | 'declined' | 'voided';
+  createdBy: string;
+  createdAt: string;
+  signedVersion?: number;
+  recipients: SignatureRecipient[];
+}
+
 export interface Payment {
   payId: string;
   dealId: string;
@@ -283,6 +306,25 @@ export function dealsApi(cfg: AppConfig, token: string) {
       }),
     cancelDocRequest: (id: string, reqId: string) =>
       f<{ status: string }>(`/v1/deals/${id}/doc-requests/${reqId}/cancel`, { method: 'POST' }),
+
+    // --- e-signature (Module 12, stretch) ---
+    signatures: (id: string, docId: string) =>
+      f<{ envelopes: SignatureEnvelope[] }>(`/v1/deals/${id}/documents/${docId}/signature`),
+    createSignature: (id: string, docId: string, body: Record<string, unknown>) =>
+      f<SignatureEnvelope>(`/v1/deals/${id}/documents/${docId}/signature`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    signEnvelope: (id: string, docId: string, envId: string, body?: Record<string, unknown>) =>
+      f<{ status: string }>(`/v1/deals/${id}/documents/${docId}/signature/${envId}/sign`, {
+        method: 'POST',
+        body: JSON.stringify(body ?? {}),
+      }),
+    voidEnvelope: (id: string, docId: string, envId: string, reason?: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/documents/${docId}/signature/${envId}/void`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }),
 
     // --- audit (Module 8) ---
     audit: (id: string, params: Record<string, string> = {}) => {

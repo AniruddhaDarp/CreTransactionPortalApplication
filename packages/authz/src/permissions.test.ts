@@ -80,6 +80,13 @@ describe('can — stubbed groups still give sensible answers', () => {
     expect(can('uploadDealWideDoc', other)).toBe(false);
     expect(can('createThreadSidePrivate', other)).toBe(true);
   });
+
+  it('sendForSignature is any active non-OTHER member', () => {
+    expect(can('sendForSignature', ctx({ role: 'SELLER', isAdmin: false }))).toBe(true);
+    expect(can('sendForSignature', ctx({ role: 'BUYER_ATTORNEY', side: 'buy' }))).toBe(true);
+    expect(can('sendForSignature', ctx({ role: 'OTHER', side: 'buy' }))).toBe(false);
+    expect(can('sendForSignature', ctx({ status: 'removed' }))).toBe(false);
+  });
 });
 
 describe('inviteLimits', () => {

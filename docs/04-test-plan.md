@@ -497,6 +497,60 @@ audit end to end against the deployed stack.
 
 ---
 
+## 12. E-signature (Module 12, stretch)
+
+The portal sends a document out for signature and lands the executed PDF back as
+a new version. `ESIGN_PROVIDER=fake` (the demo default) simulates signing
+in-app; `ESIGN_PROVIDER=docusign` uses real DocuSign (not exercised here — no
+account).
+
+**T12.1 Send for signature** — open a document you can see → its drawer →
+"Send this document for signature" → tick one or more members → "Send for
+signature". A `sent` envelope appears with a status chip per recipient.
+
+**T12.2 OTHER cannot send** — as an `OTHER` contributor the "Send for signature"
+box is absent; `POST …/signature` → `403`.
+
+**T12.3 Signer visibility is enforced** — try to send a `Financing` document
+(or a `side_private:buy` doc) with a sell-side member as a signer →
+`400 "signer … cannot see this document"`. The envelope is not created.
+
+**T12.4 Sign** — as a pending recipient, "Sign". Your chip flips to `completed`;
+the envelope stays `sent` until every recipient has signed.
+
+**T12.5 Completion writes a new version** — when the last recipient signs, the
+envelope flips to `completed`, a new document version appears (note: "Signed via
+fake envelope …"), and the current-version pointer moves to it. Download that
+version → it is a real PDF containing "SIGNED COPY".
+
+**T12.6 Non-signer blocked** — a member who is not a recipient sees no
+Sign/Decline buttons; `POST …/sign` → `403`.
+
+**T12.7 Decline** — a recipient clicks "Decline" (with a reason). The envelope
+flips to `declined` and no version is written. The requester gets a
+`signature_declined` notification.
+
+**T12.8 Void** — the requester (or a deal lead) clicks "Void" on a `sent`
+envelope → `voided`. A non-requester non-lead → `403`.
+
+**T12.9 Audit + notifications** — the deal's audit trail shows
+`signature.requested`, `signature.recipient_completed`, `signature.completed`,
+`signature.declined`, `signature.voided` with readable summaries. Signers get a
+`signature_requested` (in-app + action-required email when email is on); all
+members get `signature_completed`.
+
+*Automated coverage:* `packages/events` (15 document-event schemas + fixtures),
+`packages/authz` (`sendForSignature`), `services/documents`
+(`signatures.test.ts` — 9 route tests incl. signer-visibility 400, the two-signer
+completion + version write-back, decline, docusign-mode 409, void authz;
+`provider/fake.test.ts` — envelope + real-PDF output), `services/audit`
+(`describe.test.ts`), `services/notifications` (`fanout.test.ts`), `infra`
+(17-route assertion). Live E2E: `scratchpad/sig-e2e.mjs` — send → 403 non-signer
+→ both sign → completed + v2 written → download is a real "SIGNED COPY" PDF →
+decline → void → audit, against the deployed stack.
+
+---
+
 ## Results log
 
 | Test | Result | Notes / issue |
@@ -579,3 +633,12 @@ audit end to end against the deployed stack.
 | T11.6 | | |
 | T11.7 | | |
 | T11.8 | | |
+| T12.1 | | |
+| T12.2 | | |
+| T12.3 | | |
+| T12.4 | | |
+| T12.5 | | |
+| T12.6 | | |
+| T12.7 | | |
+| T12.8 | | |
+| T12.9 | | |

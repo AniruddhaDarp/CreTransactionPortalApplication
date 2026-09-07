@@ -123,6 +123,32 @@ export function plan(detailType: string, d: Record<string, unknown>): Plan | nul
         targetType: 'deal',
         targetId: str(d.dealId),
       };
+    case 'signature.requested':
+      return {
+        recipients: { users: (d.recipientUserIds as string[]) ?? [] },
+        type: 'signature_requested',
+        title: 'You were asked to sign a document',
+        targetType: 'document',
+        targetId: str(d.docId),
+        email: true,
+      };
+    case 'signature.completed':
+      return {
+        recipients: { allMembers: true },
+        type: 'signature_completed',
+        title: 'A document finished signing — the signed copy is in the document room',
+        targetType: 'document',
+        targetId: str(d.docId),
+      };
+    case 'signature.declined':
+      return {
+        recipients: { users: [str(d.createdBy)] },
+        type: 'signature_declined',
+        title: `A signature request you sent was declined${d.reason ? ` — ${str(d.reason)}` : ''}`,
+        targetType: 'document',
+        targetId: str(d.docId),
+      };
+
     case 'payment.confirmed':
       return {
         recipients: { allMembers: true },

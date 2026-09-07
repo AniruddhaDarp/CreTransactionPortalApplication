@@ -75,6 +75,17 @@ describe('plan', () => {
     expect(plan('payment.recorded', { payId: 'p' })).toBeNull();
   });
 
+  it('signature.* fan-out: requested → signers (+email), completed → all, declined → creator', () => {
+    const req = plan('signature.requested', { docId: 'doc1', recipientUserIds: ['u1', 'u2'] })!;
+    expect(req.recipients).toEqual({ users: ['u1', 'u2'] });
+    expect(req.email).toBe(true);
+    expect(plan('signature.completed', { docId: 'doc1' })!.recipients).toEqual({ allMembers: true });
+    expect(plan('signature.declined', { docId: 'doc1', createdBy: 'u9', reason: 'no' })!.recipients).toEqual({
+      users: ['u9'],
+    });
+    expect(plan('signature.recipient_completed', { docId: 'doc1', userId: 'u1' })).toBeNull();
+  });
+
   it('returns null for events it does not handle', () => {
     expect(plan('document.accessed', { docId: 'x' })).toBeNull();
   });

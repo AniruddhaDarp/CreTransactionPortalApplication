@@ -6,11 +6,12 @@ import {
   type DocumentCategory,
   type Scope,
 } from '@cre/authz';
-import { HttpError, parseBody, router, type RequestContext } from '@cre/platform';
+import { HttpError, parseBody, router, type RequestContext, type RouteHandler } from '@cre/platform';
 import { z } from 'zod';
 import * as repo from './repo.js';
 import { requireViewer, scopeMember } from './scope.js';
 import { authzCtx, emit, param } from './shared.js';
+import { signatureRoutes } from './signatures.js';
 
 const categoryEnum = z.enum(
   DOCUMENT_CATEGORIES as unknown as readonly [DocumentCategory, ...DocumentCategory[]],
@@ -57,7 +58,7 @@ function assertCanWriteScope(v: ReturnType<typeof scopeMember> & { userId?: stri
 
 const s3 = () => import('./s3.js');
 
-export const handler = router({
+const documentRoutes: Record<string, RouteHandler> = {
   'GET /v1/deals/{dealId}/documents': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
@@ -292,7 +293,9 @@ export const handler = router({
     ]);
     return { body: { status: 'cancelled' } };
   },
-});
+};
+
+export const handler = router({ ...documentRoutes, ...signatureRoutes });
 
 async function access(ctx: RequestContext, mode: 'opened' | 'downloaded') {
   const dealId = param(ctx, 'dealId');

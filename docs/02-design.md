@@ -943,7 +943,9 @@ assignment and for keeping the demo up afterward.
 - ~~Payments: record earnest-money / closing-funds movements with a
   confirmation handshake.~~ **Delivered (Module 11)** — see §17. Payer identity
   verification / actual fund movement (problem 1) remains out of scope.
-- Document e-signature for the purchase agreement and disclosures.
+- ~~Document e-signature for the purchase agreement and disclosures.~~
+  **Delivered (Module 12)** — see §17. A provider seam with an in-process fake
+  (default) and a real DocuSign JWT-grant implementation gated off.
 
 **Next — out of scope for the prototype:**
 
@@ -1113,3 +1115,44 @@ sections have been updated to match; this section is the changelog.)
   `handshake.requested` it triggers already pings the approver.
 - 4 new routes on the Deals API (26 → 30). SPA gains a **Payments** panel on the
   deal page; approve/reject of payment handshakes reuses the Milestones panel.
+
+### E-signature (Module 12, stretch)
+
+- **Provider seam, not a DocuSign hard dependency.** `services/documents/src/
+  provider/` defines `ESignatureProvider` (`createEnvelope` / `getStatus` /
+  `getSignedPdf` / `void`). `FakeProvider` (default, `ESIGN_PROVIDER=fake`)
+  drives the whole flow in-process — signing is a `POST …/sign` route and our
+  DynamoDB rows are authoritative — and `getSignedPdf` synthesises a real
+  one-page "SIGNED COPY" PDF (hand-written minimal PDF with a correct xref).
+  `DocusignProvider` (`ESIGN_PROVIDER=docusign`) is the real eSignature REST
+  v2.1 integration: JWT-Grant auth (RS256 signed with `node:crypto` — **no new
+  dependency**), envelope creation with `signHere` tabs and a `creRef` custom
+  field, `/documents/combined` fetch, void. It is gated off exactly like the
+  SES email path and carries no automated E2E (no DocuSign account in the demo).
+- **Lives in the Documents service.** A `SIG#<docId>#<envId>` envelope +
+  `SIGR#<envId>#<userId>` recipient rows in the documents table; the completed
+  PDF is written straight back as **version N+1 of the source document**
+  (`document.versioned` + `signature.completed`), with no cross-service saga.
+- **No webhook, no unauthenticated route.** The shared `router()` 401s any
+  request without a Cognito `sub`, so a DocuSign Connect webhook would need a
+  separate Lambda and a public route — a carve-out from the otherwise uniform
+  JWT API for a path that no-ops in the demo. Instead `GET …/signature`
+  **reconciles** any still-`sent` envelope by calling `provider.getStatus()`
+  (a no-op for the fake provider; a live DocuSign poll in real mode). Per-signer
+  progress in real mode is therefore not tracked — only the envelope-level
+  terminal status. Real-time completion via DocuSign Connect (HMAC-verified
+  webhook Lambda) is the production upgrade.
+- **Auth.** `sendForSignature` = any active non-OTHER member; the sender must
+  also pass `canSeeDocument` for the document, and **every chosen signer** is
+  validated against `canSeeDocument` for the document's scope + category (a
+  sell-side member can't be added to a Financing envelope). Void: the requester
+  or a deal lead. Sign: only a pending recipient, and only in fake mode.
+- **Lifecycle.** `sent → completed | declined | voided`. First decline kills the
+  envelope; all-signed triggers the version write-back (claim-then-write via a
+  conditional status flip, so a double request can't double-version).
+- Audit picks up `signature.*` via the `source: cre.*` prefix rule (summaries in
+  `describe.ts`); Notifications sends `signature.requested` to the signers
+  (+email flag), `signature.completed` to all members, `signature.declined` to
+  the requester. 4 new routes on the Documents API (13 → 17). SPA: a
+  **Signatures** block inside the per-document drawer in the Documents panel
+  (send form, per-recipient status chips, sign / decline / void).

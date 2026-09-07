@@ -60,14 +60,16 @@ describe('DocumentsStack', () => {
     });
   });
 
-  it('registers the 13 JWT-authorized document routes', () => {
-    t.resourceCountIs('AWS::ApiGatewayV2::Route', 13);
+  it('registers the 17 JWT-authorized document routes', () => {
+    t.resourceCountIs('AWS::ApiGatewayV2::Route', 17);
     t.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', { AuthorizerType: 'JWT' });
     for (const rk of [
       'POST /v1/deals/{dealId}/documents',
       'GET /v1/deals/{dealId}/documents/{docId}/versions/{n}/download',
       'DELETE /v1/deals/{dealId}/documents/{docId}',
       'POST /v1/deals/{dealId}/doc-requests/{reqId}/fulfill',
+      'POST /v1/deals/{dealId}/documents/{docId}/signature',
+      'POST /v1/deals/{dealId}/documents/{docId}/signature/{envId}/sign',
     ]) {
       t.hasResourceProperties('AWS::ApiGatewayV2::Route', { RouteKey: rk, AuthorizationType: 'JWT' });
     }

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { documentEventSchemas } from './documents.js';
 
 describe('document event schemas', () => {
-  it('has all ten event types', () => {
-    expect(Object.keys(documentEventSchemas)).toHaveLength(10);
+  it('has all fifteen event types', () => {
+    expect(Object.keys(documentEventSchemas)).toHaveLength(15);
   });
 
   it('every entry parses its fixture', () => {
@@ -43,6 +43,40 @@ describe('document event schemas', () => {
         createdBy: 'u',
       },
       'docrequest.cancelled': { dealId: 'd', reqId: 'r', scope: 'side_private:buy' },
+      'signature.requested': {
+        dealId: 'd',
+        docId: 'x',
+        envId: 'env1',
+        version: 2,
+        scope: 'deal_wide',
+        provider: 'fake',
+        recipientUserIds: ['u1', 'u2'],
+        createdBy: 'u9',
+      },
+      'signature.recipient_completed': {
+        dealId: 'd',
+        docId: 'x',
+        envId: 'env1',
+        userId: 'u1',
+        scope: 'deal_wide',
+      },
+      'signature.completed': {
+        dealId: 'd',
+        docId: 'x',
+        envId: 'env1',
+        signedVersion: 3,
+        scope: 'deal_wide',
+      },
+      'signature.declined': {
+        dealId: 'd',
+        docId: 'x',
+        envId: 'env1',
+        userId: 'u2',
+        reason: 'wrong counterparty',
+        scope: 'deal_wide',
+        createdBy: 'u9',
+      },
+      'signature.voided': { dealId: 'd', docId: 'x', envId: 'env1', scope: 'deal_wide' },
     };
     for (const [type, schema] of Object.entries(documentEventSchemas)) {
       expect(() => schema.parse(fixtures[type]), type).not.toThrow();

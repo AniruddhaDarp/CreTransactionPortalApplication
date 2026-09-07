@@ -95,6 +95,54 @@ export const docrequestCancelledSchema = z.object({
   scope: scopeSchema,
 });
 
+// --- e-signature (Module 12, stretch) --------------------------------
+
+export const signatureRequestedSchema = z.object({
+  dealId: z.string(),
+  docId: z.string(),
+  envId: z.string(),
+  version: z.number().int(),
+  scope: scopeSchema,
+  provider: z.string(),
+  recipientUserIds: z.array(z.string()),
+  createdBy: z.string(),
+});
+
+export const signatureRecipientCompletedSchema = z.object({
+  dealId: z.string(),
+  docId: z.string(),
+  envId: z.string(),
+  userId: z.string(),
+  scope: scopeSchema,
+});
+
+export const signatureCompletedSchema = z.object({
+  dealId: z.string(),
+  docId: z.string(),
+  envId: z.string(),
+  signedVersion: z.number().int(),
+  scope: scopeSchema,
+});
+
+export const signatureDeclinedSchema = z.object({
+  dealId: z.string(),
+  docId: z.string(),
+  envId: z.string(),
+  /** Absent when the decline was reported by the provider rather than an in-app signer. */
+  userId: z.string().optional(),
+  reason: z.string().optional(),
+  scope: scopeSchema,
+  createdBy: z.string(),
+});
+
+export const signatureVoidedSchema = z.object({
+  dealId: z.string(),
+  docId: z.string(),
+  envId: z.string(),
+  reason: z.string().optional(),
+  scope: scopeSchema,
+});
+
 export const documentEventSchemas = {
   'document.uploaded': documentUploadedSchema,
   'document.versioned': documentVersionedSchema,
@@ -106,6 +154,11 @@ export const documentEventSchemas = {
   'docrequest.fulfilled': docrequestFulfilledSchema,
   'docrequest.declined': docrequestDeclinedSchema,
   'docrequest.cancelled': docrequestCancelledSchema,
+  'signature.requested': signatureRequestedSchema,
+  'signature.recipient_completed': signatureRecipientCompletedSchema,
+  'signature.completed': signatureCompletedSchema,
+  'signature.declined': signatureDeclinedSchema,
+  'signature.voided': signatureVoidedSchema,
 } as const;
 
 export type DocumentEventType = keyof typeof documentEventSchemas;

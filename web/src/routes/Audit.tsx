@@ -22,6 +22,10 @@ const ACTIONS = [
   'payment.recorded',
   'payment.confirmed',
   'payment.voided',
+  'signature.requested',
+  'signature.completed',
+  'signature.declined',
+  'signature.voided',
 ];
 
 export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {

@@ -49,6 +49,7 @@ export type Action =
   | 'promoteDocument'
   | 'deleteDocument'
   | 'createDocRequest'
+  | 'sendForSignature'
   // --- payments (Module 11, stretch) ---
   | 'recordPayment'
   | 'voidPayment';
@@ -137,6 +138,10 @@ export function can(action: Action, ctx: AuthzContext): boolean {
     case 'deleteDocument':
       return admin || buyLead; // "may initiate the delete handshake"
     case 'createDocRequest':
+      return notOther;
+    case 'sendForSignature':
+      // any active non-OTHER member; the per-document scope + category check
+      // (canSeeDocument) and per-signer visibility are enforced by the caller.
       return notOther;
 
     // --- payments (Module 11) — a lead records; the counterparty confirms/voids ---
@@ -266,6 +271,7 @@ const UI_ACTIONS: Action[] = [
   'createThreadDealWide',
   'uploadDealWideDoc',
   'createDocRequest',
+  'sendForSignature',
   'recordPayment',
   'viewAudit',
 ];
