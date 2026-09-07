@@ -17,6 +17,15 @@ export type MemberStatus = 'invited' | 'active' | 'removed';
 export type InviteStatus = 'pending' | 'accepted' | 'revoked';
 export type StageStatus = 'not_started' | 'in_progress' | 'completed';
 export type HandshakeStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+export type PaymentStatus = 'recorded' | 'confirmed' | 'void';
+export type PaymentKind =
+  | 'earnest_money'
+  | 'additional_deposit'
+  | 'closing_funds'
+  | 'extension_fee'
+  | 'other';
+export type PaymentMethod = 'wire' | 'check' | 'ach' | 'other';
+export type PaymentParty = 'buyer' | 'seller' | 'escrow' | 'lender' | 'other';
 
 export type TransactItem = NonNullable<TransactWriteCommandInput['TransactItems']>[number];
 
@@ -101,6 +110,29 @@ export interface Handshake {
   decidedAt?: string;
 }
 
+export interface Payment {
+  dealId: string;
+  payId: string;
+  kind: PaymentKind;
+  amount: number;
+  method: PaymentMethod;
+  payer: PaymentParty;
+  payee: PaymentParty;
+  reference?: string;
+  paidOn: string;
+  note?: string;
+  status: PaymentStatus;
+  recordedBy: string;
+  recordedAt: string;
+  confirmHsId?: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  voidHsId?: string;
+  voidedBy?: string;
+  voidedAt?: string;
+  voidReason?: string;
+}
+
 export function tableName(): string {
   const t = process.env.DEALS_TABLE;
   if (!t) throw new Error('DEALS_TABLE env var is not set');
@@ -120,6 +152,7 @@ const apprKey = (id: string, hsId: string, uid: string) => ({
   PK: `DEAL#${id}`,
   SK: `APPR#${hsId}#${uid}`,
 });
+const payKey = (id: string, payId: string) => ({ PK: `DEAL#${id}`, SK: `PAY#${payId}` });
 
 const KEY_ATTRS = new Set(['PK', 'SK', 'GSI1PK', 'GSI1SK', 'GSI2PK', 'GSI2SK']);
 function clean<T>(item: Record<string, unknown>): T {
@@ -728,4 +761,55 @@ export async function runTransaction(items: TransactItem[]): Promise<void> {
   await docClient().send(new TransactWriteCommand({ TransactItems: items }));
 }
 
-export const keys = { dealKey, stageKey, hsKey };
+// --- payments (Module 11) ---------------------------------------------
+
+export async function putPayment(p: Payment): Promise<void> {
+  await docClient().send(
+    new PutCommand({
+      TableName: tableName(),
+      Item: { ...payKey(p.dealId, p.payId), ...p },
+      ConditionExpression: 'attribute_not_exists(SK)',
+    }),
+  );
+}
+
+export async function getPayment(dealId: string, payId: string): Promise<Payment | undefined> {
+  const r = await docClient().send(
+    new GetCommand({ TableName: tableName(), Key: payKey(dealId, payId) }),
+  );
+  return r.Item ? clean<Payment>(r.Item) : undefined;
+}
+
+export async function listPayments(dealId: string): Promise<Payment[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': 'PAY#' },
+    }),
+  );
+  return (r.Items ?? [])
+    .map((i) => clean<Payment>(i))
+    .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
+}
+
+/** Point the payment at the (re-)opened confirm or void handshake. */
+export async function setPaymentHs(
+  dealId: string,
+  payId: string,
+  field: 'confirmHsId' | 'voidHsId',
+  hsId: string,
+): Promise<void> {
+  await docClient().send(
+    new UpdateCommand({
+      TableName: tableName(),
+      Key: payKey(dealId, payId),
+      UpdateExpression: 'SET #f = :hs',
+      ExpressionAttributeNames: { '#f': field },
+      ExpressionAttributeValues: { ':hs': hsId },
+      ConditionExpression: 'attribute_exists(PK)',
+    }),
+  );
+}
+
+export const keys = { dealKey, stageKey, hsKey, payKey };

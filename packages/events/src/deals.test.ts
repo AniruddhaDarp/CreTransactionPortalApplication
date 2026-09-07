@@ -42,6 +42,9 @@ describe('deal event schemas', () => {
         'checklist.item_added',
         'checklist.item_toggled',
         'checklist.item_removed',
+        'payment.recorded',
+        'payment.confirmed',
+        'payment.voided',
       ].sort(),
     );
   });
@@ -91,6 +94,25 @@ describe('deal event schemas', () => {
       'checklist.item_added': { dealId: 'd', n: 3, itemId: 'i', title: 'Phase I' },
       'checklist.item_toggled': { dealId: 'd', n: 3, itemId: 'i', done: true },
       'checklist.item_removed': { dealId: 'd', n: 3, itemId: 'i' },
+      'payment.recorded': {
+        dealId: 'd',
+        payId: 'p',
+        kind: 'earnest_money',
+        amount: 50000,
+        method: 'wire',
+        payer: 'buyer',
+        payee: 'escrow',
+        recordedBy: 'u',
+        scope: 'deal_wide',
+      },
+      'payment.confirmed': {
+        dealId: 'd',
+        payId: 'p',
+        kind: 'earnest_money',
+        amount: 50000,
+        confirmedBy: 'admin',
+      },
+      'payment.voided': { dealId: 'd', payId: 'p', reason: 'dup' },
     };
     for (const [type, schema] of Object.entries(dealEventSchemas)) {
       expect(() => schema.parse(fixtures[type]), type).not.toThrow();

@@ -26,8 +26,8 @@ export function Home({ config, token }: { config: AppConfig; token: string }) {
     };
   }, [config, token]);
 
-  if (error) return <p>Could not load profile: {error}</p>;
-  if (!profile) return <p>Loading profile…</p>;
+  if (error) return <p className="error">Could not load profile: {error}</p>;
+  if (!profile) return <p className="muted">Loading profile…</p>;
 
   const save = async (patch: Partial<Profile>) => {
     setSaving(true);
@@ -48,35 +48,40 @@ export function Home({ config, token }: { config: AppConfig; token: string }) {
 
   return (
     <section>
-      <h2>Signed in as {profile.name}</h2>
-      <dl>
-        <dt>Email</dt>
-        <dd>{profile.email}</dd>
-        <dt>Company</dt>
-        <dd>{profile.company ?? '—'}</dd>
-        <dt>Phone</dt>
-        <dd>{profile.phone ?? '—'}</dd>
-      </dl>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const data = new FormData(e.currentTarget);
-          void save({
-            company: String(data.get('company') ?? ''),
-            phone: String(data.get('phone') ?? ''),
-          });
-        }}
-      >
-        <label>
-          Company <input name="company" defaultValue={profile.company ?? ''} />
-        </label>{' '}
-        <label>
-          Phone <input name="phone" defaultValue={profile.phone ?? ''} />
-        </label>{' '}
-        <button type="submit" disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-      </form>
+      <h2 style={{ fontSize: 20, letterSpacing: '-0.015em', marginBottom: 4 }}>{profile.name}</h2>
+      <p className="deal-header__sub" style={{ marginBottom: 20 }}>{profile.email}</p>
+
+      <div className="panel" style={{ maxWidth: 480 }}>
+        <div className="panel__head">
+          <h3>Your details</h3>
+        </div>
+        <form
+          className="panel__body form-grid"
+          style={{ maxWidth: 'none' }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const data = new FormData(e.currentTarget);
+            void save({
+              company: String(data.get('company') ?? ''),
+              phone: String(data.get('phone') ?? ''),
+            });
+          }}
+        >
+          <label className="field">
+            <span>Company</span>
+            <input className="input" name="company" defaultValue={profile.company ?? ''} />
+          </label>
+          <label className="field">
+            <span>Phone</span>
+            <input className="input" name="phone" defaultValue={profile.phone ?? ''} />
+          </label>
+          <div>
+            <button className="btn btn--primary" type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
     </section>
   );
 }

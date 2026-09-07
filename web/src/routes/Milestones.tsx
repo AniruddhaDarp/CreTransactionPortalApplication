@@ -37,44 +37,56 @@ export function Milestones({
 
   useEffect(load, [load]);
 
-  const act = (p: Promise<unknown>) =>
-    p.then(load).catch((e: unknown) => setMsg(String(e)));
-
+  const act = (p: Promise<unknown>) => p.then(load).catch((e: unknown) => setMsg(String(e)));
   const atLast = currentStage >= 6;
 
   return (
-    <section>
-      <h3>Milestones</h3>
-      {msg && <p style={{ color: '#b00' }}>{msg}</p>}
-      <ol>
-        {stages.map((s) => (
-          <li key={s.n} style={{ fontWeight: s.status === 'in_progress' ? 700 : 400 }}>
-            {s.name} — {s.status.replace('_', ' ')}
-            {s.targetDate ? ` · target ${s.targetDate}` : ''}
-          </li>
-        ))}
+    <>
+      {msg && <p className="error">{msg}</p>}
+
+      <ol className="stepper">
+        {stages.map((s) => {
+          const state =
+            s.status === 'completed' ? 'done' : s.status === 'in_progress' ? 'current' : 'todo';
+          return (
+            <li key={s.n} className={`step step--${state}`}>
+              <span className="step__dot" aria-hidden="true" />
+              <span>
+                <span className="step__name">{s.name}</span>
+                <span className="step__meta">
+                  {s.status.replace('_', ' ')}
+                  {s.targetDate ? ` · target ${s.targetDate}` : ''}
+                </span>
+              </span>
+            </li>
+          );
+        })}
       </ol>
+
       {capabilities.advanceMilestone && dealActive && !atLast && (
-        <button onClick={() => void act(api.advance(dealId))}>
-          Request advance to stage {currentStage + 1}
-        </button>
+        <div style={{ marginTop: 14 }}>
+          <button className="btn btn--primary btn--sm" onClick={() => void act(api.advance(dealId))}>
+            Request advance to stage {currentStage + 1}
+          </button>
+        </div>
       )}
 
       <h4>Checklist — current stage</h4>
-      <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+      {items.length === 0 && <p className="empty">No checklist items.</p>}
+      <ul className="checklist">
         {items.map((it) => (
           <li key={it.itemId}>
-            <label>
-              <input
-                type="checkbox"
-                checked={it.done}
-                disabled={!capabilities.editChecklist}
-                onChange={(e) =>
-                  void act(api.toggleChecklistItem(dealId, currentStage, it.itemId, e.target.checked))
-                }
-              />{' '}
+            <input
+              type="checkbox"
+              id={`chk-${it.itemId}`}
+              checked={it.done}
+              disabled={!capabilities.editChecklist}
+              onChange={(e) =>
+                void act(api.toggleChecklistItem(dealId, currentStage, it.itemId, e.target.checked))
+              }
+            />
+            <label htmlFor={`chk-${it.itemId}`} className={it.done ? 'done' : ''}>
               {it.title}
-              {it.done && it.doneBy ? ' ✓' : ''}
             </label>
           </li>
         ))}
@@ -83,23 +95,36 @@ export function Milestones({
       {handshakes.length > 0 && (
         <>
           <h4>Pending handshakes</h4>
-          <ul>
+          <div style={{ display: 'grid', gap: 8 }}>
             {handshakes.map((h) => (
-              <li key={h.hsId}>
-                <code>{h.action}</code> — initiated by {h.initiatedSide}-side{' '}
-                <button onClick={() => void act(api.approveHandshake(dealId, h.hsId))}>approve</button>{' '}
-                <button
-                  onClick={() =>
-                    void act(api.rejectHandshake(dealId, h.hsId, prompt('Reason?') ?? undefined))
-                  }
-                >
-                  reject
-                </button>
-              </li>
+              <div key={h.hsId} className="card card--warn">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span className="tag">{h.action}</span>
+                  <span className="muted" style={{ fontSize: 12.5 }}>
+                    initiated by {h.initiatedSide}-side
+                  </span>
+                  <span className="btn-row" style={{ marginLeft: 'auto' }}>
+                    <button
+                      className="btn btn--primary btn--sm"
+                      onClick={() => void act(api.approveHandshake(dealId, h.hsId))}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="btn btn--danger btn--sm"
+                      onClick={() =>
+                        void act(api.rejectHandshake(dealId, h.hsId, prompt('Reason?') ?? undefined))
+                      }
+                    >
+                      Reject
+                    </button>
+                  </span>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </>
       )}
-    </section>
+    </>
   );
 }

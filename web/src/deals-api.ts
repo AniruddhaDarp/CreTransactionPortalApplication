@@ -137,6 +137,27 @@ export interface NotificationItem {
   occurredAt: string;
 }
 
+export interface Payment {
+  payId: string;
+  dealId: string;
+  kind: string;
+  amount: number;
+  method: string;
+  payer: string;
+  payee: string;
+  reference?: string;
+  paidOn: string;
+  note?: string;
+  status: 'recorded' | 'confirmed' | 'void';
+  recordedBy: string;
+  recordedAt: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  voidedBy?: string;
+  voidedAt?: string;
+  voidReason?: string;
+}
+
 export interface AuditEvent {
   eventId: string;
   occurredAt: string;
@@ -270,6 +291,23 @@ export function dealsApi(cfg: AppConfig, token: string) {
         `/v1/deals/${id}/audit${qs ? `?${qs}` : ''}`,
       );
     },
+    // --- payments (Module 11, stretch) ---
+    payments: (id: string) => f<{ payments: Payment[] }>(`/v1/deals/${id}/payments`),
+    recordPayment: (id: string, body: Record<string, unknown>) =>
+      f<Payment & { confirmHsId: string }>(`/v1/deals/${id}/payments`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    confirmPayment: (id: string, payId: string) =>
+      f<{ handshakeId: string; status: string }>(`/v1/deals/${id}/payments/${payId}/confirm`, {
+        method: 'POST',
+      }),
+    voidPayment: (id: string, payId: string, reason?: string) =>
+      f<{ handshakeId: string; status: string }>(`/v1/deals/${id}/payments/${payId}/void`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }),
+
     // --- notifications (Module 9) ---
     notifications: () =>
       f<{ notifications: NotificationItem[]; unreadCount: number }>('/v1/notifications'),

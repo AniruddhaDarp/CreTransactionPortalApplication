@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AuditEvent, DealsApi } from '../deals-api.js';
+import { scopeTag } from '../theme.js';
 
 const ACTIONS = [
   '',
@@ -18,6 +19,9 @@ const ACTIONS = [
   'document.accessed',
   'document.archived',
   'docrequest.created',
+  'payment.recorded',
+  'payment.confirmed',
+  'payment.voided',
 ];
 
 export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
@@ -70,23 +74,33 @@ export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
   };
 
   return (
-    <section>
-      <h3>Audit trail</h3>
-      <p style={{ fontSize: '0.85em', color: '#555' }}>
-        You see entries in scopes: {scopes.join(', ') || '—'}. There is no cross-side view.
+    <>
+      <p className="scope-note">
+        Showing entries in your visible scopes:{' '}
+        {scopes.length
+          ? scopes.map((s) => (
+              <span key={s} className={scopeTag(s).cls} style={{ marginRight: 4 }}>
+                {scopeTag(s).label}
+              </span>
+            ))
+          : '—'}
+        . There is no cross-side view.
       </p>
-      {err && <p style={{ color: '#b00' }}>{err}</p>}
+      {err && <p className="error">{err}</p>}
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
-        <label>
-          actor
-          <br />
-          <input value={actor} onChange={(e) => setActor(e.target.value)} placeholder="user id" />
+      <div className="toolbar">
+        <label className="field">
+          <span>Actor</span>
+          <input
+            className="input"
+            value={actor}
+            onChange={(e) => setActor(e.target.value)}
+            placeholder="user id"
+          />
         </label>
-        <label>
-          action
-          <br />
-          <select value={action} onChange={(e) => setAction(e.target.value)}>
+        <label className="field">
+          <span>Action</span>
+          <select className="select" value={action} onChange={(e) => setAction(e.target.value)}>
             {ACTIONS.map((a) => (
               <option key={a} value={a}>
                 {a || '(any)'}
@@ -94,48 +108,68 @@ export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
             ))}
           </select>
         </label>
-        <label>
-          from
-          <br />
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <label className="field">
+          <span>From</span>
+          <input
+            className="input"
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
         </label>
-        <label>
-          to
-          <br />
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        <label className="field">
+          <span>To</span>
+          <input className="input" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </label>
-        <button onClick={load}>Apply</button>
-        <button onClick={() => void download('csv')}>Export CSV</button>
-        <button onClick={() => void download('json')}>Export JSON</button>
+        <button className="btn btn--sm" onClick={load}>
+          Apply
+        </button>
+        <span className="spacer" />
+        <button className="btn btn--ghost btn--sm" onClick={() => void download('csv')}>
+          Export CSV
+        </button>
+        <button className="btn btn--ghost btn--sm" onClick={() => void download('json')}>
+          Export JSON
+        </button>
       </div>
 
-      <table style={{ marginTop: '1rem', borderCollapse: 'collapse', fontSize: '0.88em' }}>
-        <thead>
-          <tr>
-            <th align="left">When</th>
-            <th align="left">Actor</th>
-            <th align="left">Action</th>
-            <th align="left">Scope</th>
-            <th align="left">Summary</th>
-          </tr>
-        </thead>
-        <tbody>
-          {events.map((e) => (
-            <tr key={e.eventId}>
-              <td>{e.occurredAt.slice(0, 19).replace('T', ' ')}</td>
-              <td>{e.actorId ? e.actorId.slice(0, 8) : '—'}</td>
-              <td>{e.detailType}</td>
-              <td>{e.scope}</td>
-              <td>{e.summary}</td>
-            </tr>
-          ))}
-          {events.length === 0 && (
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
             <tr>
-              <td colSpan={5}>No audit entries in your scope for this filter.</td>
+              <th>When</th>
+              <th>Actor</th>
+              <th>Action</th>
+              <th>Scope</th>
+              <th>Summary</th>
             </tr>
-          )}
-        </tbody>
-      </table>
-    </section>
+          </thead>
+          <tbody>
+            {events.map((e) => (
+              <tr key={e.eventId}>
+                <td className="num" style={{ whiteSpace: 'nowrap' }}>
+                  {e.occurredAt.slice(0, 19).replace('T', ' ')}
+                </td>
+                <td className="num">{e.actorId ? e.actorId.slice(0, 8) : '—'}</td>
+                <td className="mono" style={{ fontSize: 12 }}>
+                  {e.detailType}
+                </td>
+                <td>
+                  <span className={scopeTag(e.scope).cls}>{scopeTag(e.scope).label}</span>
+                </td>
+                <td>{e.summary}</td>
+              </tr>
+            ))}
+            {events.length === 0 && (
+              <tr>
+                <td colSpan={5}>
+                  <span className="empty">No audit entries in your scope for this filter.</span>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

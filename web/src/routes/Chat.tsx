@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatMessage, ChatThread, DealsApi, FeedItem } from '../deals-api.js';
+import { scopeTag } from '../theme.js';
 
 const SCOPES = [
   'deal_wide',
@@ -53,11 +54,12 @@ export function Chat({ api, dealId, myUserId }: { api: DealsApi; dealId: string;
   }, [api, dealId, openId]);
 
   return (
-    <section>
-      <h3>Communication</h3>
-      {err && <p style={{ color: '#b00' }}>{err}</p>}
+    <>
+      {err && <p className="error">{err}</p>}
 
       <form
+        className="form-inline"
+        style={{ marginBottom: 14 }}
         onSubmit={(e) => {
           e.preventDefault();
           const d = new FormData(e.currentTarget);
@@ -71,45 +73,69 @@ export function Chat({ api, dealId, myUserId }: { api: DealsApi; dealId: string;
           e.currentTarget.reset();
         }}
       >
-        <input name="subject" placeholder="New thread subject" required />{' '}
-        <select name="scope">
-          {SCOPES.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>{' '}
-        <button type="submit">Start thread</button>
+        <label className="field" style={{ flex: 1, minWidth: 180 }}>
+          <span>New thread</span>
+          <input className="input" name="subject" placeholder="Subject" required />
+        </label>
+        <label className="field">
+          <span>Visibility</span>
+          <select className="select" name="scope">
+            {SCOPES.map((s) => (
+              <option key={s} value={s}>
+                {scopeTag(s).label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="btn" type="submit">
+          Start thread
+        </button>
       </form>
 
-      <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem' }}>
-        <ul style={{ listStyle: 'none', paddingLeft: 0, minWidth: 180 }}>
-          {threads.map((t) => (
-            <li key={t.threadId}>
+      <div className="chat">
+        <div className="thread-rail">
+          {threads.length === 0 && (
+            <div style={{ padding: 12 }}>
+              <span className="empty">No threads yet.</span>
+            </div>
+          )}
+          {threads.map((t) => {
+            const s = scopeTag(t.scope);
+            return (
               <button
+                key={t.threadId}
+                className={`thread${t.threadId === openId ? ' is-active' : ''}`}
                 onClick={() => setOpenId(t.threadId)}
-                style={{ fontWeight: t.threadId === openId ? 700 : 400 }}
               >
-                {t.subject}
+                <span className="thread__subject">{t.subject}</span>
+                <span className={s.cls}>{s.label}</span>
               </button>
-              <br />
-              <small>{t.scope}</small>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
 
-        <div style={{ flex: 1 }}>
+        <div className="chat__main">
           {openId ? (
             <>
-              <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #ccc', padding: 8 }}>
+              <div className="msg-list">
                 {messages.map((m) => (
-                  <p key={m.msgId} style={{ margin: '4px 0', fontStyle: m.system ? 'italic' : undefined }}>
-                    <strong>{m.authorId === myUserId ? 'you' : m.authorId.slice(0, 6)}:</strong>{' '}
-                    {m.body}
-                    {m.editedAt ? ' (edited)' : ''}
-                  </p>
+                  <div
+                    key={m.msgId}
+                    className={`msg${m.system ? ' msg--system' : m.authorId === myUserId ? ' msg--me' : ''}`}
+                  >
+                    {!m.system && (
+                      <span className="msg__author">
+                        {m.authorId === myUserId ? 'You' : m.authorId.slice(0, 6)}
+                      </span>
+                    )}
+                    {m.deletedAt ? <em className="muted">message removed</em> : m.body}
+                    {m.editedAt && !m.deletedAt && <span className="msg__edited"> (edited)</span>}
+                  </div>
                 ))}
-                {messages.length === 0 && <p>No messages yet.</p>}
+                {messages.length === 0 && <span className="empty">No messages yet.</span>}
               </div>
               <form
+                className="composer"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const body = draft.current?.value.trim();
@@ -122,25 +148,34 @@ export function Chat({ api, dealId, myUserId }: { api: DealsApi; dealId: string;
                     .catch((x: unknown) => setErr(String(x)));
                 }}
               >
-                <input ref={draft} placeholder="Message…" style={{ width: '80%' }} />{' '}
-                <button type="submit">Send</button>
+                <input ref={draft} className="input" placeholder="Write a message…" />
+                <button className="btn btn--primary" type="submit">
+                  Send
+                </button>
               </form>
             </>
           ) : (
-            <p>Select a thread.</p>
+            <div style={{ padding: 24 }}>
+              <span className="empty">Select a thread to read it.</span>
+            </div>
           )}
         </div>
       </div>
 
       <h4>Activity</h4>
-      <ul>
+      <ul className="feed">
         {feed.map((f, i) => (
           <li key={i}>
-            <small>{f.createdAt.slice(0, 16).replace('T', ' ')}</small> — {f.summary}
+            <time>{f.createdAt.slice(0, 16).replace('T', ' ')}</time>
+            <span>{f.summary}</span>
           </li>
         ))}
-        {feed.length === 0 && <li>Nothing yet.</li>}
+        {feed.length === 0 && (
+          <li>
+            <span className="empty">Nothing yet.</span>
+          </li>
+        )}
       </ul>
-    </section>
+    </>
   );
 }

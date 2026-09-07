@@ -175,6 +175,70 @@ const applyDeleteDocument: Applier = (_deal, payload) => {
   return { effects: [], events: [], saga: 'awaiting_document' };
 };
 
+const applyConfirmPayment: Applier = (deal, payload, actorId) => {
+  const payId = String(payload.payId ?? '');
+  if (!payId) throw new HttpError(400, 'payId is required');
+  const now = new Date().toISOString();
+  return {
+    effects: [
+      {
+        Update: {
+          TableName: T(),
+          Key: K.payKey(deal.dealId, payId),
+          UpdateExpression: 'SET #s = :confirmed, confirmedBy = :by, confirmedAt = :now',
+          ExpressionAttributeNames: { '#s': 'status' },
+          ExpressionAttributeValues: {
+            ':confirmed': 'confirmed',
+            ':by': actorId,
+            ':now': now,
+            ':recorded': 'recorded',
+          },
+          ConditionExpression: '#s = :recorded',
+        },
+      },
+    ],
+    events: [
+      {
+        type: 'payment.confirmed',
+        detail: { dealId: deal.dealId, payId, kind: payload.kind, amount: payload.amount, confirmedBy: actorId },
+      },
+    ],
+  };
+};
+
+const applyVoidPayment: Applier = (deal, payload, actorId) => {
+  const payId = String(payload.payId ?? '');
+  if (!payId) throw new HttpError(400, 'payId is required');
+  const reason = payload.reason === undefined ? undefined : String(payload.reason);
+  const now = new Date().toISOString();
+  const sets = ['#s = :void', 'voidedBy = :by', 'voidedAt = :now'];
+  const values: Record<string, unknown> = {
+    ':void': 'void',
+    ':by': actorId,
+    ':now': now,
+    ':voidcmp': 'void',
+  };
+  if (reason !== undefined) {
+    sets.push('voidReason = :reason');
+    values[':reason'] = reason;
+  }
+  return {
+    effects: [
+      {
+        Update: {
+          TableName: T(),
+          Key: K.payKey(deal.dealId, payId),
+          UpdateExpression: `SET ${sets.join(', ')}`,
+          ExpressionAttributeNames: { '#s': 'status' },
+          ExpressionAttributeValues: values,
+          ConditionExpression: 'attribute_exists(PK) AND #s <> :voidcmp',
+        },
+      },
+    ],
+    events: [{ type: 'payment.voided', detail: { dealId: deal.dealId, payId, reason } }],
+  };
+};
+
 const REGISTRY: Record<HandshakeAction, Applier> = {
   advance_stage: applyAdvance,
   close_deal: applyStatus('CLOSED'),
@@ -182,6 +246,8 @@ const REGISTRY: Record<HandshakeAction, Applier> = {
   edit_price: applyEditPrice,
   edit_dates: applyEditDates,
   delete_document: applyDeleteDocument,
+  confirm_payment: applyConfirmPayment,
+  void_payment: applyVoidPayment,
 };
 
 // --- orchestration -------------------------------------------------------

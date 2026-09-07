@@ -131,12 +131,16 @@ Deliberate scope cuts for the prototype — the full list with rationale is in
 - **Short polling** (3–30 s) instead of WebSockets/AppSync.
 - **No in-app bidding / pre-contract stages** — a deal starts at an accepted
   offer.
-- Wire-fraud prevention (payments + payer identity) and deadline/contingency
-  automation are named as the next problems to tackle, not built.
+- **Payments are recorded, not processed.** Module 11 (stretch) adds a
+  confirmation-handshake-gated payment ledger on each deal (earnest money,
+  deposits, closing funds); the portal never moves money and does no payer
+  identity verification. Wire-fraud prevention and deadline/contingency
+  automation remain named as the next problems to tackle, not built.
 
 ## Build history
 
-Built in ten reviewable modules, one commit each — see
-[`docs/03-prompt-log.md`](docs/03-prompt-log.md) for the prompt, context, and
-outcome of each. Every module ends green (`pnpm -r test`, `pnpm lint`,
-`cdk synth --strict`) and was deployed + E2E-verified against the live stack.
+Built in reviewable modules, one commit each — ten core modules plus Module 11
+(payments, stretch) — see [`docs/03-prompt-log.md`](docs/03-prompt-log.md) for
+the prompt, context, and outcome of each. Every module ends green
+(`pnpm -r test`, `pnpm lint`, `cdk synth --strict`) and was deployed +
+E2E-verified against the live stack.

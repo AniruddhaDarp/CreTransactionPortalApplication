@@ -127,6 +127,34 @@ export const checklistItemRemovedSchema = z.object({
   itemId: z.string(),
 });
 
+// --- payments (Module 11, stretch) ------------------------------------
+
+export const paymentRecordedSchema = z.object({
+  dealId: z.string(),
+  payId: z.string(),
+  kind: z.string(),
+  amount: z.number(),
+  method: z.string(),
+  payer: z.string(),
+  payee: z.string(),
+  recordedBy: z.string(),
+  scope: z.string(),
+});
+
+export const paymentConfirmedSchema = z.object({
+  dealId: z.string(),
+  payId: z.string(),
+  kind: z.string(),
+  amount: z.number(),
+  confirmedBy: z.string(),
+});
+
+export const paymentVoidedSchema = z.object({
+  dealId: z.string(),
+  payId: z.string(),
+  reason: z.string().optional(),
+});
+
 /** Registry: `detail-type` -> schema, for producer/consumer contract tests. */
 export const dealEventSchemas = {
   'deal.created': dealCreatedSchema,
@@ -144,6 +172,9 @@ export const dealEventSchemas = {
   'checklist.item_added': checklistItemAddedSchema,
   'checklist.item_toggled': checklistItemToggledSchema,
   'checklist.item_removed': checklistItemRemovedSchema,
+  'payment.recorded': paymentRecordedSchema,
+  'payment.confirmed': paymentConfirmedSchema,
+  'payment.voided': paymentVoidedSchema,
 } as const;
 
 export type DealEventType = keyof typeof dealEventSchemas;

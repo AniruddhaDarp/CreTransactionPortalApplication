@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Capabilities, DocRequest, DocumentRow, DocVersion, DealsApi } from '../deals-api.js';
+import { scopeTag } from '../theme.js';
 
 const CATEGORIES = [
   'Purchase Agreement',
@@ -135,114 +136,174 @@ export function Documents({
   };
 
   return (
-    <section>
-      <h3>Document room</h3>
-      {err && <p style={{ color: '#b00' }}>{err}</p>}
+    <>
+      {err && <p className="error">{err}</p>}
 
       <form
+        className="form-inline"
+        style={{ marginBottom: 14 }}
         onSubmit={(e) => {
           e.preventDefault();
           void submitUpload(e.currentTarget);
         }}
       >
-        <input name="title" placeholder="Document title" required />{' '}
-        <select name="category">
-          {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>{' '}
-        <select name="scope">
-          {SCOPES.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>{' '}
-        <input name="description" placeholder="description (optional)" />{' '}
-        <input ref={uploadFile} type="file" required />{' '}
-        <button type="submit" disabled={busy}>
+        <label className="field" style={{ minWidth: 160 }}>
+          <span>Title</span>
+          <input className="input" name="title" placeholder="Document title" required />
+        </label>
+        <label className="field">
+          <span>Category</span>
+          <select className="select" name="category">
+            {CATEGORIES.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Visibility</span>
+          <select className="select" name="scope">
+            {SCOPES.map((s) => (
+              <option key={s} value={s}>
+                {scopeTag(s).label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Notes (optional)</span>
+          <input className="input" name="description" placeholder="—" />
+        </label>
+        <label className="field">
+          <span>File</span>
+          <input className="input" ref={uploadFile} type="file" required />
+        </label>
+        <button className="btn btn--primary" type="submit" disabled={busy}>
           {busy ? 'Uploading…' : 'Upload'}
         </button>
       </form>
 
-      <table style={{ marginTop: '1rem', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th align="left">Title</th>
-            <th align="left">Category</th>
-            <th align="left">Scope</th>
-            <th align="left">v</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {docs.map((doc) => (
-            <tr key={doc.docId}>
-              <td>
-                <button onClick={() => setOpenId(openId === doc.docId ? null : doc.docId)}>
-                  {doc.title}
-                </button>
-              </td>
-              <td>{doc.category}</td>
-              <td>{doc.scope}</td>
-              <td>{doc.currentVersion}</td>
-              <td>
-                <button onClick={() => open(doc.docId, doc.currentVersion, 'view')}>view</button>{' '}
-                <button onClick={() => open(doc.docId, doc.currentVersion, 'download')}>
-                  download
-                </button>{' '}
-                {doc.scope.startsWith('side_private') && capabilities.promoteDocument && (
-                  <button onClick={() => act(api.promoteDocument(dealId, doc.docId))}>
-                    promote → deal-wide
-                  </button>
-                )}{' '}
-                {capabilities.deleteDocument && (
-                  <button
-                    onClick={() =>
-                      act(
-                        api
-                          .deleteDocument(dealId, doc.docId)
-                          .then(() =>
-                            setErr('Delete requested — a counterparty lead must approve the handshake.'),
-                          ),
-                      )
-                    }
-                  >
-                    request delete
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-          {docs.length === 0 && (
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
             <tr>
-              <td colSpan={5}>No documents visible to you.</td>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Visibility</th>
+              <th>v</th>
+              <th></th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {docs.map((doc) => {
+              const s = scopeTag(doc.scope);
+              return (
+                <tr key={doc.docId}>
+                  <td>
+                    <button
+                      className="linkbtn"
+                      onClick={() => setOpenId(openId === doc.docId ? null : doc.docId)}
+                    >
+                      {doc.title}
+                    </button>
+                  </td>
+                  <td className="muted">{doc.category}</td>
+                  <td>
+                    <span className={s.cls}>{s.label}</span>
+                  </td>
+                  <td className="num">{doc.currentVersion}</td>
+                  <td>
+                    <span className="btn-row">
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => open(doc.docId, doc.currentVersion, 'view')}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => open(doc.docId, doc.currentVersion, 'download')}
+                      >
+                        Download
+                      </button>
+                      {doc.scope.startsWith('side_private') && capabilities.promoteDocument && (
+                        <button
+                          className="btn btn--ghost btn--sm"
+                          onClick={() => act(api.promoteDocument(dealId, doc.docId))}
+                        >
+                          Promote → deal-wide
+                        </button>
+                      )}
+                      {capabilities.deleteDocument && (
+                        <button
+                          className="btn btn--danger btn--sm"
+                          onClick={() =>
+                            act(
+                              api
+                                .deleteDocument(dealId, doc.docId)
+                                .then(() =>
+                                  setErr(
+                                    'Delete requested — a counterparty lead must approve the handshake.',
+                                  ),
+                                ),
+                            )
+                          }
+                        >
+                          Request delete
+                        </button>
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+            {docs.length === 0 && (
+              <tr>
+                <td colSpan={5}>
+                  <span className="empty">No documents visible to you.</span>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {openId && (
-        <div style={{ border: '1px solid #ccc', padding: 8, marginTop: 8 }}>
-          <strong>Versions</strong>
-          <ul>
+        <div className="card" style={{ marginTop: 10 }}>
+          <h4 style={{ marginTop: 0 }}>Versions</h4>
+          <ul className="section-list">
             {versions.map((v) => (
               <li key={v.n}>
-                v{v.n} — {v.filename}{' '}
-                <button onClick={() => open(openId, v.n, 'view')}>view</button>{' '}
-                <button onClick={() => open(openId, v.n, 'download')}>download</button>
-                {v.note ? ` — ${v.note}` : ''}
+                <span className="num">v{v.n}</span>
+                <span>{v.filename}</span>
+                {v.note && <span className="muted">— {v.note}</span>}
+                <span className="btn-row" style={{ marginLeft: 'auto' }}>
+                  <button className="btn btn--ghost btn--sm" onClick={() => open(openId, v.n, 'view')}>
+                    View
+                  </button>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => open(openId, v.n, 'download')}
+                  >
+                    Download
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
-          <input ref={versionFile} type="file" />{' '}
-          <button disabled={busy} onClick={() => void submitVersion(openId)}>
-            Add version
-          </button>
+          <div className="btn-row" style={{ marginTop: 8 }}>
+            <input className="input" ref={versionFile} type="file" style={{ maxWidth: 260 }} />
+            <button className="btn btn--sm" disabled={busy} onClick={() => void submitVersion(openId)}>
+              Add version
+            </button>
+          </div>
         </div>
       )}
 
       <h4>Document requests</h4>
       {capabilities.createDocRequest && (
         <form
+          className="form-inline"
+          style={{ marginBottom: 12 }}
           onSubmit={(e) => {
             e.preventDefault();
             const d = new FormData(e.currentTarget);
@@ -257,51 +318,82 @@ export function Documents({
             e.currentTarget.reset();
           }}
         >
-          <select name="category">
-            {CATEGORIES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>{' '}
-          <select name="scope">
-            {SCOPES.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>{' '}
-          <input name="targetRole" placeholder="target role (e.g. SELLER_AGENT)" required />{' '}
-          <input name="note" placeholder="note" />{' '}
-          <button type="submit">Request</button>
+          <label className="field">
+            <span>Category</span>
+            <select className="select" name="category">
+              {CATEGORIES.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>Visibility</span>
+            <select className="select" name="scope">
+              {SCOPES.map((s) => (
+                <option key={s} value={s}>
+                  {scopeTag(s).label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>Target role</span>
+            <input className="input" name="targetRole" placeholder="e.g. SELLER_AGENT" required />
+          </label>
+          <label className="field" style={{ minWidth: 150 }}>
+            <span>Note</span>
+            <input className="input" name="note" placeholder="—" />
+          </label>
+          <button className="btn" type="submit">
+            Request
+          </button>
         </form>
       )}
-      <ul>
+      <ul className="section-list">
         {requests.map((r) => (
           <li key={r.reqId}>
-            [{r.status}] {r.category} · {r.scope}
-            {r.targetRole ? ` · for ${r.targetRole}` : ''}
-            {r.note ? ` — ${r.note}` : ''}{' '}
+            <span className={`pill pill--${r.status === 'open' ? 'warn' : r.status === 'fulfilled' ? 'ok' : 'danger'}`}>
+              {r.status}
+            </span>
+            <span>{r.category}</span>
+            <span className={scopeTag(r.scope).cls}>{scopeTag(r.scope).label}</span>
+            {r.targetRole && <span className="muted">for {r.targetRole}</span>}
+            {r.note && <span className="muted">— {r.note}</span>}
             {r.status === 'open' && (
-              <>
+              <span className="btn-row" style={{ marginLeft: 'auto' }}>
                 <button
+                  className="btn btn--ghost btn--sm"
                   onClick={() => {
                     const docId = window.prompt('docId that fulfills this request?');
                     if (docId) act(api.fulfillDocRequest(dealId, r.reqId, docId));
                   }}
                 >
-                  fulfill
-                </button>{' '}
+                  Fulfil
+                </button>
                 <button
+                  className="btn btn--ghost btn--sm"
                   onClick={() =>
                     act(api.declineDocRequest(dealId, r.reqId, window.prompt('reason?') || undefined))
                   }
                 >
-                  decline
-                </button>{' '}
-                <button onClick={() => act(api.cancelDocRequest(dealId, r.reqId))}>cancel</button>
-              </>
+                  Decline
+                </button>
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => act(api.cancelDocRequest(dealId, r.reqId))}
+                >
+                  Cancel
+                </button>
+              </span>
             )}
           </li>
         ))}
-        {requests.length === 0 && <li>None.</li>}
+        {requests.length === 0 && (
+          <li>
+            <span className="empty">None.</span>
+          </li>
+        )}
       </ul>
-    </section>
+    </>
   );
 }

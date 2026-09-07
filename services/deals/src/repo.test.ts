@@ -7,7 +7,16 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { acceptInvite, createDeal, getDeal, listBuySideRoster, listMyDeals } from './repo.js';
+import {
+  acceptInvite,
+  createDeal,
+  getDeal,
+  listBuySideRoster,
+  listMyDeals,
+  listPayments,
+  putPayment,
+} from './repo.js';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
 
 const ddb = mockClient(DynamoDBDocumentClient);
 process.env.DEALS_TABLE = 'deals-test';
@@ -103,5 +112,37 @@ describe('deals repo', () => {
       { role: 'BUYER', status: 'active' },
       { role: 'BUYER_AGENT', status: 'invited' },
     ]);
+  });
+
+  it('putPayment writes a PAY# item guarded against overwrite', async () => {
+    ddb.on(PutCommand).resolves({});
+    await putPayment({
+      dealId: 'd1',
+      payId: 'p1',
+      kind: 'earnest_money',
+      amount: 50_000,
+      method: 'wire',
+      payer: 'buyer',
+      payee: 'escrow',
+      paidOn: '2026-09-01',
+      status: 'recorded',
+      recordedBy: 'u1',
+      recordedAt: 't',
+    });
+    const put = ddb.commandCalls(PutCommand)[0]!.args[0].input;
+    expect((put.Item as Record<string, unknown>).SK).toBe('PAY#p1');
+    expect(put.ConditionExpression).toContain('attribute_not_exists');
+  });
+
+  it('listPayments strips keys and sorts by recordedAt', async () => {
+    ddb.on(QueryCommand).resolves({
+      Items: [
+        { PK: 'DEAL#d1', SK: 'PAY#b', payId: 'b', recordedAt: '2026-02-01', status: 'recorded' },
+        { PK: 'DEAL#d1', SK: 'PAY#a', payId: 'a', recordedAt: '2026-01-01', status: 'confirmed' },
+      ],
+    });
+    const rows = await listPayments('d1');
+    expect(rows.map((r) => r.payId)).toEqual(['a', 'b']);
+    expect(rows[0]).not.toHaveProperty('PK');
   });
 });

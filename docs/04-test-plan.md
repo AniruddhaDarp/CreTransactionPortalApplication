@@ -72,9 +72,11 @@ curl -s -H "authorization: Bearer $TOK" "$API/v1/deals" | jq
 
 - **Email is disabled.** No invitation or action-required email is sent.
   Invitations come back as a link (`acceptUrl`) the inviter shares.
-- **`GET /v1/me` 404s for seeded users.** They are created with
-  `admin-create-user`, which doesn't fire the profile-provisioning trigger.
-  A genuine hosted-UI sign-up (test 2.x) does get a profile.
+- **Seeded users' profiles are provisioned by the script, not the trigger.**
+  `admin-create-user` doesn't fire `PostConfirmation`, so `seed.mjs` writes the
+  `accounts` profile row directly (`provisionProfile`). `GET /v1/me` therefore
+  works for a seeded login. (A pre-existing seeded cohort from before this
+  change needs a re-`seed.mjs`, or those rows written by hand.)
 - **Projection lag.** After a member joins, their scoped views (chat, docs,
   audit) 403 for ~2–10 s until the `member.joined` event is consumed, then 200.
 - **Polling, not push.** The bell (30 s), thread list / activity (15 s), open
@@ -118,7 +120,8 @@ same cap the seed script works around; try again later or skip.)_
 name/email show (the post-confirmation trigger created the row).
 
 **T2.3 `[API]` `GET /v1/me`** — token for the T2.1 user → `GET $API/v1/me` →
-`200` with your profile. For a **seeded** user → `404` (documented gap).
+`200` with your profile. A **seeded** user also → `200` (the seed script writes
+the profile row directly, since `admin-create-user` skips the trigger).
 
 **T2.4 `[API]` `PUT /v1/me`** — `PUT $API/v1/me` `{"company":"Acme","phone":"512-555-0100"}`
 as the T2.1 user → `200`, echoes the updated profile. Re-`GET` confirms.
@@ -442,6 +445,58 @@ should be within a few dollars (all serverless, pay-per-use).
 
 ---
 
+## 11. Payments (Module 11, stretch)
+
+The portal records payments; it never moves money. A deal lead records a
+payment; the counterparty lead confirms it (or voids it) through a handshake.
+
+**T11.1 Record a payment** — as `seed-selleragent` (admin) or a buy-side lead,
+open a deal → Payments panel → "Record a payment" (kind `earnest_money`, amount,
+method `wire`, paid-on). Expect `201`; the row appears with status **recorded**
+and a pending `confirm_payment` handshake is opened.
+
+**T11.2 Non-lead cannot record** — as `seed-seller`, `seed-buyerattorney`,
+`seed-lender`, or an `OTHER` member, the "Record a payment" form is hidden;
+`POST /v1/deals/{id}/payments` returns `403`.
+
+**T11.3 Confirm handshake routes to the counterparty** — the recording side does
+**not** see an approve button for its own `confirm_payment`; the opposite-side
+lead sees it in the Milestones "pending handshakes" panel and in
+`GET /v1/handshakes`. Approve → the payment flips to **confirmed** with
+`confirmedBy` set.
+
+**T11.4 Reject then re-request** — reject the `confirm_payment` handshake (with a
+reason). The payment stays **recorded**. "Request confirm" on the row opens a
+fresh handshake; a second one while the first is still pending → `409`.
+
+**T11.5 Void needs a handshake** — on a `recorded` *or* `confirmed` payment,
+click Void (give a reason). Expect `202` and a pending `void_payment` handshake.
+The payment only becomes **void** after the counterparty approves. A second void
+on an already-void payment → `409`.
+
+**T11.6 Deal must be active** — on a `CLOSED` / `CANCELLED` deal,
+`POST /v1/deals/{id}/payments` → `409`; the record form is hidden.
+
+**T11.7 Audit + notifications** — after confirm and void, the deal's audit trail
+shows `payment.recorded` ("… pending confirmation"), `payment.confirmed`
+("earnest_money $N") and `payment.voided` ("… — <reason>"). Every active member
+gets a `payment_confirmed` / `payment_voided` in-app notification;
+`payment.recorded` raises none of its own (the `handshake_pending` to the
+approver covers it).
+
+**T11.8 Payments are deal-wide** — a `TITLE_AGENT` or `OTHER` member (who cannot
+record) can still see the full payments list. There is no side-private payment.
+
+*Automated coverage:* `packages/authz` (record/void authz, handshake-action
+mapping), `services/deals` (`payments.test.ts` — 10 route tests;
+`handshake.test.ts` — confirm/void appliers; `repo.test.ts` — `PAY#` writes),
+`services/audit` (`describe.test.ts`), `services/notifications`
+(`fanout.test.ts`), `infra` (30-route assertion). Live E2E:
+`scratchpad/pay-e2e.mjs` exercised record → confirm → void → double-void 409 →
+audit end to end against the deployed stack.
+
+---
+
 ## Results log
 
 | Test | Result | Notes / issue |
@@ -516,3 +571,11 @@ should be within a few dollars (all serverless, pay-per-use).
 | T10.3 | | |
 | T10.4 | | |
 | T10.5 | | |
+| T11.1 | | |
+| T11.2 | | |
+| T11.3 | | |
+| T11.4 | | |
+| T11.5 | | |
+| T11.6 | | |
+| T11.7 | | |
+| T11.8 | | |

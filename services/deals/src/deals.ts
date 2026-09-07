@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { buildCtx } from './context.js';
 import * as handshake from './handshake.js';
 import { handshakeRoutes } from './handshakes.js';
+import { paymentRoutes } from './payments.js';
 import type { DealMeta } from './repo.js';
 import * as repo from './repo.js';
 import { emit, param, requireMember, WEB_ORIGIN } from './shared.js';
@@ -416,4 +417,9 @@ const dealRoutes: Record<string, RouteHandler> = {
   },
 };
 
-export const handler = router({ ...dealRoutes, ...stageRoutes, ...handshakeRoutes });
+export const handler = router({
+  ...dealRoutes,
+  ...stageRoutes,
+  ...handshakeRoutes,
+  ...paymentRoutes,
+});

@@ -191,6 +191,29 @@ export function summarize(detailType: string, d: Record<string, unknown>): Descr
         summary: 'Request cancelled',
       };
 
+    // --- payments (Module 11) ---
+    case 'payment.recorded':
+      return {
+        action: detailType,
+        targetType: 'payment',
+        targetId: s(d.payId),
+        summary: `Payment recorded — ${s(d.kind)} $${s(d.amount)} via ${s(d.method)} (${s(d.payer)} → ${s(d.payee)}), pending confirmation`,
+      };
+    case 'payment.confirmed':
+      return {
+        action: detailType,
+        targetType: 'payment',
+        targetId: s(d.payId),
+        summary: `Payment confirmed — ${s(d.kind)} $${s(d.amount)}`,
+      };
+    case 'payment.voided':
+      return {
+        action: detailType,
+        targetType: 'payment',
+        targetId: s(d.payId),
+        summary: `Payment voided${d.reason ? ` — ${s(d.reason)}` : ''}`,
+      };
+
     // --- notifications (Module 9) ---
     case 'notification.emailed':
       return {

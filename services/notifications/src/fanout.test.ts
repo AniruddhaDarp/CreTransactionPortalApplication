@@ -66,6 +66,15 @@ describe('plan', () => {
     expect(p.email).toBe(true);
   });
 
+  it('payment.confirmed / voided → all members; payment.recorded is not itself a notification', () => {
+    const c = plan('payment.confirmed', { payId: 'p', kind: 'earnest_money', amount: 50000 })!;
+    expect(c.recipients).toEqual({ allMembers: true });
+    expect(c.type).toBe('payment_confirmed');
+    expect(c.title).toContain('$50000');
+    expect(plan('payment.voided', { payId: 'p', reason: 'dup' })!.type).toBe('payment_voided');
+    expect(plan('payment.recorded', { payId: 'p' })).toBeNull();
+  });
+
   it('returns null for events it does not handle', () => {
     expect(plan('document.accessed', { docId: 'x' })).toBeNull();
   });

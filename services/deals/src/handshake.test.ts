@@ -167,4 +167,51 @@ describe('handshake.decide', () => {
       }),
     ).rejects.toMatchObject({ status: 409 });
   });
+
+  it('approving a confirm_payment flips the PAY# row (guarded on recorded) and emits payment.confirmed', async () => {
+    ddb.on(QueryCommand).resolves({ Items: [{ userId: 'buyer' }] });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { events } = await decide({
+      deal: deal(),
+      hs: hs({ action: 'confirm_payment', payload: { payId: 'p1', kind: 'earnest_money', amount: 50000 } }),
+      authz: authz({ role: 'BUYER', side: 'buy', isAdmin: false }),
+      actorId: 'buyer',
+      decision: 'approve',
+    });
+    expect(events.map((e) => e.type)).toEqual(['handshake.approved', 'payment.confirmed']);
+    expect(events[1]!.detail).toMatchObject({ payId: 'p1', confirmedBy: 'buyer', amount: 50000 });
+    const items = ddb.commandCalls(TransactWriteCommand)[0]!.args[0].input.TransactItems!;
+    const upd = items.find((i) => i.Update?.Key?.SK === 'PAY#p1')!.Update!;
+    expect(upd.ConditionExpression).toContain(':recorded');
+    expect(upd.ExpressionAttributeValues![':confirmed']).toBe('confirmed');
+  });
+
+  it('approving a void_payment marks the row void with the reason and blocks a double-void', async () => {
+    ddb.on(QueryCommand).resolves({ Items: [{ userId: 'buyer' }] });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { events } = await decide({
+      deal: deal(),
+      hs: hs({ action: 'void_payment', payload: { payId: 'p2', reason: 'entered twice' } }),
+      authz: authz({ role: 'BUYER', side: 'buy', isAdmin: false }),
+      actorId: 'buyer',
+      decision: 'approve',
+    });
+    expect(events.map((e) => e.type)).toEqual(['handshake.approved', 'payment.voided']);
+    const items = ddb.commandCalls(TransactWriteCommand)[0]!.args[0].input.TransactItems!;
+    const upd = items.find((i) => i.Update?.Key?.SK === 'PAY#p2')!.Update!;
+    expect(upd.ConditionExpression).toContain('<> :voidcmp');
+    expect(upd.ExpressionAttributeValues![':reason']).toBe('entered twice');
+  });
+
+  it('pre-flights a confirm_payment with a missing payId at initiate time (400)', async () => {
+    await expect(
+      initiate({
+        deal: deal(),
+        authz: authz(),
+        action: 'confirm_payment',
+        payload: {},
+        actorId: 'admin',
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
 });

@@ -11,10 +11,15 @@ export function NewDeal({ api }: { api: DealsApi }) {
 
   return (
     <section>
-      <h2>New deal</h2>
-      <p>A deal starts at an accepted offer. You become its admin (seller&rsquo;s agent).</p>
-      {error && <p>Could not create: {error}</p>}
+      <h2 style={{ fontSize: 20, letterSpacing: '-0.015em' }}>New deal</h2>
+      <p className="deal-header__sub" style={{ marginBottom: 18 }}>
+        A deal starts at an accepted offer. You become its admin (seller&rsquo;s agent).
+      </p>
+      {error && <p className="error">Could not create: {error}</p>}
+
       <form
+        className="panel"
+        style={{ maxWidth: 480 }}
         onSubmit={(e) => {
           e.preventDefault();
           const d = new FormData(e.currentTarget);
@@ -38,41 +43,37 @@ export function NewDeal({ api }: { api: DealsApi }) {
             });
         }}
       >
-        <p>
-          <label>
-            Property address
-            <br />
-            <input name="address" required minLength={3} size={40} />
+        <div className="panel__body form-grid" style={{ maxWidth: 'none' }}>
+          <label className="field">
+            <span>Property address</span>
+            <input className="input" name="address" required minLength={3} />
           </label>
-        </p>
-        <p>
-          <label>
-            Type{' '}
-            <select name="propertyType">
+          <label className="field">
+            <span>Property type</span>
+            <select className="select" name="propertyType">
               {PROPERTY_TYPES.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
           </label>
-        </p>
-        <p>
-          <label>
-            Accepted price (USD) <input name="price" type="number" min={1} required />
+          <label className="field">
+            <span>Accepted price (USD)</span>
+            <input className="input" name="price" type="number" min={1} required />
           </label>
-        </p>
-        <p>
-          <label>
-            Label (optional) <input name="label" maxLength={80} />
+          <label className="field">
+            <span>Label (optional)</span>
+            <input className="input" name="label" maxLength={80} placeholder="e.g. Larkspur Commons" />
           </label>
-        </p>
-        <p>
-          <label>
-            Target closing date (optional) <input name="targetClosingDate" type="date" />
+          <label className="field">
+            <span>Target closing date (optional)</span>
+            <input className="input" name="targetClosingDate" type="date" />
           </label>
-        </p>
-        <button type="submit" disabled={busy}>
-          {busy ? 'Creating…' : 'Create deal'}
-        </button>
+          <div>
+            <button className="btn btn--primary" type="submit" disabled={busy}>
+              {busy ? 'Creating…' : 'Create deal'}
+            </button>
+          </div>
+        </div>
       </form>
     </section>
   );

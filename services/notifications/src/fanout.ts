@@ -123,6 +123,23 @@ export function plan(detailType: string, d: Record<string, unknown>): Plan | nul
         targetType: 'deal',
         targetId: str(d.dealId),
       };
+    case 'payment.confirmed':
+      return {
+        recipients: { allMembers: true },
+        type: 'payment_confirmed',
+        title: `A ${str(d.kind)} payment of $${str(d.amount)} was confirmed`,
+        targetType: 'payment',
+        targetId: str(d.payId),
+      };
+    case 'payment.voided':
+      return {
+        recipients: { allMembers: true },
+        type: 'payment_voided',
+        title: `A payment was voided${d.reason ? ` — ${str(d.reason)}` : ''}`,
+        targetType: 'payment',
+        targetId: str(d.payId),
+      };
+
     case 'thread.converted':
       if (!d.droppedUserId) return null;
       return {

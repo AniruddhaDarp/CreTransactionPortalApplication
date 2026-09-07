@@ -940,8 +940,9 @@ assignment and for keeping the demo up afterward.
 
 **Stretch — attempt in this build if time allows, after the core is solid:**
 
-- Payments: earnest-money / closing-funds handling + payer identity verification
-  (problem 1).
+- ~~Payments: record earnest-money / closing-funds movements with a
+  confirmation handshake.~~ **Delivered (Module 11)** — see §17. Payer identity
+  verification / actual fund movement (problem 1) remains out of scope.
 - Document e-signature for the purchase agreement and disclosures.
 
 **Next — out of scope for the prototype:**
@@ -1055,10 +1056,12 @@ sections have been updated to match; this section is the changelog.)
   resolve stack identifiers from **SSM**, not `infra/cdk-outputs.json`.
 - They create Cognito users with **`admin-create-user` + `SUPPRESS` + a
   permanent password**, because the Cognito-default email sender's daily cap is
-  low and a scripted cohort exhausts it. Consequence: those users do **not**
-  fire the `PostConfirmation` trigger, so they have no `accounts` profile row —
-  fine for every deal flow (which keys off membership + JWT claims), but
-  `GET /v1/me` 404s for a scripted login.
+  low and a scripted cohort exhausts it. `admin-create-user` does **not** fire
+  the `PostConfirmation` trigger, so `makeUser` writes the `accounts` profile
+  row itself (`provisionProfile` — a direct `dynamodb:PutItem`, idempotent) so
+  the Profile page works for scripted logins. It does not re-emit
+  `account.created`; only Audit and the Notifications `PROFILE#` projection
+  consume that, neither of which the seed/verify flows exercise.
 - `inviteAndAccept` blocks on `waitMemberSync` — it polls `/threads`,
   `/documents` and `/audit` as the new member until all three return `200` —
   before returning, so a script never acts as a member whose projection is
@@ -1068,3 +1071,45 @@ sections have been updated to match; this section is the changelog.)
   deal-delete API, so cancelled deals still linger — orphan reduction, not
   elimination), and its final "counterparty is notified" check is a soft warning
   rather than a hard failure since it rides the at-least-once notification bus.
+
+### Payments (Module 11, stretch)
+
+- **Recording, not a payments system.** The portal never touches money. A
+  `PAY#<payId>` row in the Deals table records that a payment happened —
+  `kind` (earnest_money / additional_deposit / closing_funds / extension_fee /
+  other), `amount`, `method` (wire / check / ach / other), `payer` / `payee`
+  (buyer / seller / escrow / lender / other), `reference`, `paidOn`, `note` —
+  with lifecycle `recorded → confirmed | void`. Payments are `deal_wide`: every
+  active member can list them.
+- **No new service.** Two new `HandshakeAction`s — `confirm_payment`
+  (`recorded → confirmed`, condition-guarded on `status = recorded`) and
+  `void_payment` (`→ void`, guarded `status <> void`) — plug into the existing
+  Deals handshake state machine, so they inherit `GET /v1/handshakes`, the
+  approvals badge, the Milestones "pending handshakes" panel, and the
+  `handshake_pending` / `handshake_approved` notifications. A standalone
+  Payments microservice would have forced a cross-service saga for "confirm"
+  (like the document-delete flow) — far more machinery than a record-keeping
+  feature warrants.
+- **Who.** A deal lead (`SELLER_AGENT` admin, or a buy-side `BUYER` /
+  `BUYER_AGENT`) records and initiates confirm/void; the counterparty lead
+  approves — the same eligibility rule as every other handshake. Title /
+  lender / attorneys see payments but don't record them (escrow-agent-as-recorder
+  is noted for later).
+- **`POST …/payments` records *and* opens the confirm handshake** in one call —
+  the recorder is asserting the payment and asking the counterparty to confirm.
+  `POST …/payments/{id}/confirm` re-opens the handshake after a rejection;
+  `POST …/payments/{id}/void` opens a `void_payment` handshake (voiding is
+  always gated — a confirmed payment is part of the deal record).
+- **Known gap (deliberate).** The `PAY#` row is written *before*
+  `handshake.initiate`, which 409s if the counterparty side hasn't joined the
+  deal yet. That leaves an orphan `recorded` payment with no open handshake;
+  `POST …/payments/{id}/confirm` recovers it once the buy side is present. The
+  fully-atomic alternative (a saga) was judged not worth it for a stretch
+  feature.
+- Audit picks up `payment.recorded` / `payment.confirmed` / `payment.voided`
+  through the existing `source: cre.*` prefix rule (summaries added to
+  `describe.ts`); Notifications broadcasts `payment.confirmed` / `payment.voided`
+  to all members. `payment.recorded` raises no notification of its own — the
+  `handshake.requested` it triggers already pings the approver.
+- 4 new routes on the Deals API (26 → 30). SPA gains a **Payments** panel on the
+  deal page; approve/reject of payment handshakes reuses the Milestones panel.

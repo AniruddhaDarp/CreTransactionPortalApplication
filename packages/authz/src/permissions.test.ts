@@ -125,6 +125,25 @@ describe('handshake approval', () => {
     expect(initiateActionFor('close_deal')).toBe('changeDealStatus');
     expect(initiateActionFor('edit_price')).toBe('editPurchasePrice');
     expect(initiateActionFor('delete_document')).toBe('deleteDocument');
+    expect(initiateActionFor('confirm_payment')).toBe('recordPayment');
+    expect(initiateActionFor('void_payment')).toBe('voidPayment');
+  });
+});
+
+describe('can — payments (Module 11)', () => {
+  it('a lead (admin or buy-side lead) may record / void; nobody else may', () => {
+    expect(can('recordPayment', ctx({ isAdmin: true }))).toBe(true);
+    expect(can('recordPayment', ctx({ role: 'BUYER', side: 'buy' }))).toBe(true);
+    expect(can('voidPayment', ctx({ role: 'BUYER_AGENT', side: 'buy' }))).toBe(true);
+    expect(can('recordPayment', ctx({ role: 'SELLER', isAdmin: false }))).toBe(false);
+    expect(can('recordPayment', ctx({ role: 'LENDER', side: 'buy' }))).toBe(false);
+    expect(can('voidPayment', ctx({ role: 'BUYER_ATTORNEY', side: 'buy' }))).toBe(false);
+    expect(can('recordPayment', ctx({ status: 'removed', isAdmin: true }))).toBe(false);
+  });
+
+  it('exposes recordPayment in the SPA capability map', () => {
+    expect(capabilitiesFor(ctx({ isAdmin: true })).recordPayment).toBe(true);
+    expect(capabilitiesFor(ctx({ role: 'SELLER', isAdmin: false })).recordPayment).toBe(false);
   });
 });
 

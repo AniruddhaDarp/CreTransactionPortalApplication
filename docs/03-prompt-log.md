@@ -664,3 +664,46 @@ design §6 **role→category visibility matrix**.
   and its rationale (event enrichment, deterministic-SK dedup, shared projection
   helper, `raw` router hatch, link-based invites, two-table audit, disabled
   email, the `admin-create-user` seeding trade-off, …).
+
+## 21 — Module 11 (stretch): record payments with handshake gating
+
+> Next step is to look at the stretch features. Let's do payments and docusign
+> first. For payments, we don't need a payments system entirely but just the
+> ability to record payments (with handshake) should be enough.
+>
+> [Four decisions on the plan] 1. In the Deals service (recommended) — a `PAY#`
+> item type + a new handshake action, no new stack. 2. Record auto-opens the
+> confirm handshake (recommended). 3. Deal leads only record and confirm
+> (recommended). 4. Voiding always needs a handshake.
+
+**Outcome — the payments stretch feature is live and E2E-verified:**
+
+- **`@cre/authz`** — `recordPayment` / `voidPayment` actions (lead-only,
+  `admin || buyLead`); `confirm_payment` / `void_payment` added to
+  `HandshakeAction` + `HANDSHAKE_ACTIONS` + `initiateActionFor`; `recordPayment`
+  exposed in the SPA capability map.
+- **`@cre/events`** — `payment.recorded` / `payment.confirmed` / `payment.voided`
+  `detail` schemas + registry entries.
+- **`services/deals`** — `PAY#<payId>` rows (`putPayment` / `getPayment` /
+  `listPayments` / `setPaymentHs`); two new handshake appliers (condition-guarded
+  status flips + `payment.confirmed` / `payment.voided` emit); a new
+  `payments.ts` route module (`GET`/`POST /payments`, `POST …/{payId}/confirm`,
+  `POST …/{payId}/void`) — 26 → 30 routes.
+- **`services/audit`** — `describe.ts` summaries for the three `payment.*` events
+  (picked up automatically by the `source: cre.*` prefix rule).
+- **`services/notifications`** — `payment.confirmed` / `payment.voided`
+  broadcast to all members; both detail-types added to the stack's consumed set.
+- **SPA** — a **Payments** panel on the deal page (record form gated on
+  `capabilities.recordPayment`, per-row confirm/void); payment-handshake
+  approve/reject reuses the Milestones panel; the three `payment.*` types added
+  to the Audit filter.
+- **`docs/02-design.md`** — §16 Payments marked delivered; §17 gains a
+  "Payments (Module 11, stretch)" subsection (design, the lead-only rule, the
+  deliberate orphan-`recorded` gap, why no separate service).
+- **Deployed** `CrePortalDeals` + `CrePortalNotifications` + `CrePortalAudit` +
+  the SPA. Live E2E: buyer/admin records earnest money → counterparty sees the
+  `confirm_payment` handshake → approves → `confirmed` → `void_payment`
+  handshake → approved → `void`; double-void 409s; audit shows all three
+  `payment.*` summaries.
+
+**DocuSign is the next stretch item** (not started).

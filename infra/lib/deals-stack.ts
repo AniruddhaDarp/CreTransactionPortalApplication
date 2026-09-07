@@ -50,6 +50,11 @@ const ROUTES: RouteSpec[] = [
   [HttpMethod.GET, '/v1/handshakes'],
   [HttpMethod.POST, '/v1/deals/{dealId}/handshakes/{hsId}/approve'],
   [HttpMethod.POST, '/v1/deals/{dealId}/handshakes/{hsId}/reject'],
+  // payments (Module 11, stretch)
+  [HttpMethod.GET, '/v1/deals/{dealId}/payments'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/payments'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/payments/{payId}/confirm'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/payments/{payId}/void'],
 ];
 
 /**

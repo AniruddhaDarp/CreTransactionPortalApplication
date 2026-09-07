@@ -25,6 +25,26 @@ describe('summarize', () => {
     expect(d.summary).toContain('price: 100 → 200');
   });
 
+  it('describes payment lifecycle events', () => {
+    const rec = summarize('payment.recorded', {
+      payId: 'p1',
+      kind: 'earnest_money',
+      amount: 50000,
+      method: 'wire',
+      payer: 'buyer',
+      payee: 'escrow',
+    });
+    expect(rec).toMatchObject({ action: 'payment.recorded', targetType: 'payment', targetId: 'p1' });
+    expect(rec.summary).toContain('earnest_money $50000');
+    expect(rec.summary).toContain('buyer → escrow');
+    expect(summarize('payment.confirmed', { payId: 'p1', kind: 'earnest_money', amount: 50000 }).summary).toBe(
+      'Payment confirmed — earnest_money $50000',
+    );
+    expect(summarize('payment.voided', { payId: 'p1', reason: 'dup' }).summary).toBe(
+      'Payment voided — dup',
+    );
+  });
+
   it('falls back to the detail-type for unknown events', () => {
     expect(summarize('mystery.event', {})).toEqual({
       action: 'mystery.event',

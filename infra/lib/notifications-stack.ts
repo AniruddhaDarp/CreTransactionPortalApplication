@@ -43,6 +43,8 @@ const CONSUMED_EVENTS = [
   'stage.advanced',
   'deal.status_changed',
   'thread.converted',
+  'payment.confirmed',
+  'payment.voided',
 ];
 
 /**

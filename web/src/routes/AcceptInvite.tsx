@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { DealsApi } from '../deals-api.js';
 
@@ -25,19 +25,31 @@ export function AcceptInvite({ api }: { api: DealsApi }) {
     };
   }, [api, dealId, token]);
 
-  if (error) return <p>Invitation problem: {error}</p>;
-  if (!preview) return <p>Checking invitation…</p>;
-  if (preview.status !== 'pending') return <p>This invitation is {preview.status}.</p>;
-  if (preview.expired) return <p>This invitation has expired.</p>;
-
-  return (
+  const wrap = (body: ReactNode) => (
     <section>
-      <h2>Join a deal</h2>
+      <div className="panel" style={{ maxWidth: 460 }}>
+        <div className="panel__head">
+          <h3>Deal invitation</h3>
+        </div>
+        <div className="panel__body">{body}</div>
+      </div>
+    </section>
+  );
+
+  if (error) return wrap(<p className="error">Invitation problem: {error}</p>);
+  if (!preview) return wrap(<p className="muted">Checking invitation…</p>);
+  if (preview.status !== 'pending')
+    return wrap(<p className="empty">This invitation is {preview.status}.</p>);
+  if (preview.expired) return wrap(<p className="empty">This invitation has expired.</p>);
+
+  return wrap(
+    <>
       <p>
         You&rsquo;ve been invited to <strong>{preview.dealAddress ?? dealId}</strong> as{' '}
-        <strong>{preview.role}</strong>.
+        <span className="tag tag--role">{preview.role}</span>.
       </p>
       <button
+        className="btn btn--primary"
         disabled={busy}
         onClick={() => {
           setBusy(true);
@@ -53,6 +65,6 @@ export function AcceptInvite({ api }: { api: DealsApi }) {
       >
         {busy ? 'Joining…' : 'Accept & join'}
       </button>
-    </section>
+    </>,
   );
 }

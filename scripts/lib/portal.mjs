@@ -66,17 +66,75 @@ export async function deleteUser(userPoolId, username) {
   return awsQuiet(['cognito-idp', 'admin-delete-user', '--user-pool-id', userPoolId, '--username', username]);
 }
 
+let _accountsTable;
+async function accountsTable() {
+  if (!_accountsTable) {
+    const res = await aws([
+      'cloudformation',
+      'describe-stack-resources',
+      '--stack-name',
+      'CrePortalAccounts',
+      '--query',
+      "StackResources[?ResourceType=='AWS::DynamoDB::Table'].PhysicalResourceId",
+    ]);
+    _accountsTable = (res ?? [])[0];
+    if (!_accountsTable) throw new Error('could not resolve the CrePortalAccounts table');
+  }
+  return _accountsTable;
+}
+
 /**
- * Create a confirmed Cognito user with a permanent password and return an
- * authenticated client.
+ * Write an `accounts` profile row directly — the equivalent of what the
+ * PostConfirmation trigger would do. `admin-create-user` (used by `makeUser`)
+ * does NOT fire that trigger, so without this a scripted login gets a 404 on
+ * the Profile page. Idempotent: a row that already exists is left alone.
+ */
+export async function provisionProfile({ sub, email, name }) {
+  const now = new Date().toISOString();
+  const item = {
+    PK: { S: `USER#${sub}` },
+    SK: { S: 'PROFILE' },
+    GSI1PK: { S: `EMAIL#${String(email).toLowerCase()}` },
+    userId: { S: sub },
+    email: { S: email },
+    name: { S: name || email },
+    createdAt: { S: now },
+    updatedAt: { S: now },
+  };
+  try {
+    await execFileP(
+      'aws',
+      [
+        'dynamodb',
+        'put-item',
+        '--region',
+        REGION,
+        '--table-name',
+        await accountsTable(),
+        '--item',
+        JSON.stringify(item),
+        '--condition-expression',
+        'attribute_not_exists(PK)',
+      ],
+      { stdio: 'pipe' },
+    );
+  } catch (e) {
+    if (!String(e.stderr || e).includes('ConditionalCheckFailed')) throw e;
+  }
+}
+
+/**
+ * Create a confirmed Cognito user with a permanent password, provision its
+ * `accounts` profile row, and return an authenticated client.
  *
  * Uses `admin-create-user` with `SUPPRESS` (no verification email) rather than
  * `sign-up` — the Cognito-default email sender has a low daily cap that a
- * scripted cohort blows through. Trade-off: `admin-create-user` does **not**
- * fire the `PostConfirmation` trigger, so these users get no `accounts` profile
- * row / `account.created` event. That is fine for the seed/verify flows (deals,
- * chat, documents, audit and notifications all key off deal membership + JWT
- * claims, not the profile); only `GET /v1/me` would 404 for a scripted login.
+ * scripted cohort blows through. `admin-create-user` does **not** fire the
+ * `PostConfirmation` trigger, so `makeUser` writes the profile row itself
+ * (`provisionProfile`) to keep the Profile page working for scripted logins.
+ * (No `account.created` event is emitted — only the Audit trail and the
+ * Notifications `PROFILE#` projection consume that, neither of which the
+ * seed/verify flows exercise.)
  */
 export async function makeUser(cfg, { email, name, password }) {
   await aws([
@@ -104,7 +162,9 @@ export async function makeUser(cfg, { email, name, password }) {
     password,
     '--permanent',
   ]);
-  return authClient(cfg, { email, name, password });
+  const client = await authClient(cfg, { email, name, password });
+  await provisionProfile({ sub: client.sub, email, name });
+  return client;
 }
 
 /** Authenticate an existing user and return an API client bound to their token. */

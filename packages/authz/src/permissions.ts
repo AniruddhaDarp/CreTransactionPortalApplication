@@ -48,7 +48,10 @@ export type Action =
   | 'uploadSidePrivateDoc'
   | 'promoteDocument'
   | 'deleteDocument'
-  | 'createDocRequest';
+  | 'createDocRequest'
+  // --- payments (Module 11, stretch) ---
+  | 'recordPayment'
+  | 'voidPayment';
 
 export interface AuthzContext {
   role: Role;
@@ -136,6 +139,11 @@ export function can(action: Action, ctx: AuthzContext): boolean {
     case 'createDocRequest':
       return notOther;
 
+    // --- payments (Module 11) — a lead records; the counterparty confirms/voids ---
+    case 'recordPayment':
+    case 'voidPayment':
+      return admin || buyLead; // "may initiate the confirm / void handshake"
+
     default:
       return false;
   }
@@ -191,7 +199,9 @@ export type HandshakeAction =
   | 'cancel_deal'
   | 'edit_price'
   | 'edit_dates'
-  | 'delete_document';
+  | 'delete_document'
+  | 'confirm_payment'
+  | 'void_payment';
 
 export const HANDSHAKE_ACTIONS: readonly HandshakeAction[] = [
   'advance_stage',
@@ -200,6 +210,8 @@ export const HANDSHAKE_ACTIONS: readonly HandshakeAction[] = [
   'edit_price',
   'edit_dates',
   'delete_document',
+  'confirm_payment',
+  'void_payment',
 ];
 
 /** The side that must approve a handshake initiated by `initiatedSide`. */
@@ -233,6 +245,10 @@ export function initiateActionFor(action: HandshakeAction): Action {
       return 'editDates';
     case 'delete_document':
       return 'deleteDocument';
+    case 'confirm_payment':
+      return 'recordPayment';
+    case 'void_payment':
+      return 'voidPayment';
   }
 }
 
@@ -250,6 +266,7 @@ const UI_ACTIONS: Action[] = [
   'createThreadDealWide',
   'uploadDealWideDoc',
   'createDocRequest',
+  'recordPayment',
   'viewAudit',
 ];
 
