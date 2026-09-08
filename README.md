@@ -19,6 +19,64 @@ workspace**, with:
 - **an in-app notification centre** (bell + unread count), with action-required
   email wired but flag-gated off (see [Known gaps](#known-gaps)).
 
+The problem, the research behind it, and how scope was decided are in
+[`docs/01-problem-exploration.md`](docs/01-problem-exploration.md); the full
+design and the alternatives weighed for each decision are in
+[`docs/02-design.md`](docs/02-design.md).
+
+## Try it — the deployed app
+
+**Open → https://d2nvvjs357ot5x.cloudfront.net → "Sign in".**
+
+Sign-in is the Cognito hosted UI. The nine seed users below are already
+confirmed; **password for every one is `CrePortalDemo!2026`**. Sign out from the
+top bar to switch roles, or use a second browser / incognito window to hold two
+roles at once (needed to see a **handshake** — one side requests, the other
+approves).
+
+| Role | Email | Person |
+|---|---|---|
+| Seller's Agent *(deal admin)* | `seed-selleragent@cre-portal.example` | Selena Ortiz — listing broker |
+| Seller | `seed-seller@cre-portal.example` | Sam Reed — owner |
+| Seller's Attorney | `seed-sellerattorney@cre-portal.example` | Priya Nair — seller counsel |
+| Buyer | `seed-buyer@cre-portal.example` | Bianca Cho — principal |
+| Buyer's Agent | `seed-buyeragent@cre-portal.example` | Diego Ramos — buy-side broker |
+| Buyer's Attorney | `seed-buyerattorney@cre-portal.example` | Marcus Lin — buyer counsel |
+| Lender | `seed-lender@cre-portal.example` | Fatima Khan — acquisition lender |
+| Title Agent | `seed-title@cre-portal.example` | Tara Vance — title & escrow |
+| Third party (`OTHER`, buy-side) | `seed-inspector@cre-portal.example` | Owen Pratt — Phase I / PCA inspector |
+
+There is one fully-populated sample deal — **4200 Larkspur Commons, Austin TX**
+(mid Due-Diligence): [open it directly](https://d2nvvjs357ot5x.cloudfront.net/deals/40297d27-84c5-41a7-bb9a-6368759589a8),
+or it's listed under **My deals** for every seed user.
+
+**A 5-minute tour** (sign in as **Selena / Seller's Agent** unless noted):
+
+1. **Milestones tab** — the 6-stage backbone, the current stage, the per-stage
+   checklist, and any pending handshakes.
+2. **Communication tab** — threads at four visibility scopes. Open the
+   agent-channel thread; as an agent you can *Make deal-wide*. `@`-mention only
+   offers people who can see the thread.
+3. **Documents tab** — sort the table; open a doc for its version history and
+   signature panel. Sign in as **Diego (Buyer's Agent)** and note the sell side
+   can't see `Financing` / `Appraisal` documents even deal-wide.
+4. **A handshake** — as Selena, Milestones → *Request advance to the next
+   milestone*. In the other window as **Bianca (Buyer)**, the **Actions** tab
+   shows it → Approve. Same pattern for a price change (Edit terms in the header)
+   and for closing the deal (the last step of the pipeline).
+5. **Payments tab** — record a payment (e.g. earnest money); it auto-opens a
+   confirm handshake for the counterparty. The header shows progress toward the
+   accepted price.
+6. **Audit tab** — every action, filterable, scoped to what *you* may see. Export
+   CSV / JSON. Sign in as the two sides in turn to confirm there is **no god
+   view**.
+
+A scripted end-to-end that exercises every feature with the full cast is in
+[`docs/05-full-deal-walkthrough.md`](docs/05-full-deal-walkthrough.md).
+
+> To rebuild the sample deal from scratch (idempotent — recreates the seed users
+> and prints a fresh deep link): `node scripts/seed.mjs`.
+
 ## Architecture
 
 **Six microservices** — Accounts, Deals, Chat, Documents, Notifications, Audit —
@@ -48,8 +106,8 @@ Deployed to AWS project `581759697181` / `us-east-2`:
 | API | https://d1016hsgh5.execute-api.us-east-2.amazonaws.com |
 | Hosted UI (sign-in) | https://cre-portal-581759697181.auth.us-east-2.amazoncognito.com |
 
-`node scripts/seed.mjs` provisions a fully-populated sample deal and prints a
-login for every role (shared password) plus the deep link to the deal.
+Seed logins are in [Try it](#try-it--the-deployed-app) above; `node
+scripts/seed.mjs` re-provisions them plus a fresh sample deal.
 
 ## Repository layout
 
