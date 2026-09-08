@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getProvider, type ProviderRecipient } from './provider/index.js';
 import * as repo from './repo.js';
 import { requireViewer, scopeMember } from './scope.js';
-import { authzCtx, emit, param } from './shared.js';
+import { assertDealActive, authzCtx, emit, param } from './shared.js';
 
 const s3 = () => import('./s3.js');
 
@@ -119,6 +119,7 @@ export const signatureRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/documents/{docId}/signature': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const docId = param(ctx, 'docId');
+    await assertDealActive(dealId);
     const { viewer, doc } = await loadVisibleDoc(dealId, docId, ctx.userId);
     if (!can('sendForSignature', authzCtx(viewer))) {
       throw new HttpError(403, 'this role cannot send documents for signature');
@@ -211,6 +212,24 @@ export const signatureRoutes: Record<string, RouteHandler> = {
     return { status: 201, body: { ...env, recipients } };
   },
 
+  // Every signature envelope in the deal that the caller is a party to (a
+  // recipient) or created — for the Actions tab and the document-list badges.
+  'GET /v1/deals/{dealId}/signatures': async (ctx) => {
+    const dealId = param(ctx, 'dealId');
+    await requireViewer(dealId, ctx.userId);
+    const envs = await repo.listEnvelopesForDeal(dealId);
+    const withRecipients = await Promise.all(
+      envs.map(async (env) => ({
+        ...env,
+        recipients: await repo.listRecipients(dealId, env.envId),
+      })),
+    );
+    const mine = withRecipients.filter(
+      (e) => e.createdBy === ctx.userId || e.recipients.some((r) => r.userId === ctx.userId),
+    );
+    return { body: { envelopes: mine } };
+  },
+
   'GET /v1/deals/{dealId}/documents/{docId}/signature': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const docId = param(ctx, 'docId');
@@ -229,6 +248,7 @@ export const signatureRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/documents/{docId}/signature/{envId}/sign': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const docId = param(ctx, 'docId');
+    await assertDealActive(dealId);
     const envId = param(ctx, 'envId');
     if (getProvider().name !== 'fake') {
       throw new HttpError(409, 'in docusign mode, signing happens on the DocuSign platform');
@@ -283,6 +303,7 @@ export const signatureRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/documents/{docId}/signature/{envId}/void': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const docId = param(ctx, 'docId');
+    await assertDealActive(dealId);
     const envId = param(ctx, 'envId');
     const { viewer, doc } = await loadVisibleDoc(dealId, docId, ctx.userId);
     const env = await repo.getEnvelope(dealId, docId, envId);

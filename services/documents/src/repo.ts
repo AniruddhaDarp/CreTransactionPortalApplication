@@ -22,6 +22,7 @@ export interface DocumentRow {
   versionCount: number;
   uploadedBy: string;
   createdAt: string;
+  updatedAt?: string;
   archivedAt?: string;
 }
 
@@ -96,6 +97,21 @@ export function tableName(): string {
 }
 
 const docKey = (d: string, id: string) => ({ PK: `DEAL#${d}`, SK: `DOC#${id}` });
+const dealMetaKey = (d: string) => ({ PK: `DEAL#${d}`, SK: 'DEALMETA' });
+
+export async function setDealStatus(dealId: string, status: string): Promise<void> {
+  await docClient().send(
+    new PutCommand({ TableName: tableName(), Item: { ...dealMetaKey(dealId), dealId, status } }),
+  );
+}
+
+/** `ACTIVE` unless a `deal.status_changed` has landed here saying otherwise. */
+export async function getDealStatus(dealId: string): Promise<string> {
+  const r = await docClient().send(
+    new GetCommand({ TableName: tableName(), Key: dealMetaKey(dealId) }),
+  );
+  return String((r.Item as { status?: string } | undefined)?.status ?? 'ACTIVE');
+}
 const verKey = (d: string, id: string, n: number) => ({ PK: `DEAL#${d}`, SK: `DOCVER#${id}#${n}` });
 const reqKey = (d: string, id: string) => ({ PK: `DEAL#${d}`, SK: `DOCREQ#${id}` });
 const sigKey = (d: string, docId: string, envId: string) => ({
@@ -187,8 +203,8 @@ export async function addVersion(version: DocVersion): Promise<DocumentRow> {
     new UpdateCommand({
       TableName: tableName(),
       Key: docKey(version.dealId, version.docId),
-      UpdateExpression: 'SET currentVersion = :n, versionCount = :n',
-      ExpressionAttributeValues: { ':n': version.n },
+      UpdateExpression: 'SET currentVersion = :n, versionCount = :n, updatedAt = :ua',
+      ExpressionAttributeValues: { ':n': version.n, ':ua': version.uploadedAt },
       ConditionExpression: 'attribute_exists(SK) AND attribute_not_exists(archivedAt)',
       ReturnValues: 'ALL_NEW',
     }),
@@ -201,9 +217,13 @@ export async function promoteDocument(dealId: string, docId: string): Promise<Do
     new UpdateCommand({
       TableName: tableName(),
       Key: docKey(dealId, docId),
-      UpdateExpression: 'SET #scope = :wide',
+      UpdateExpression: 'SET #scope = :wide, updatedAt = :ua',
       ExpressionAttributeNames: { '#scope': 'scope' },
-      ExpressionAttributeValues: { ':wide': 'deal_wide', ':wide2': 'deal_wide' },
+      ExpressionAttributeValues: {
+        ':wide': 'deal_wide',
+        ':wide2': 'deal_wide',
+        ':ua': new Date().toISOString(),
+      },
       ConditionExpression: 'attribute_exists(SK) AND #scope <> :wide2',
       ReturnValues: 'ALL_NEW',
     }),
@@ -270,6 +290,19 @@ export async function listEnvelopesForDoc(
       TableName: tableName(),
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': `SIG#${docId}#` },
+    }),
+  );
+  return (r.Items ?? [])
+    .map((i) => strip<SignatureEnvelope>(i))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+export async function listEnvelopesForDeal(dealId: string): Promise<SignatureEnvelope[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': 'SIG#' },
     }),
   );
   return (r.Items ?? [])

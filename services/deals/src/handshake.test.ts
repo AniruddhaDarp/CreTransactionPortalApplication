@@ -53,13 +53,14 @@ describe('handshake.initiate', () => {
       ],
     });
     ddb.on(TransactWriteCommand).resolves({});
-    const { hs, event } = await initiate({
+    const { hs, events } = await initiate({
       deal: deal(),
       authz: authz(),
       action: 'advance_stage',
       payload: {},
       actorId: 'admin',
     });
+    const event = events[0]!;
     expect(hs.status).toBe('pending');
     expect(event.type).toBe('handshake.requested');
     expect((event.detail.approverIds as string[]).sort()).toEqual(['bagent', 'buyer']);
@@ -97,6 +98,87 @@ describe('handshake.initiate', () => {
         actorId: 'admin',
       }),
     ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('side-private delete_document is approved by the other lead on the initiating side', async () => {
+    ddb.on(QueryCommand).resolves({
+      Items: [
+        member({ userId: 'buyer', role: 'BUYER', side: 'buy' }),
+        member({ userId: 'bagent', role: 'BUYER_AGENT', side: 'buy' }),
+        member({ userId: 'sagent', role: 'SELLER_AGENT', side: 'sell' }),
+      ],
+    });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { hs, events } = await initiate({
+      deal: deal(),
+      authz: authz({ role: 'BUYER', side: 'buy', isAdmin: false }),
+      action: 'delete_document',
+      payload: { docId: 'doc1', scope: 'side_private:buy' },
+      actorId: 'buyer',
+    });
+    expect(hs.status).toBe('pending');
+    const requested = events.find((e) => e.type === 'handshake.requested')!;
+    expect(requested.detail.approverIds).toEqual(['bagent']);
+  });
+
+  it('side-private delete_document with no other same-side lead self-approves', async () => {
+    ddb.on(QueryCommand).resolves({
+      Items: [
+        member({ userId: 'buyer', role: 'BUYER', side: 'buy' }),
+        member({ userId: 'sagent', role: 'SELLER_AGENT', side: 'sell' }),
+      ],
+    });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { hs, events } = await initiate({
+      deal: deal(),
+      authz: authz({ role: 'BUYER', side: 'buy', isAdmin: false }),
+      action: 'delete_document',
+      payload: { docId: 'doc1', scope: 'side_private:buy' },
+      actorId: 'buyer',
+    });
+    expect(hs.status).toBe('approved');
+    expect(hs.sagaState).toBe('awaiting_document');
+    expect(events.map((e) => e.type)).toEqual(['handshake.requested', 'handshake.approved']);
+  });
+
+  it('deal-wide delete_document of a category the sell side cannot see stays same-side', async () => {
+    ddb.on(QueryCommand).resolves({
+      Items: [
+        member({ userId: 'buyer', role: 'BUYER', side: 'buy' }),
+        member({ userId: 'bagent', role: 'BUYER_AGENT', side: 'buy' }),
+        member({ userId: 'sagent', role: 'SELLER_AGENT', side: 'sell' }),
+      ],
+    });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { events } = await initiate({
+      deal: deal(),
+      authz: authz({ role: 'BUYER', side: 'buy', isAdmin: false }),
+      action: 'delete_document',
+      payload: { docId: 'doc1', scope: 'deal_wide', category: 'Financing' },
+      actorId: 'buyer',
+    });
+    const requested = events.find((e) => e.type === 'handshake.requested')!;
+    expect(requested.detail.approverIds).toEqual(['bagent']); // buy-side co-lead, not the seller
+  });
+
+  it('deal-wide delete_document still needs a counterparty lead', async () => {
+    ddb.on(QueryCommand).resolves({
+      Items: [
+        member({ userId: 'buyer', role: 'BUYER', side: 'buy' }),
+        member({ userId: 'sagent', role: 'SELLER_AGENT', side: 'sell' }),
+        member({ userId: 'seller', role: 'SELLER', side: 'sell' }),
+      ],
+    });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { events } = await initiate({
+      deal: deal(),
+      authz: authz({ role: 'BUYER', side: 'buy', isAdmin: false }),
+      action: 'delete_document',
+      payload: { docId: 'doc1', scope: 'deal_wide' },
+      actorId: 'buyer',
+    });
+    const requested = events.find((e) => e.type === 'handshake.requested')!;
+    expect((requested.detail.approverIds as string[]).sort()).toEqual(['sagent', 'seller']);
   });
 });
 
@@ -137,6 +219,41 @@ describe('handshake.decide', () => {
         hs: hs(),
         authz: authz({ role: 'BUYER_ATTORNEY', side: 'buy', isAdmin: false }),
         actorId: 'x',
+        decision: 'approve',
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('a same-side co-lead may approve a side-private delete_document', async () => {
+    ddb.on(QueryCommand).resolves({ Items: [] });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { events } = await decide({
+      deal: deal(),
+      hs: hs({
+        action: 'delete_document',
+        initiatedBy: 'buyer',
+        initiatedSide: 'buy',
+        payload: { docId: 'doc1', scope: 'side_private:buy' },
+      }),
+      authz: authz({ role: 'BUYER_AGENT', side: 'buy', isAdmin: false }),
+      actorId: 'bagent',
+      decision: 'approve',
+    });
+    expect(events.map((e) => e.type)).toContain('handshake.approved');
+  });
+
+  it('the counterparty cannot approve a side-private delete_document', async () => {
+    await expect(
+      decide({
+        deal: deal(),
+        hs: hs({
+          action: 'delete_document',
+          initiatedBy: 'buyer',
+          initiatedSide: 'buy',
+          payload: { docId: 'doc1', scope: 'side_private:buy' },
+        }),
+        authz: authz({ role: 'SELLER_AGENT', side: 'sell', isAdmin: true }),
+        actorId: 'sagent',
         decision: 'approve',
       }),
     ).rejects.toMatchObject({ status: 403 });
@@ -201,6 +318,24 @@ describe('handshake.decide', () => {
     const upd = items.find((i) => i.Update?.Key?.SK === 'PAY#p2')!.Update!;
     expect(upd.ConditionExpression).toContain('<> :voidcmp');
     expect(upd.ExpressionAttributeValues![':reason']).toBe('entered twice');
+  });
+
+  it('approving a close_deal marks the deal CLOSED and completes the final milestone', async () => {
+    ddb.on(QueryCommand).resolves({ Items: [{ userId: 'buyer' }] });
+    ddb.on(TransactWriteCommand).resolves({});
+    const { events } = await decide({
+      deal: deal({ currentStage: 6, firm: true }),
+      hs: hs({ action: 'close_deal', payload: { reason: 'funded' } }),
+      authz: authz({ role: 'BUYER', side: 'buy', isAdmin: false }),
+      actorId: 'buyer',
+      decision: 'approve',
+    });
+    expect(events.map((e) => e.type)).toEqual(['handshake.approved', 'deal.status_changed']);
+    const items = ddb.commandCalls(TransactWriteCommand)[0]!.args[0].input.TransactItems!;
+    const dealUpd = items.find((i) => i.Update?.Key?.SK === 'META')!.Update!;
+    expect(dealUpd.ExpressionAttributeValues![':s']).toBe('CLOSED');
+    const stageUpd = items.find((i) => i.Update?.Key?.SK === 'STAGE#6')!.Update!;
+    expect(stageUpd.ExpressionAttributeValues![':done']).toBe('completed');
   });
 
   it('pre-flights a confirm_payment with a missing payId at initiate time (400)', async () => {

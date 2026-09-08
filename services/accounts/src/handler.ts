@@ -1,6 +1,6 @@
 import { HttpError, parseBody, router } from '@cre/platform';
 import { z } from 'zod';
-import { getProfile, updateProfile } from './repo.js';
+import { getProfile, getProfiles, updateProfile } from './repo.js';
 
 const patchSchema = z
   .object({
@@ -13,6 +13,21 @@ const patchSchema = z
 
 /** `GET /v1/me` and `PUT /v1/me` — the caller's own profile. */
 export const handler = router({
+  // Batch display-name lookup: `?ids=a,b,c` -> `{ profiles: [{ userId, name, company }] }`.
+  // Any authenticated user may resolve names; unknown ids are omitted.
+  'GET /v1/profiles': async (ctx) => {
+    const ids = String(ctx.query.ids ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const profiles = (await getProfiles(ids)).map((p) => ({
+      userId: p.userId,
+      name: p.name,
+      company: p.company,
+    }));
+    return { body: { profiles } };
+  },
+
   'GET /v1/me': async (ctx) => {
     const profile = await getProfile(ctx.userId);
     if (!profile) {

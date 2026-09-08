@@ -1,13 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { DealsApi, Member, SignatureEnvelope } from '../deals-api.js';
+import { useCallback, useRef, useState } from 'react';
+import type { DealsApi, SignatureEnvelope } from '../deals-api.js';
+import { useAsk } from './dialog.js';
+import { humanizeError } from './errors.js';
+import { useMemberNames } from './useMemberNames.js';
+import { usePoll } from './usePoll.js';
 
+/** green = completed, red = declined/voided, amber = pending (sent). */
 function statusPill(status: string): string {
   if (status === 'completed') return 'pill pill--ok';
   if (status === 'declined' || status === 'voided') return 'pill pill--danger';
   return 'pill pill--warn';
 }
 
-const short = (id: string) => id.slice(0, 8);
+/** Turn a raw API error into something readable — swap any internal signer id
+ *  for the member's name, otherwise defer to the shared humanizer. */
+function friendlyErr(raw: string, label: (id: string) => string): string {
+  const inner = /\{"error":"([^"]+)"/.exec(raw)?.[1] ?? raw;
+  const badId = /signer ([0-9a-fA-F-]{6,}) cannot see this document/.exec(inner)?.[1];
+  if (badId) {
+    return `${label(badId)} can't be a signer on this document — it's outside their access (scope or category).`;
+  }
+  return humanizeError(raw);
+}
 
 export function SignaturePanel({
   api,
@@ -15,33 +29,50 @@ export function SignaturePanel({
   docId,
   myUserId,
   canSend,
+  dealActive = true,
 }: {
   api: DealsApi;
   dealId: string;
   docId: string;
   myUserId: string;
   canSend: boolean;
+  dealActive?: boolean;
 }) {
   const [envelopes, setEnvelopes] = useState<SignatureEnvelope[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
   const [picked, setPicked] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState<{ subject: string; version?: number } | null>(null);
+  const seen = useRef<Record<string, string>>({});
+  const { label, members } = useMemberNames(api, dealId);
+  const ask = useAsk();
 
   const load = useCallback(() => {
     api
       .signatures(dealId, docId)
-      .then((r) => setEnvelopes(r.envelopes))
-      .catch((e: unknown) => setErr(String(e)));
+      .then((r) => {
+        setEnvelopes(r.envelopes);
+        for (const e of r.envelopes) {
+          if (seen.current[e.envId] && seen.current[e.envId] !== 'completed' && e.status === 'completed') {
+            setDone({ subject: e.subject, version: e.signedVersion });
+          }
+          seen.current[e.envId] = e.status;
+        }
+      })
+      .catch((e: unknown) => setErr(friendlyErr(String(e), label)));
   }, [api, dealId, docId]);
 
-  useEffect(load, [load]);
-  useEffect(() => {
-    if (canSend) api.members(dealId).then((r) => setMembers(r.members)).catch(() => {});
-  }, [api, dealId, canSend]);
+  usePoll(load, 8_000, [load]);
 
   const act = (p: Promise<unknown>) => {
     setErr(null);
-    void p.then(load).catch((e: unknown) => setErr(String(e)));
+    void p.then(load).catch((e: unknown) => setErr(friendlyErr(String(e), label)));
+  };
+
+  const downloadSigned = (n: number) => {
+    api
+      .documentDownloadUrl(dealId, docId, n)
+      .then((r) => window.open(r.url, '_blank', 'noopener'))
+      .catch((e: unknown) => setErr(friendlyErr(String(e), label)));
   };
 
   const send = () => {
@@ -60,10 +91,35 @@ export function SignaturePanel({
       <h4 style={{ margin: '0 0 6px' }}>Signatures</h4>
       {err && <p className="error">{err}</p>}
 
+      {done && (
+        <div
+          className="card card--ok"
+          style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 8 }}
+        >
+          <span style={{ flex: 1 }}>
+            ✅ <strong>Signing complete</strong> — “{done.subject}” is fully signed.
+            {done.version ? (
+              <>
+                {' '}
+                The executed copy is saved as <strong>v{done.version}</strong>.
+              </>
+            ) : null}
+          </span>
+          {done.version && (
+            <button className="btn btn--ghost btn--sm" onClick={() => downloadSigned(done.version!)}>
+              Download
+            </button>
+          )}
+          <button className="btn btn--ghost btn--sm" onClick={() => setDone(null)}>
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <ul className="section-list">
         {envelopes.map((env) => {
           const mine = env.recipients.find((r) => r.userId === myUserId);
-          const canSign = env.status === 'sent' && mine && mine.status === 'sent';
+          const canSign = dealActive && env.status === 'sent' && mine && mine.status === 'sent';
           return (
             <li key={env.envId} style={{ flexWrap: 'wrap' }}>
               <span className={statusPill(env.status)}>{env.status}</span>
@@ -72,10 +128,13 @@ export function SignaturePanel({
                 via {env.provider}
                 {env.signedVersion ? ` · signed copy v${env.signedVersion}` : ''}
               </span>
-              <span className="btn-row" style={{ flexBasis: '100%', marginTop: 4 }}>
+              <span
+                className="btn-row"
+                style={{ flexBasis: '100%', marginTop: 4, flexWrap: 'wrap', gap: 6 }}
+              >
                 {env.recipients.map((r) => (
-                  <span key={r.userId} className={`tag tag--role`} title={r.userId}>
-                    {short(r.userId)}: {r.status}
+                  <span key={r.userId} className={statusPill(r.status)} style={{ fontSize: 11 }}>
+                    {label(r.userId)} &middot; {r.status}
                   </span>
                 ))}
               </span>
@@ -84,31 +143,56 @@ export function SignaturePanel({
                   <>
                     <button
                       className="btn btn--primary btn--sm"
-                      onClick={() => act(api.signEnvelope(dealId, docId, env.envId))}
+                      onClick={() =>
+                        act(
+                          api.signEnvelope(dealId, docId, env.envId).then((r) => {
+                            if (r.status === 'completed')
+                              setDone({ subject: env.subject, version: r.signedVersion });
+                          }),
+                        )
+                      }
                     >
                       Sign
                     </button>
                     <button
                       className="btn btn--danger btn--sm"
-                      onClick={() =>
+                      onClick={async () => {
+                        const reason = await ask({
+                          title: 'Decline to sign?',
+                          body: `“${env.subject}” — the sender will be notified.`,
+                          input: true,
+                          placeholder: 'Reason (optional)',
+                          danger: true,
+                          confirmLabel: 'Decline',
+                        });
+                        if (reason == null) return;
                         act(
                           api.signEnvelope(dealId, docId, env.envId, {
                             decline: true,
-                            reason: window.prompt('Reason for declining?') || undefined,
+                            reason: reason || undefined,
                           }),
-                        )
-                      }
+                        );
+                      }}
                     >
                       Decline
                     </button>
                   </>
                 )}
-                {env.status === 'sent' && env.createdBy === myUserId && (
+                {dealActive && env.status === 'sent' && env.createdBy === myUserId && (
                   <button
                     className="btn btn--ghost btn--sm"
-                    onClick={() =>
-                      act(api.voidEnvelope(dealId, docId, env.envId, window.prompt('Reason?') || undefined))
-                    }
+                    onClick={async () => {
+                      const reason = await ask({
+                        title: 'Void this signature request?',
+                        body: `“${env.subject}” — all pending signers lose access to sign.`,
+                        input: true,
+                        placeholder: 'Reason (optional)',
+                        danger: true,
+                        confirmLabel: 'Void',
+                      });
+                      if (reason == null) return;
+                      act(api.voidEnvelope(dealId, docId, env.envId, reason || undefined));
+                    }}
                   >
                     Void
                   </button>
@@ -137,7 +221,7 @@ export function SignaturePanel({
                     checked={!!picked[m.userId]}
                     onChange={(e) => setPicked((p) => ({ ...p, [m.userId]: e.target.checked }))}
                   />
-                  {m.role} <span className="muted">({short(m.userId)})</span>
+                  {label(m.userId)}
                 </label>
               ))}
           </div>

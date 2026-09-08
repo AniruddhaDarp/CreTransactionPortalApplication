@@ -19,7 +19,25 @@ export const threadConvertedSchema = z.object({
   dealId: z.string(),
   threadId: z.string(),
   toScope: scopeSchema,
+  by: z.string().optional(),
   droppedUserId: z.string().optional(),
+});
+
+export const threadDeleteRequestedSchema = z.object({
+  dealId: z.string(),
+  threadId: z.string(),
+  subject: z.string(),
+  scope: scopeSchema,
+  requestedBy: z.string(),
+  requesterRole: z.string(),
+  requesterSide: z.string(),
+});
+
+export const threadDeletedSchema = z.object({
+  dealId: z.string(),
+  threadId: z.string(),
+  subject: z.string().optional(),
+  hsId: z.string().optional(),
 });
 
 export const messagePostedSchema = z.object({
@@ -48,6 +66,8 @@ export const messageDeletedSchema = z.object({
 export const chatEventSchemas = {
   'thread.created': threadCreatedSchema,
   'thread.converted': threadConvertedSchema,
+  'thread.delete_requested': threadDeleteRequestedSchema,
+  'thread.deleted': threadDeletedSchema,
   'message.posted': messagePostedSchema,
   'message.edited': messageEditedSchema,
   'message.deleted': messageDeletedSchema,

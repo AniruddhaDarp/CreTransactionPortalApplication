@@ -35,18 +35,21 @@ const ROUTES: Array<[HttpMethod, string]> = [
   [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/decline'],
   [HttpMethod.POST, '/v1/deals/{dealId}/doc-requests/{reqId}/cancel'],
   // e-signature (Module 12, stretch)
+  [HttpMethod.GET, '/v1/deals/{dealId}/signatures'],
   [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/signature'],
   [HttpMethod.GET, '/v1/deals/{dealId}/documents/{docId}/signature'],
   [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/signature/{envId}/sign'],
   [HttpMethod.POST, '/v1/deals/{dealId}/documents/{docId}/signature/{envId}/void'],
 ];
 
-/** `member.*` feeds the local projection; `handshake.approved` drives the delete saga. */
+/** `member.*` feeds the local projection; `handshake.approved` drives the delete
+ *  saga; `deal.status_changed` freezes the room once the deal closes. */
 const CONSUMED_EVENTS = [
   'member.joined',
   'member.role_changed',
   'member.removed',
   'handshake.approved',
+  'deal.status_changed',
 ];
 
 /**

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Role, Side } from './roles.js';
 import {
+  approverSideFor,
   can,
+  canApproveHandshake,
   capabilitiesFor,
   handshakeApproverSide,
   initiateActionFor,
@@ -30,38 +32,45 @@ describe('can — deal + membership', () => {
     expect(can('editDealFields', ctx({ status: 'removed', isAdmin: true }))).toBe(false);
   });
 
-  it('only the admin edits deal fields', () => {
-    expect(can('editDealFields', ctx({ isAdmin: true }))).toBe(true);
-    expect(can('editDealFields', ctx({ role: 'SELLER', isAdmin: false }))).toBe(false);
+  it('either sell-side lead (SELLER or SELLER_AGENT) edits deal fields; the buy side cannot', () => {
+    expect(can('editDealFields', ctx({ role: 'SELLER_AGENT', isAdmin: true }))).toBe(true);
+    expect(can('editDealFields', ctx({ role: 'SELLER', isAdmin: false }))).toBe(true);
+    expect(can('editDealFields', ctx({ role: 'SELLER_ATTORNEY', isAdmin: false }))).toBe(false);
+    expect(can('editDealFields', ctx({ role: 'BUYER', side: 'buy' }))).toBe(false);
   });
 
-  it('admin or a buy-side lead may initiate a price-change handshake', () => {
-    expect(can('editPurchasePrice', ctx({ isAdmin: true }))).toBe(true);
+  it('a sell-side or buy-side lead may initiate a price-change handshake', () => {
+    expect(can('editPurchasePrice', ctx({ role: 'SELLER_AGENT', isAdmin: true }))).toBe(true);
+    expect(can('editPurchasePrice', ctx({ role: 'SELLER', isAdmin: false }))).toBe(true);
     expect(can('editPurchasePrice', ctx({ role: 'BUYER_AGENT', side: 'buy' }))).toBe(true);
     expect(can('editPurchasePrice', ctx({ role: 'BUYER_ATTORNEY', side: 'buy' }))).toBe(false);
   });
 
-  it('date/status edits are admin-only pre-firm, handshake-initiable post-firm', () => {
+  it('date/status edits are sell-lead-only pre-firm, either-lead post-firm', () => {
     expect(can('editDates', ctx({ role: 'BUYER', side: 'buy', isFirm: false }))).toBe(false);
     expect(can('editDates', ctx({ role: 'BUYER', side: 'buy', isFirm: true }))).toBe(true);
-    expect(can('changeDealStatus', ctx({ isAdmin: true, isFirm: false }))).toBe(true);
+    expect(can('changeDealStatus', ctx({ role: 'SELLER', isAdmin: false, isFirm: false }))).toBe(true);
+    expect(can('changeDealStatus', ctx({ role: 'SELLER', isAdmin: false, isFirm: true }))).toBe(true);
   });
 
   it('routes invitations by who manages the target side', () => {
-    expect(can('inviteSellSide', ctx({ isAdmin: true }))).toBe(true);
-    // admin bootstraps the buy side; a plain sell-side member cannot
-    expect(can('inviteBuySide', ctx({ isAdmin: true }))).toBe(true);
-    expect(can('inviteBuySide', ctx({ role: 'SELLER', isAdmin: false }))).toBe(false);
+    expect(can('inviteSellSide', ctx({ role: 'SELLER_AGENT', isAdmin: true }))).toBe(true);
+    expect(can('inviteSellSide', ctx({ role: 'SELLER', isAdmin: false }))).toBe(true);
+    expect(can('inviteSellSide', ctx({ role: 'SELLER_ATTORNEY', isAdmin: false }))).toBe(false);
+    // a sell-side lead bootstraps the buy side; the buy side then self-manages
+    expect(can('inviteBuySide', ctx({ role: 'SELLER', isAdmin: false }))).toBe(true);
     expect(can('inviteBuySide', ctx({ role: 'BUYER', side: 'buy' }))).toBe(true);
-    expect(can('inviteTitle', ctx({ isAdmin: true }))).toBe(true);
-    expect(can('inviteOther', ctx({ isAdmin: true, targetSide: 'sell' }))).toBe(true);
-    expect(can('inviteOther', ctx({ isAdmin: true, targetSide: 'buy' }))).toBe(false);
+    expect(can('inviteBuySide', ctx({ role: 'LENDER', side: 'buy' }))).toBe(false);
+    expect(can('inviteTitle', ctx({ role: 'SELLER', isAdmin: false }))).toBe(true);
+    expect(can('inviteOther', ctx({ role: 'SELLER', isAdmin: false, targetSide: 'sell' }))).toBe(true);
+    expect(can('inviteOther', ctx({ role: 'SELLER', isAdmin: false, targetSide: 'buy' }))).toBe(false);
     expect(can('inviteOther', ctx({ role: 'BUYER', side: 'buy', targetSide: 'buy' }))).toBe(true);
   });
 
   it('roster changes require managing the target member’s side', () => {
-    expect(can('removeMember', ctx({ isAdmin: true, targetSide: 'sell' }))).toBe(true);
-    expect(can('removeMember', ctx({ isAdmin: true, targetSide: 'buy' }))).toBe(false);
+    expect(can('removeMember', ctx({ role: 'SELLER', isAdmin: false, targetSide: 'sell' }))).toBe(true);
+    expect(can('removeMember', ctx({ role: 'SELLER', isAdmin: false, targetSide: 'buy' }))).toBe(false);
+    expect(can('removeMember', ctx({ role: 'SELLER_ATTORNEY', targetSide: 'sell' }))).toBe(false);
     expect(can('changeMemberRole', ctx({ role: 'BUYER', side: 'buy', targetSide: 'buy' }))).toBe(
       true,
     );
@@ -69,9 +78,11 @@ describe('can — deal + membership', () => {
 });
 
 describe('can — stubbed groups still give sensible answers', () => {
-  it('advanceMilestone / deleteDocument are lead-initiable', () => {
+  it('advanceMilestone / deleteDocument are lead-initiable on either side', () => {
     expect(can('advanceMilestone', ctx({ role: 'BUYER', side: 'buy' }))).toBe(true);
-    expect(can('deleteDocument', ctx({ role: 'SELLER', side: 'sell' }))).toBe(false);
+    expect(can('advanceMilestone', ctx({ role: 'SELLER', side: 'sell' }))).toBe(true);
+    expect(can('deleteDocument', ctx({ role: 'SELLER', side: 'sell' }))).toBe(true);
+    expect(can('deleteDocument', ctx({ role: 'SELLER_ATTORNEY', side: 'sell' }))).toBe(false);
   });
 
   it('OTHER cannot post deal-wide or create deal-wide threads/docs', () => {
@@ -122,9 +133,36 @@ describe('handshake approval', () => {
     // sell initiated -> a buy-side lead approves
     expect(isHandshakeApprover(ctx({ role: 'BUYER', side: 'buy' }), 'sell')).toBe(true);
     expect(isHandshakeApprover(ctx({ role: 'BUYER_ATTORNEY', side: 'buy' }), 'sell')).toBe(false);
-    // buy initiated -> the admin approves
-    expect(isHandshakeApprover(ctx({ isAdmin: true }), 'buy')).toBe(true);
-    expect(isHandshakeApprover(ctx({ role: 'SELLER', isAdmin: false }), 'buy')).toBe(false);
+    // buy initiated -> a sell-side lead approves (SELLER or SELLER_AGENT)
+    expect(isHandshakeApprover(ctx({ role: 'SELLER_AGENT', isAdmin: true }), 'buy')).toBe(true);
+    expect(isHandshakeApprover(ctx({ role: 'SELLER', isAdmin: false }), 'buy')).toBe(true);
+    expect(isHandshakeApprover(ctx({ role: 'SELLER_ATTORNEY', isAdmin: false }), 'buy')).toBe(false);
+  });
+
+  it('routes a side-private document archive to the initiating side’s own lead', () => {
+    // deal-wide delete + every other action -> counterparty
+    expect(approverSideFor('delete_document', 'buy', 'deal_wide')).toBe('sell');
+    expect(approverSideFor('advance_stage', 'buy', 'side_private:buy')).toBe('sell');
+    // side-private delete -> same side
+    expect(approverSideFor('delete_document', 'buy', 'side_private:buy')).toBe('buy');
+    expect(approverSideFor('delete_document', 'sell', 'side_private:sell')).toBe('sell');
+    // deal-wide delete of a category the counterparty can't see -> same side
+    expect(approverSideFor('delete_document', 'buy', 'deal_wide', 'Financing')).toBe('buy');
+    expect(approverSideFor('delete_document', 'buy', 'deal_wide', 'Appraisal')).toBe('buy');
+    // ...but a category the counterparty *can* see -> counterparty
+    expect(approverSideFor('delete_document', 'buy', 'deal_wide', 'Title')).toBe('sell');
+
+    // a buy-side lead approves a buy-side-private delete; the seller cannot
+    expect(
+      canApproveHandshake(ctx({ role: 'BUYER_AGENT', side: 'buy' }), 'delete_document', 'buy', 'side_private:buy'),
+    ).toBe(true);
+    expect(
+      canApproveHandshake(ctx({ role: 'SELLER_AGENT', isAdmin: true }), 'delete_document', 'buy', 'side_private:buy'),
+    ).toBe(false);
+    // deal-wide delete keeps the counterparty as approver
+    expect(
+      canApproveHandshake(ctx({ role: 'SELLER', isAdmin: false }), 'delete_document', 'buy', 'deal_wide'),
+    ).toBe(true);
   });
 
   it('maps each handshake action to its initiating capability', () => {
@@ -138,19 +176,20 @@ describe('handshake approval', () => {
 });
 
 describe('can — payments (Module 11)', () => {
-  it('a lead (admin or buy-side lead) may record / void; nobody else may', () => {
-    expect(can('recordPayment', ctx({ isAdmin: true }))).toBe(true);
+  it('either side’s lead may record / void; non-leads may not', () => {
+    expect(can('recordPayment', ctx({ role: 'SELLER_AGENT', isAdmin: true }))).toBe(true);
+    expect(can('recordPayment', ctx({ role: 'SELLER', isAdmin: false }))).toBe(true);
     expect(can('recordPayment', ctx({ role: 'BUYER', side: 'buy' }))).toBe(true);
     expect(can('voidPayment', ctx({ role: 'BUYER_AGENT', side: 'buy' }))).toBe(true);
-    expect(can('recordPayment', ctx({ role: 'SELLER', isAdmin: false }))).toBe(false);
+    expect(can('recordPayment', ctx({ role: 'SELLER_ATTORNEY', isAdmin: false }))).toBe(false);
     expect(can('recordPayment', ctx({ role: 'LENDER', side: 'buy' }))).toBe(false);
     expect(can('voidPayment', ctx({ role: 'BUYER_ATTORNEY', side: 'buy' }))).toBe(false);
-    expect(can('recordPayment', ctx({ status: 'removed', isAdmin: true }))).toBe(false);
+    expect(can('recordPayment', ctx({ role: 'SELLER', status: 'removed' }))).toBe(false);
   });
 
   it('exposes recordPayment in the SPA capability map', () => {
-    expect(capabilitiesFor(ctx({ isAdmin: true })).recordPayment).toBe(true);
-    expect(capabilitiesFor(ctx({ role: 'SELLER', isAdmin: false })).recordPayment).toBe(false);
+    expect(capabilitiesFor(ctx({ role: 'SELLER', isAdmin: false })).recordPayment).toBe(true);
+    expect(capabilitiesFor(ctx({ role: 'SELLER_ATTORNEY', isAdmin: false })).recordPayment).toBe(false);
   });
 });
 
@@ -169,13 +208,15 @@ describe('inviteActionFor', () => {
 
 describe('capabilitiesFor', () => {
   it('produces a boolean map an SPA can use to hide controls', () => {
-    const caps = capabilitiesFor(ctx({ isAdmin: true }));
-    expect(caps.editDealFields).toBe(true);
-    expect(caps.inviteBuySide).toBe(true); // admin bootstraps the buy side
-    expect(caps.manageRoster).toBe(true);
-    const plainSeller = capabilitiesFor(ctx({ role: 'SELLER', isAdmin: false }));
-    expect(plainSeller.editDealFields).toBe(false);
-    expect(plainSeller.inviteBuySide).toBe(false);
+    // a plain SELLER has the same authority as the SELLER_AGENT
+    const seller = capabilitiesFor(ctx({ role: 'SELLER', isAdmin: false }));
+    expect(seller.editDealFields).toBe(true);
+    expect(seller.inviteBuySide).toBe(true); // a sell-side lead bootstraps the buy side
+    expect(seller.manageRoster).toBe(true);
+    const attorney = capabilitiesFor(ctx({ role: 'SELLER_ATTORNEY', isAdmin: false }));
+    expect(attorney.editDealFields).toBe(false);
+    expect(attorney.inviteBuySide).toBe(false);
+    expect(attorney.manageRoster).toBe(false);
   });
 
   it('is all-false-ish for a removed member', () => {

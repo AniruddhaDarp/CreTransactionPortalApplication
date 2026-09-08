@@ -15,7 +15,7 @@ import { handshakeRoutes } from './handshakes.js';
 import { paymentRoutes } from './payments.js';
 import type { DealMeta } from './repo.js';
 import * as repo from './repo.js';
-import { emit, param, requireMember, WEB_ORIGIN } from './shared.js';
+import { assertActive, emit, param, requireMember, WEB_ORIGIN } from './shared.js';
 import { stageRoutes } from './stages.js';
 
 const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -105,7 +105,28 @@ const dealRoutes: Record<string, RouteHandler> = {
     return { status: 201, body: { ...deal, membership } };
   },
 
-  'GET /v1/deals': async (ctx) => ({ body: { deals: await repo.listMyDeals(ctx.userId) } }),
+  'GET /v1/deals': async (ctx) => {
+    const email = String(ctx.claims.email ?? '').toLowerCase();
+    const [deals, rawInvites] = await Promise.all([
+      repo.listMyDeals(ctx.userId),
+      email ? repo.listPendingInvitesForEmail(email) : Promise.resolve([]),
+    ]);
+    const now = Date.now();
+    const pendingInvites = await Promise.all(
+      rawInvites
+        .filter((i) => Date.parse(i.expiresAt) > now)
+        .map(async (i) => ({
+          dealId: i.dealId,
+          token: i.token,
+          role: i.role,
+          side: i.side,
+          invitedBy: i.invitedBy,
+          expiresAt: i.expiresAt,
+          dealAddress: (await repo.getDeal(i.dealId))?.address ?? null,
+        })),
+    );
+    return { body: { deals, pendingInvites } };
+  },
 
   'GET /v1/deals/{dealId}': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
@@ -116,6 +137,7 @@ const dealRoutes: Record<string, RouteHandler> = {
 
   'PATCH /v1/deals/{dealId}': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     if (!can('editDealFields', buildCtx(deal, membership))) {
       throw new HttpError(403, 'only the deal admin may edit these fields');
     }
@@ -140,14 +162,14 @@ const dealRoutes: Record<string, RouteHandler> = {
 
     if (authz.isFirm) {
       // firm deal: closing/cancelling needs the counterparty's approval
-      const { hs, event } = await handshake.initiate({
+      const { hs, events } = await handshake.initiate({
         deal,
         authz,
         action: status === 'CLOSED' ? 'close_deal' : 'cancel_deal',
         payload: { reason },
         actorId: ctx.userId,
       });
-      await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+      await emit(deal.dealId, ctx.correlationId, ctx.userId, events);
       return {
         status: 202,
         body: { handshakeId: hs.hsId, action: hs.action, status: 'pending' },
@@ -167,32 +189,33 @@ const dealRoutes: Record<string, RouteHandler> = {
 
   'POST /v1/deals/{dealId}/terms': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const authz = buildCtx(deal, membership);
     const input = parseBody(termsSchema, ctx.body ?? {});
 
     if (input.price !== undefined) {
       // a price change is always a handshake
-      const { hs, event } = await handshake.initiate({
+      const { hs, events } = await handshake.initiate({
         deal,
         authz,
         action: 'edit_price',
         payload: { price: input.price },
         actorId: ctx.userId,
       });
-      await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+      await emit(deal.dealId, ctx.correlationId, ctx.userId, events);
       return { status: 202, body: { handshakeId: hs.hsId, action: 'edit_price', status: 'pending' } };
     }
 
     // targetClosingDate: admin-unilateral pre-firm, handshake once firm
     if (deal.firm) {
-      const { hs, event } = await handshake.initiate({
+      const { hs, events } = await handshake.initiate({
         deal,
         authz,
         action: 'edit_dates',
         payload: { targetClosingDate: input.targetClosingDate },
         actorId: ctx.userId,
       });
-      await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+      await emit(deal.dealId, ctx.correlationId, ctx.userId, events);
       return { status: 202, body: { handshakeId: hs.hsId, action: 'edit_dates', status: 'pending' } };
     }
     if (!can('editDates', authz)) throw new HttpError(403, 'not allowed to change the closing date');
@@ -250,6 +273,7 @@ const dealRoutes: Record<string, RouteHandler> = {
 
   'POST /v1/deals/{dealId}/invites': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const input = parseBody(inviteSchema, ctx.body ?? {});
     const email = input.email.toLowerCase();
     const targetSide = input.role === 'OTHER' ? input.side! : sideOf(input.role);
@@ -368,8 +392,29 @@ const dealRoutes: Record<string, RouteHandler> = {
     return { status: 201, body: membership };
   },
 
+  'POST /v1/deals/{dealId}/invites/{token}/decline': async (ctx) => {
+    const dealId = param(ctx, 'dealId');
+    const invite = await repo.getInvite(dealId, param(ctx, 'token'));
+    if (!invite) throw new HttpError(404, 'invitation not found');
+    if (String(ctx.claims.email ?? '').toLowerCase() !== invite.email) {
+      throw new HttpError(403, 'this invitation is for a different email address');
+    }
+    if (invite.status !== 'pending') {
+      throw new HttpError(409, `this invitation was already ${invite.status}`);
+    }
+    await repo.revokeInvite(dealId, invite.token);
+    await emit(dealId, ctx.correlationId, ctx.userId, [
+      {
+        type: 'member.invite_declined',
+        detail: { dealId, email: invite.email, role: invite.role, invitedBy: invite.invitedBy },
+      },
+    ]);
+    return { body: { status: 'declined' } };
+  },
+
   'PATCH /v1/deals/{dealId}/members/{userId}': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const targetUserId = param(ctx, 'userId');
     const target = await repo.getMembership(deal.dealId, targetUserId);
     if (!target || target.status !== 'active') throw new HttpError(404, 'no such active member');
@@ -398,6 +443,7 @@ const dealRoutes: Record<string, RouteHandler> = {
 
   'DELETE /v1/deals/{dealId}/members/{userId}': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const targetUserId = param(ctx, 'userId');
     if (targetUserId === deal.createdBy) throw new HttpError(409, 'the deal creator cannot be removed');
     if (targetUserId === ctx.userId) throw new HttpError(409, 'you cannot remove yourself');

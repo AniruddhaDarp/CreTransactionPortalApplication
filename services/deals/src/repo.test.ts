@@ -14,6 +14,7 @@ import {
   listBuySideRoster,
   listMyDeals,
   listPayments,
+  listPendingInvitesForEmail,
   putPayment,
 } from './repo.js';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
@@ -114,6 +115,20 @@ describe('deals repo', () => {
     ]);
   });
 
+  it('listPendingInvitesForEmail queries GSI2 by lowercased email and keeps only pending', async () => {
+    ddb.on(QueryCommand).resolves({
+      Items: [
+        { dealId: 'd1', token: 't1', email: 'me@x.com', role: 'BUYER', status: 'pending' },
+        { dealId: 'd2', token: 't2', email: 'me@x.com', role: 'LENDER', status: 'accepted' },
+      ],
+    });
+    const rows = await listPendingInvitesForEmail('ME@X.com');
+    const call = ddb.commandCalls(QueryCommand)[0]!.args[0].input;
+    expect(call.IndexName).toBe('gsi2');
+    expect(call.ExpressionAttributeValues![':pk']).toBe('EMAIL#me@x.com');
+    expect(rows.map((r) => r.token)).toEqual(['t1']);
+  });
+
   it('putPayment writes a PAY# item guarded against overwrite', async () => {
     ddb.on(PutCommand).resolves({});
     await putPayment({
@@ -125,6 +140,7 @@ describe('deals repo', () => {
       payer: 'buyer',
       payee: 'escrow',
       paidOn: '2026-09-01',
+      appliesToPrice: true,
       status: 'recorded',
       recordedBy: 'u1',
       recordedAt: 't',

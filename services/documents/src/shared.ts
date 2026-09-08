@@ -1,8 +1,17 @@
 import type { AuthzContext } from '@cre/authz';
 import { HttpError, publish, type RequestContext } from '@cre/platform';
+import * as repo from './repo.js';
 import type { Viewer } from './scope.js';
 
 export const BUS = () => process.env.EVENT_BUS_NAME ?? '';
+
+/** Once a deal is CLOSED / CANCELLED the document room is a read-only record. */
+export async function assertDealActive(dealId: string): Promise<void> {
+  const status = (await repo.getDealStatus(dealId)) ?? 'ACTIVE';
+  if (status !== 'ACTIVE') {
+    throw new HttpError(409, `the deal is ${status.toLowerCase()} — the workspace is read-only`);
+  }
+}
 
 export const param = (ctx: RequestContext, name: string): string => {
   const v = ctx.pathParams[name];

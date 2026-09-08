@@ -162,13 +162,19 @@ the agent can carry the process on the buyer's instruction. Gated actions:
 | Action | Rule |
 |---|---|
 | Advance a milestone | Always handshake (either side initiates) |
-| Delete / archive a document | Always handshake |
+| Delete / archive a **deal-wide** document | Always handshake — counterparty lead approves |
+| Delete / archive a **side-private** document | Handshake, but approved by the *other* lead on the initiating side (the counterparty can't see the doc); if the initiator is that side's only lead, the request is self-approving |
+| Delete a **channel** thread | Handshake — initiated by an agent/attorney of the channel, approved by a counterparty deal lead; soft archive |
 | Edit purchase price | Always handshake |
 | Edit dates (closing, stage targets) | Admin unilaterally pre-firm; handshake once firm |
 | Close / cancel the deal | Admin unilaterally in/before Attorney Review; handshake once firm |
 
 Rejections carry an optional reason and drop the request; it can be re-proposed.
 Milestone **regression is blocked entirely** in V1.
+
+`approverSideFor(action, initiatedSide, scope)` in `@cre/authz` resolves who
+approves; every path stays "no unilateral deletion, always audited", but the
+reviewer is always someone with visibility of the document.
 
 ### 5.5 Communication
 
@@ -177,11 +183,18 @@ creation), optional stage tag, messages.
 
 - **Create:** any active member for a scope they belong to; `OTHER` may create
   `side_private` only.
-- **Channel → side-private conversion:** an `channel:agent` thread can be
-  promoted to `side_private` by either agent — it moves to *that agent's* side,
-  pulls in the whole side, and drops the other side's agent. Same for
-  `channel:attorney` by either attorney. History retained; audited; the dropped
-  party is notified. No other conversions in V1.
+- **Channel → deal-wide conversion:** either agent may open a `channel:agent`
+  thread to the whole deal (`deal_wide`); either attorney may do the same for
+  `channel:attorney`. Unilateral, history retained, nobody dropped, all members
+  notified, audited. (The earlier side-private conversion was replaced by this —
+  "make public" proved the more useful operation.)
+- **Channel deletion:** either agent (or attorney) of a channel may request its
+  deletion; it is **handshake-gated** — a deal lead on the counterparty side
+  approves. On approval the thread is **soft-archived** (`deletedAt`, hidden from
+  every list, messages retained in the audit log) and all members are notified.
+  Runs as a cross-service saga (`thread.delete_requested` → Deals opens the
+  handshake → `handshake.approved` → Chat archives → `thread.deleted` closes it),
+  mirroring the document-delete saga.
 - **Messages:** text, @mentions of members, attach/reference a document. Edit and
   delete are **soft** — "edited" / "message removed" markers; original content
   retained in the audit log.

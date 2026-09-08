@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AuditEvent, DealsApi } from '../deals-api.js';
 import { scopeTag } from '../theme.js';
+import { isMembershipSyncing, SYNCING_NOTE } from './sync.js';
+import { useMemberNames } from './useMemberNames.js';
+import { humanizeError } from './errors.js';
+import { usePoll } from './usePoll.js';
 
 const ACTIONS = [
   '',
@@ -33,6 +37,7 @@ export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
   const [scopes, setScopes] = useState<string[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [actor, setActor] = useState('');
+  const { label, members } = useMemberNames(api, dealId);
   const [action, setAction] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -54,14 +59,16 @@ export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
         setEvents(r.events);
         setScopes(r.scopes);
       })
-      .catch((e: unknown) => setErr(String(e)));
+      .catch((e: unknown) => setErr(humanizeError(String(e))));
   }, [api, dealId, filters]);
 
-  useEffect(load, [load]);
+  usePoll(load, 12_000, [load]);
+  // while the membership projection is catching up, retry quickly
   useEffect(() => {
-    const t = setInterval(load, 15_000);
-    return () => clearInterval(t);
-  }, [load]);
+    if (!err || !isMembershipSyncing(err)) return;
+    const t = setTimeout(load, 2500);
+    return () => clearTimeout(t);
+  }, [err, load]);
 
   const download = async (format: 'csv' | 'json') => {
     try {
@@ -73,7 +80,7 @@ export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setErr(String(e));
+      setErr(humanizeError(String(e)));
     }
   };
 
@@ -90,17 +97,26 @@ export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
           : '—'}
         . There is no cross-side view.
       </p>
-      {err && <p className="error">{err}</p>}
+      {err &&
+        (isMembershipSyncing(err) ? (
+          <p className="muted">{SYNCING_NOTE}</p>
+        ) : (
+          <p className="error">{err}</p>
+        ))}
 
       <div className="toolbar">
         <label className="field">
           <span>Actor</span>
-          <input
-            className="input"
-            value={actor}
-            onChange={(e) => setActor(e.target.value)}
-            placeholder="user id"
-          />
+          <select className="select" value={actor} onChange={(e) => setActor(e.target.value)}>
+            <option value="">(anyone)</option>
+            {members
+              .filter((m) => m.status === 'active')
+              .map((m) => (
+                <option key={m.userId} value={m.userId}>
+                  {label(m.userId)}
+                </option>
+              ))}
+          </select>
         </label>
         <label className="field">
           <span>Action</span>
@@ -154,7 +170,7 @@ export function Audit({ api, dealId }: { api: DealsApi; dealId: string }) {
                 <td className="num" style={{ whiteSpace: 'nowrap' }}>
                   {e.occurredAt.slice(0, 19).replace('T', ' ')}
                 </td>
-                <td className="num">{e.actorId ? e.actorId.slice(0, 8) : '—'}</td>
+                <td>{e.actorId ? label(e.actorId) : '—'}</td>
                 <td className="mono" style={{ fontSize: 12 }}>
                   {e.detailType}
                 </td>

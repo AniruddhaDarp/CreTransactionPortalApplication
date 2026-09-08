@@ -62,3 +62,12 @@ export const isAttorney = (role: Role): boolean =>
 /** Buyer or buyer's agent — either can act as the buy-side handshake lead. */
 export const isBuySideLead = (role: Role): boolean =>
   role === 'BUYER' || role === 'BUYER_AGENT';
+
+/**
+ * Seller or seller's agent — either can act as the sell-side lead. Mirrors
+ * `isBuySideLead`: a seller representing themselves has the same authority as a
+ * listing broker. (The deal *creator* is still recorded separately as the
+ * initial seat, but it no longer confers extra permissions.)
+ */
+export const isSellSideLead = (role: Role): boolean =>
+  role === 'SELLER' || role === 'SELLER_AGENT';

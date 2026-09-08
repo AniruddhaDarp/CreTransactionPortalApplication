@@ -10,7 +10,7 @@ import { HttpError, parseBody, router, type RequestContext, type RouteHandler } 
 import { z } from 'zod';
 import * as repo from './repo.js';
 import { requireViewer, scopeMember } from './scope.js';
-import { authzCtx, emit, param } from './shared.js';
+import { assertDealActive, authzCtx, emit, param } from './shared.js';
 import { signatureRoutes } from './signatures.js';
 
 const categoryEnum = z.enum(
@@ -72,6 +72,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/documents': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const input = parseBody(newDocSchema, ctx.body ?? {});
     assertCanWriteScope(scopeMember(viewer), input.scope);
 
@@ -92,6 +93,7 @@ const documentRoutes: Record<string, RouteHandler> = {
         versionCount: 1,
         uploadedBy: ctx.userId,
         createdAt: now,
+        updatedAt: now,
       },
       {
         dealId,
@@ -127,6 +129,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/documents/{docId}/versions': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const doc = await repo.getDocument(dealId, param(ctx, 'docId'));
     if (!doc || doc.archivedAt) throw new HttpError(404, 'document not found');
     assertCanWriteScope(scopeMember(viewer), doc.scope);
@@ -158,6 +161,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/documents/{docId}/promote': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const doc = await repo.getDocument(dealId, param(ctx, 'docId'));
     if (!doc || doc.archivedAt) throw new HttpError(404, 'document not found');
     if (doc.scope === 'deal_wide') throw new HttpError(409, 'document is already deal-wide');
@@ -175,6 +179,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'DELETE /v1/deals/{dealId}/documents/{docId}': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const doc = await repo.getDocument(dealId, param(ctx, 'docId'));
     if (!doc || doc.archivedAt) throw new HttpError(404, 'document not found');
     if (!can('deleteDocument', authzCtx(viewer))) {
@@ -186,6 +191,9 @@ const documentRoutes: Record<string, RouteHandler> = {
         detail: {
           dealId,
           docId: doc.docId,
+          scope: doc.scope,
+          category: doc.category,
+          title: doc.title,
           requestedBy: ctx.userId,
           requesterRole: viewer.role,
           requesterSide: viewer.side,
@@ -212,6 +220,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/doc-requests': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     if (!can('createDocRequest', authzCtx(viewer))) {
       throw new HttpError(403, 'not allowed to create document requests');
     }
@@ -252,6 +261,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/doc-requests/{reqId}/fulfill': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const req = await requireOpenRequest(dealId, param(ctx, 'reqId'), viewer, ctx.userId);
     const { docId } = parseBody(z.object({ docId: z.string().min(1) }), ctx.body ?? {});
     const doc = await repo.getDocument(dealId, docId);
@@ -269,6 +279,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/doc-requests/{reqId}/decline': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const viewer = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const req = await requireOpenRequest(dealId, param(ctx, 'reqId'), viewer, ctx.userId);
     const { reason } = parseBody(z.object({ reason: z.string().max(500).optional() }), ctx.body ?? {});
     await repo.resolveDocRequest(dealId, req.reqId, { status: 'declined', declineReason: reason });
@@ -284,6 +295,7 @@ const documentRoutes: Record<string, RouteHandler> = {
   'POST /v1/deals/{dealId}/doc-requests/{reqId}/cancel': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const req = await repo.getDocRequest(dealId, param(ctx, 'reqId'));
     if (!req || req.status !== 'open') throw new HttpError(404, 'no open request with that id');
     if (req.createdBy !== ctx.userId) throw new HttpError(403, 'only the requester can cancel');

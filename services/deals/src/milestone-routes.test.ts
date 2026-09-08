@@ -81,7 +81,7 @@ describe('POST /v1/deals/{dealId}/advance', () => {
     vi.mocked(repo.getMembership).mockResolvedValue(member());
     vi.mocked(handshake.initiate).mockResolvedValue({
       hs: { hsId: 'h9', action: 'advance_stage' } as never,
-      event: { type: 'handshake.requested', detail: {} },
+      events: [{ type: 'handshake.requested', detail: {} }],
     });
     const res = await run(event({ routeKey: 'POST /v1/deals/{dealId}/advance', path: { dealId: 'd1' } }));
     expect(res.statusCode).toBe(202);
@@ -146,7 +146,7 @@ describe('POST /v1/deals/{dealId}/status when firm', () => {
     vi.mocked(repo.getMembership).mockResolvedValue(member());
     vi.mocked(handshake.initiate).mockResolvedValue({
       hs: { hsId: 'h5', action: 'close_deal' } as never,
-      event: { type: 'handshake.requested', detail: {} },
+      events: [{ type: 'handshake.requested', detail: {} }],
     });
     const res = await run(
       event({

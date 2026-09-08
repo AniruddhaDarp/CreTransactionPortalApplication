@@ -60,8 +60,8 @@ describe('DocumentsStack', () => {
     });
   });
 
-  it('registers the 17 JWT-authorized document routes', () => {
-    t.resourceCountIs('AWS::ApiGatewayV2::Route', 17);
+  it('registers the 18 JWT-authorized document routes', () => {
+    t.resourceCountIs('AWS::ApiGatewayV2::Route', 18);
     t.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', { AuthorizerType: 'JWT' });
     for (const rk of [
       'POST /v1/deals/{dealId}/documents',

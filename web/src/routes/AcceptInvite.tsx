@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { DealsApi } from '../deals-api.js';
+import { roleLabel } from '../roles.js';
 
 export function AcceptInvite({ api }: { api: DealsApi }) {
   const { dealId = '', token = '' } = useParams();
@@ -46,7 +47,7 @@ export function AcceptInvite({ api }: { api: DealsApi }) {
     <>
       <p>
         You&rsquo;ve been invited to <strong>{preview.dealAddress ?? dealId}</strong> as{' '}
-        <span className="tag tag--role">{preview.role}</span>.
+        <span className="tag tag--role">{roleLabel(preview.role)}</span>.
       </p>
       <button
         className="btn btn--primary"

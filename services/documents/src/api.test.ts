@@ -30,6 +30,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   eb.reset();
   eb.on(PutEventsCommand).resolves({ FailedEntryCount: 0 });
+  vi.mocked(repo.getDealStatus).mockResolvedValue('ACTIVE');
 });
 
 const viewer = (over: Partial<Viewer> = {}): Viewer => ({
@@ -133,6 +134,25 @@ describe('upload', () => {
     expect(JSON.parse(r.body).uploadUrl).toBe('https://s3.example/put');
     expect(repo.createDocument).toHaveBeenCalledOnce();
     expect(types()).toContain('document.uploaded');
+  });
+
+  it('409s any write once the deal is CLOSED (read-only room)', async () => {
+    vi.mocked(requireViewer).mockResolvedValue(viewer({ role: 'BUYER_AGENT', side: 'buy' }));
+    vi.mocked(repo.getDealStatus).mockResolvedValue('CLOSED');
+    const r = await run(
+      event({
+        routeKey: 'POST /v1/deals/{dealId}/documents',
+        path: { dealId: 'd1' },
+        body: {
+          category: 'Disclosure',
+          title: 'x',
+          scope: 'deal_wide',
+          filename: 'x.pdf',
+          contentType: 'application/pdf',
+        },
+      }),
+    );
+    expect(r.statusCode).toBe(409);
   });
 
   it('403s when a sell-side member tries to write into the buy-side private scope', async () => {

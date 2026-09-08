@@ -30,6 +30,7 @@ const ROUTES: Array<[HttpMethod, string]> = [
 const CONSUMED_EVENTS = [
   'account.created',
   'member.invited',
+  'member.invite_declined',
   'member.joined',
   'member.role_changed',
   'member.removed',
@@ -43,6 +44,7 @@ const CONSUMED_EVENTS = [
   'stage.advanced',
   'deal.status_changed',
   'thread.converted',
+  'thread.deleted',
   'payment.confirmed',
   'payment.voided',
   'signature.requested',

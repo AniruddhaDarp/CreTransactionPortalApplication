@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { buildCtx } from './context.js';
 import * as handshake from './handshake.js';
 import * as repo from './repo.js';
-import { emit, param, requireMember } from './shared.js';
+import { assertActive, emit, param, requireMember } from './shared.js';
 
 /**
  * Payments (Module 11, stretch) — *recording* money movements, not moving them.
@@ -35,7 +35,15 @@ const recordSchema = z.object({
   reference: z.string().max(120).optional(),
   paidOn: isoDate,
   note: z.string().max(1000).optional(),
+  /** Omit to use the default: true for deposit/closing kinds paid *by the buyer*. */
+  appliesToPrice: z.boolean().optional(),
 });
+
+const PRICE_KINDS = new Set(['earnest_money', 'additional_deposit', 'closing_funds']);
+/** Default: buyer's own consideration toward the price. Lender proceeds / escrow
+ *  disbursements are a funding source, not an additional payment on the price. */
+const defaultAppliesToPrice = (kind: string, payer: string): boolean =>
+  PRICE_KINDS.has(kind) && payer === 'buyer';
 
 const voidSchema = z.object({ reason: z.string().max(500).optional() });
 
@@ -57,7 +65,7 @@ export const paymentRoutes: Record<string, RouteHandler> = {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
     const authz = buildCtx(deal, membership);
     if (!can('recordPayment', authz)) throw new HttpError(403, 'not allowed to record payments');
-    if (deal.status !== 'ACTIVE') throw new HttpError(409, `deal is ${deal.status}`);
+    assertActive(deal);
 
     const input = parseBody(recordSchema, ctx.body ?? {});
     const payer = input.payer ?? 'buyer';
@@ -75,6 +83,7 @@ export const paymentRoutes: Record<string, RouteHandler> = {
       reference: input.reference,
       paidOn: input.paidOn,
       note: input.note,
+      appliesToPrice: input.appliesToPrice ?? defaultAppliesToPrice(input.kind, payer),
       status: 'recorded',
       recordedBy: ctx.userId,
       recordedAt: now,
@@ -84,7 +93,7 @@ export const paymentRoutes: Record<string, RouteHandler> = {
     // Open the confirm handshake. If the counterparty side isn't on the deal yet
     // this throws 409 and leaves an unconfirmed `recorded` payment — POST
     // .../confirm re-opens the handshake once they join (see docs/02-design.md §17).
-    const { hs, event } = await handshake.initiate({
+    const { hs, events } = await handshake.initiate({
       deal,
       authz,
       action: 'confirm_payment',
@@ -108,13 +117,14 @@ export const paymentRoutes: Record<string, RouteHandler> = {
           scope: 'deal_wide',
         },
       },
-      event,
+      ...events,
     ]);
     return { status: 201, body: { ...payment, confirmHsId: hs.hsId } };
   },
 
   'POST /v1/deals/{dealId}/payments/{payId}/confirm': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const authz = buildCtx(deal, membership);
     if (!can('recordPayment', authz)) throw new HttpError(403, 'not allowed to confirm payments');
 
@@ -124,7 +134,7 @@ export const paymentRoutes: Record<string, RouteHandler> = {
     if (pay.status !== 'recorded') throw new HttpError(409, `payment is already ${pay.status}`);
     await assertNoPendingHs(deal.dealId, pay.confirmHsId, 'confirmation');
 
-    const { hs, event } = await handshake.initiate({
+    const { hs, events } = await handshake.initiate({
       deal,
       authz,
       action: 'confirm_payment',
@@ -132,12 +142,13 @@ export const paymentRoutes: Record<string, RouteHandler> = {
       actorId: ctx.userId,
     });
     await repo.setPaymentHs(deal.dealId, payId, 'confirmHsId', hs.hsId);
-    await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, events);
     return { status: 202, body: { handshakeId: hs.hsId, action: 'confirm_payment', status: 'pending' } };
   },
 
   'POST /v1/deals/{dealId}/payments/{payId}/void': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const authz = buildCtx(deal, membership);
     if (!can('voidPayment', authz)) throw new HttpError(403, 'not allowed to void payments');
 
@@ -148,7 +159,7 @@ export const paymentRoutes: Record<string, RouteHandler> = {
     await assertNoPendingHs(deal.dealId, pay.voidHsId, 'void');
 
     const { reason } = parseBody(voidSchema, ctx.body ?? {});
-    const { hs, event } = await handshake.initiate({
+    const { hs, events } = await handshake.initiate({
       deal,
       authz,
       action: 'void_payment',
@@ -156,7 +167,7 @@ export const paymentRoutes: Record<string, RouteHandler> = {
       actorId: ctx.userId,
     });
     await repo.setPaymentHs(deal.dealId, payId, 'voidHsId', hs.hsId);
-    await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, events);
     return { status: 202, body: { handshakeId: hs.hsId, action: 'void_payment', status: 'pending' } };
   },
 };

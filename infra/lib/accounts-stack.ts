@@ -166,6 +166,13 @@ export class AccountsStack extends Stack {
         authorizer,
       });
     }
+    // Batch display-name lookup for the SPA (member lists, @-mention picker, …).
+    new HttpRoute(this, 'ProfilesRoute', {
+      httpApi,
+      routeKey: HttpRouteKey.with('/v1/profiles', HttpMethod.GET),
+      integration: new HttpLambdaIntegration('ProfilesIntegration', meFn),
+      authorizer,
+    });
 
     // --- SSM + outputs -----------------------------------------------
     const params: Record<string, string> = {

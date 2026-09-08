@@ -31,6 +31,7 @@ describe('deal event schemas', () => {
         'deal.status_changed',
         'deal.updated',
         'member.invited',
+        'member.invite_declined',
         'member.joined',
         'member.removed',
         'member.role_changed',
@@ -65,6 +66,7 @@ describe('deal event schemas', () => {
       'member.joined': { dealId: 'd', userId: 'u', role: 'BUYER', side: 'buy' },
       'member.role_changed': { dealId: 'd', userId: 'u', from: 'BUYER', to: 'BUYER_AGENT' },
       'member.removed': { dealId: 'd', userId: 'u', removedBy: 'admin' },
+      'member.invite_declined': { dealId: 'd', email: 'a@b.com', role: 'BUYER', invitedBy: 'u' },
       'stage.advanced': { dealId: 'd', from: 2, to: 3, firmNow: true },
       'stage.updated': { dealId: 'd', n: 3, changed: { notes: { from: null, to: 'x' } } },
       'handshake.requested': {

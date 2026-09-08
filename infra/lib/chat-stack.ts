@@ -23,6 +23,7 @@ const ROUTES: Array<[HttpMethod, string]> = [
   [HttpMethod.GET, '/v1/deals/{dealId}/threads'],
   [HttpMethod.POST, '/v1/deals/{dealId}/threads'],
   [HttpMethod.POST, '/v1/deals/{dealId}/threads/{threadId}/convert'],
+  [HttpMethod.DELETE, '/v1/deals/{dealId}/threads/{threadId}'],
   [HttpMethod.GET, '/v1/deals/{dealId}/threads/{threadId}/messages'],
   [HttpMethod.POST, '/v1/deals/{dealId}/threads/{threadId}/messages'],
   [HttpMethod.PATCH, '/v1/deals/{dealId}/threads/{threadId}/messages/{msgId}'],

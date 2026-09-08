@@ -36,6 +36,7 @@ const ROUTES: RouteSpec[] = [
   [HttpMethod.DELETE, '/v1/deals/{dealId}/invites/{token}'],
   [HttpMethod.GET, '/v1/deals/{dealId}/invites/{token}'],
   [HttpMethod.POST, '/v1/deals/{dealId}/invites/{token}/accept'],
+  [HttpMethod.POST, '/v1/deals/{dealId}/invites/{token}/decline'],
   [HttpMethod.PATCH, '/v1/deals/{dealId}/members/{userId}'],
   [HttpMethod.DELETE, '/v1/deals/{dealId}/members/{userId}'],
   // milestones + checklists + handshakes (Module 5)
@@ -155,8 +156,13 @@ export class DealsStack extends Stack {
     new Rule(this, 'ConsumerRule', {
       eventBus: EventBus.fromEventBusArn(this, 'BusForRule', busArn),
       eventPattern: {
-        source: ['cre.documents'],
-        detailType: ['document.delete_requested', 'document.archived'],
+        source: ['cre.documents', 'cre.chat'],
+        detailType: [
+          'document.delete_requested',
+          'document.archived',
+          'thread.delete_requested',
+          'thread.deleted',
+        ],
       },
       targets: [new SqsQueue(queue)],
     });

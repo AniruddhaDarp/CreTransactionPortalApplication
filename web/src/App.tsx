@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from 'react-oidc-context';
-import { BrowserRouter, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
-import { hostedLogoutUrl, isConfigured, type AppConfig } from './config.js';
+import { BrowserRouter, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { hostedLogoutUrl, isConfigured, preLoginPath, type AppConfig } from './config.js';
 import { dealsApi, type DealsApi } from './deals-api.js';
+import { roleLabel } from './roles.js';
+import { DialogProvider } from './routes/dialog.js';
+import { usePoll } from './routes/usePoll.js';
+import { useVersionCheck } from './routes/useVersionCheck.js';
 import { AcceptInvite } from './routes/AcceptInvite.js';
 import { DealDetail } from './routes/DealDetail.js';
 import { DealsList } from './routes/DealsList.js';
@@ -21,32 +25,62 @@ function Wordmark() {
 
 function ApprovalsBadge({ api }: { api: DealsApi }) {
   const [count, setCount] = useState(0);
-  useEffect(() => {
-    let live = true;
-    const load = () =>
-      api
-        .myApprovals()
-        .then((r) => live && setCount(r.handshakes.length))
-        .catch(() => {});
-    load();
-    const t = setInterval(load, 30_000);
-    return () => {
-      live = false;
-      clearInterval(t);
-    };
+  const load = useCallback(() => {
+    api
+      .myApprovals()
+      .then((r) => setCount(r.handshakes.length))
+      .catch(() => {});
   }, [api]);
+  usePoll(load, 10_000, [load]);
   if (count === 0) return null;
   return (
-    <span className="pill pill--warn" title="Handshakes awaiting your approval">
+    <span className="pill pill--warn" title="Requests awaiting your approval — see the Actions tab on the deal">
       {count} approval{count > 1 ? 's' : ''}
     </span>
   );
 }
 
+/** Which deal-detail tab a notification's action / info lives on. */
+function tabForNotification(n: { type: string; targetType?: string; title?: string }): string | null {
+  // payment handshakes ride the generic handshake plumbing — route them by title
+  if (/(confirm|void)_payment/.test(n.title ?? '')) return 'payments';
+  switch (n.targetType) {
+    case 'handshake':
+    case 'stage':
+      return 'milestones';
+    case 'thread':
+      return 'chat';
+    case 'payment':
+      return 'payments';
+    case 'document':
+    case 'doc-request':
+      return 'documents';
+  }
+  if (n.type.startsWith('payment')) return 'payments';
+  if (n.type.startsWith('signature') || n.type.startsWith('docrequest')) return 'documents';
+  if (n.type === 'mention' || n.type === 'thread_converted') return 'chat';
+  if (n.type.startsWith('handshake') || n.type === 'stage_advanced') return 'milestones';
+  if (n.type === 'deal_closed' || n.type === 'deal_cancelled') return 'milestones';
+  return null;
+}
+
+/** Display name for a deal-detail tab key. */
+const SECTION_LABEL: Record<string, string> = {
+  milestones: 'Milestones',
+  actions: 'Actions',
+  chat: 'Communication',
+  documents: 'Documents',
+  payments: 'Payments',
+  audit: 'Audit',
+  members: 'Members',
+};
+
 function NotificationsBell({ api }: { api: DealsApi }) {
   const [items, setItems] = useState<Awaited<ReturnType<DealsApi['notifications']>>['notifications']>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
+  const [dealName, setDealName] = useState<Record<string, string>>({});
+  const wrapRef = useRef<HTMLSpanElement>(null);
   const navigate = useNavigate();
 
   const load = useCallback(() => {
@@ -59,20 +93,54 @@ function NotificationsBell({ api }: { api: DealsApi }) {
       .catch(() => {});
   }, [api]);
 
-  useEffect(load, [load]);
-  useEffect(() => {
-    const t = setInterval(load, 30_000);
-    return () => clearInterval(t);
-  }, [load]);
+  usePoll(load, 10_000, [load]);
 
-  const openItem = (id: string, dealId?: string) => {
-    void api.markNotificationRead(id).then(load).catch(() => {});
+  // resolve dealId -> a readable name for the "which deal" line (deals change rarely)
+  useEffect(() => {
+    if (!open) return;
+    api
+      .list()
+      .then((r) => {
+        const m: Record<string, string> = {};
+        for (const d of r.deals) m[d.dealId] = d.label ?? d.address;
+        setDealName(m);
+      })
+      .catch(() => {});
+  }, [api, open]);
+
+  // close on a click outside the bell, or on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const openItem = (n: {
+    id: string;
+    dealId?: string;
+    type: string;
+    targetType?: string;
+    title?: string;
+  }) => {
+    void api.markNotificationRead(n.id).then(load).catch(() => {});
     setOpen(false);
-    if (dealId) navigate(`/deals/${dealId}`);
+    if (!n.dealId) return;
+    const t = tabForNotification(n);
+    navigate(`/deals/${n.dealId}${t ? `?tab=${t}` : ''}`);
   };
 
   return (
-    <span className="notif-wrap">
+    <span className="notif-wrap" ref={wrapRef}>
       <button
         className="btn btn--icon"
         onClick={() => setOpen((o) => !o)}
@@ -94,19 +162,28 @@ function NotificationsBell({ api }: { api: DealsApi }) {
             </button>
           </div>
           <ul className="notif-list">
-            {items.map((n) => (
-              <li
-                key={n.id}
-                role="menuitem"
-                tabIndex={0}
-                className={`notif${n.readAt ? '' : ' notif--unread'}`}
-                onClick={() => openItem(n.id, n.dealId)}
-                onKeyDown={(e) => e.key === 'Enter' && openItem(n.id, n.dealId)}
-              >
-                {n.title}
-                <time>{n.occurredAt.slice(0, 16).replace('T', ' ')}</time>
-              </li>
-            ))}
+            {items.map((n) => {
+              const section = SECTION_LABEL[tabForNotification(n) ?? ''];
+              return (
+                <li
+                  key={n.id}
+                  role="menuitem"
+                  tabIndex={0}
+                  className={`notif${n.readAt ? '' : ' notif--unread'}`}
+                  onClick={() => openItem(n)}
+                  onKeyDown={(e) => e.key === 'Enter' && openItem(n)}
+                >
+                  {n.title}
+                  {n.dealId && (
+                    <span className="notif__where">
+                      <b>{dealName[n.dealId] ?? 'Deal'}</b>
+                      {section ? ` · ${section}` : ''}
+                    </span>
+                  )}
+                  <time>{n.occurredAt.slice(0, 16).replace('T', ' ')}</time>
+                </li>
+              );
+            })}
             {items.length === 0 && (
               <li className="notif">
                 <span className="empty">Nothing yet.</span>
@@ -116,6 +193,71 @@ function NotificationsBell({ api }: { api: DealsApi }) {
         </div>
       )}
     </span>
+  );
+}
+
+function UserChip({ api, myUserId }: { api: DealsApi; myUserId: string }) {
+  const { pathname } = useLocation();
+  const [name, setName] = useState<string | null>(null);
+  const [profileRole, setProfileRole] = useState<string | undefined>(undefined);
+  const [dealRole, setDealRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .me()
+      .then((m) => {
+        setName(m.name);
+        setProfileRole(m.industryRole);
+      })
+      .catch(() => {});
+  }, [api]);
+
+  // On a deal page, show this user's role *on that deal* (it can differ per
+  // deal); elsewhere fall back to their account profile role.
+  const dealId = /^\/deals\/([^/]+)/.exec(pathname)?.[1];
+  useEffect(() => {
+    if (!dealId || dealId === 'new') {
+      setDealRole(null);
+      return;
+    }
+    let live = true;
+    api
+      .members(dealId)
+      .then((r) => {
+        if (live) setDealRole(r.members.find((m) => m.userId === myUserId)?.role ?? null);
+      })
+      .catch(() => {
+        if (live) setDealRole(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [api, dealId, myUserId]);
+
+  if (!name) return null;
+  const role = dealRole ? roleLabel(dealRole) : profileRole;
+  return (
+    <NavLink
+      to="/profile"
+      className={({ isActive }) => `user-chip${isActive ? ' is-active' : ''}`}
+      title={role ? `${name} — ${role} · View profile` : `${name} · View profile`}
+    >
+      <span className="user-chip__name">{name}</span>
+      {role && <span className="user-chip__role">{role}</span>}
+    </NavLink>
+  );
+}
+
+function UpdateBanner() {
+  const stale = useVersionCheck();
+  if (!stale) return null;
+  return (
+    <div className="update-banner" role="status">
+      <span>A newer version of the portal has been deployed.</span>
+      <button className="btn btn--primary btn--sm" onClick={() => window.location.reload()}>
+        Reload
+      </button>
+    </div>
   );
 }
 
@@ -165,7 +307,10 @@ export function App({ config }: { config: AppConfig }) {
     return (
       <Gate>
         <p className="error">Sign-in error: {auth.error.message}</p>
-        <button className="btn btn--primary" onClick={() => void auth.signinRedirect()}>
+        <button
+          className="btn btn--primary"
+          onClick={() => void auth.signinRedirect({ state: { returnTo: preLoginPath() } })}
+        >
           Try again
         </button>
       </Gate>
@@ -175,7 +320,10 @@ export function App({ config }: { config: AppConfig }) {
     return (
       <Gate>
         <p className="muted">Sign in to access your deals.</p>
-        <button className="btn btn--primary" onClick={() => void auth.signinRedirect()}>
+        <button
+          className="btn btn--primary"
+          onClick={() => void auth.signinRedirect({ state: { returnTo: preLoginPath() } })}
+        >
           Sign in
         </button>
       </Gate>
@@ -192,6 +340,7 @@ export function App({ config }: { config: AppConfig }) {
   };
 
   return (
+    <DialogProvider>
     <BrowserRouter>
       <header className="app-bar">
         <div className="app-bar__inner">
@@ -203,12 +352,10 @@ export function App({ config }: { config: AppConfig }) {
             <NavLink to="/" end className={({ isActive }) => (isActive ? 'is-active' : '')}>
               My deals
             </NavLink>
-            <NavLink to="/profile" className={({ isActive }) => (isActive ? 'is-active' : '')}>
-              Profile
-            </NavLink>
             <ApprovalsBadge api={api} />
             <NotificationsBell api={api} />
             <ThemeToggle />
+            <UserChip api={api} myUserId={myUserId} />
             <button className="btn btn--ghost btn--sm" onClick={signOut}>
               Sign out
             </button>
@@ -216,6 +363,7 @@ export function App({ config }: { config: AppConfig }) {
         </div>
       </header>
       <div className="container">
+        <UpdateBanner />
         <Routes>
           <Route path="/" element={<DealsList api={api} />} />
           <Route path="/deals/new" element={<NewDeal api={api} />} />
@@ -225,5 +373,6 @@ export function App({ config }: { config: AppConfig }) {
         </Routes>
       </div>
     </BrowserRouter>
+    </DialogProvider>
   );
 }

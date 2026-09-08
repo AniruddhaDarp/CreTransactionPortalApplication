@@ -47,8 +47,8 @@ describe('ChatStack', () => {
     });
   });
 
-  it('registers the 10 JWT-authorized chat routes', () => {
-    t.resourceCountIs('AWS::ApiGatewayV2::Route', 10);
+  it('registers the 11 JWT-authorized chat routes', () => {
+    t.resourceCountIs('AWS::ApiGatewayV2::Route', 11);
     t.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', { AuthorizerType: 'JWT' });
     for (const rk of [
       'POST /v1/deals/{dealId}/threads',

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { buildCtx } from './context.js';
 import * as handshake from './handshake.js';
 import * as repo from './repo.js';
-import { emit, param, requireMember, stageNum } from './shared.js';
+import { assertActive, emit, param, requireMember, stageNum } from './shared.js';
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
 
@@ -41,6 +41,7 @@ export const stageRoutes: Record<string, RouteHandler> = {
 
   'PATCH /v1/deals/{dealId}/stages/{n}': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const n = stageNum(ctx);
     if (!can('editStageMeta', buildCtx(deal, membership))) {
       throw new HttpError(403, 'not allowed to edit stage details');
@@ -67,14 +68,15 @@ export const stageRoutes: Record<string, RouteHandler> = {
 
   'POST /v1/deals/{dealId}/advance': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
-    const { hs, event } = await handshake.initiate({
+    assertActive(deal);
+    const { hs, events } = await handshake.initiate({
       deal,
       authz: buildCtx(deal, membership),
       action: 'advance_stage',
       payload: {},
       actorId: ctx.userId,
     });
-    await emit(deal.dealId, ctx.correlationId, ctx.userId, [event]);
+    await emit(deal.dealId, ctx.correlationId, ctx.userId, events);
     return { status: 202, body: { handshakeId: hs.hsId, action: 'advance_stage', status: 'pending' } };
   },
 
@@ -86,6 +88,7 @@ export const stageRoutes: Record<string, RouteHandler> = {
 
   'POST /v1/deals/{dealId}/stages/{n}/checklist': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const n = stageNum(ctx);
     if (!can('editChecklist', buildCtx(deal, membership))) {
       throw new HttpError(403, 'not allowed to edit the checklist');
@@ -110,6 +113,7 @@ export const stageRoutes: Record<string, RouteHandler> = {
 
   'PATCH /v1/deals/{dealId}/stages/{n}/checklist/{itemId}': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const n = stageNum(ctx);
     const itemId = param(ctx, 'itemId');
     if (!can('editChecklist', buildCtx(deal, membership))) {
@@ -139,6 +143,7 @@ export const stageRoutes: Record<string, RouteHandler> = {
 
   'DELETE /v1/deals/{dealId}/stages/{n}/checklist/{itemId}': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    assertActive(deal);
     const n = stageNum(ctx);
     const itemId = param(ctx, 'itemId');
     if (!can('editChecklist', buildCtx(deal, membership))) {

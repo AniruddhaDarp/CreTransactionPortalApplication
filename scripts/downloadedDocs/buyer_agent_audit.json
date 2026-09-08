@@ -1,0 +1,3703 @@
+{
+  "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+  "exportedAt": "2026-09-08T00:07:10.511Z",
+  "count": 173,
+  "events": [
+    {
+      "eventId": "442f41dd-9ae3-4f5b-b500-0df9782a82b7",
+      "metadata": {
+        "provider": "fake",
+        "createdBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "b13bd091-08a7-49a3-992a-2caac87ef3be",
+        "scope": "deal_wide",
+        "envId": "2fe5b2db-3ba2-463e-ada2-b78be076e503",
+        "version": 1,
+        "recipientUserIds": [
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ]
+      },
+      "targetId": "2fe5b2db-3ba2-463e-ada2-b78be076e503",
+      "summary": "Sent for signature (1 signer(s), via fake)",
+      "action": "signature.requested",
+      "occurredAt": "2026-09-08T00:01:28.434Z",
+      "targetType": "signature",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "signature.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "24f22315-14ba-4ad1-8d73-4c975025391b"
+    },
+    {
+      "eventId": "36092951-152b-4a18-a085-fa8e9b081e1e",
+      "metadata": {
+        "reason": "Voiding",
+        "envId": "e324830c-f051-405e-adec-5f4174481c83",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "b13bd091-08a7-49a3-992a-2caac87ef3be",
+        "scope": "deal_wide"
+      },
+      "targetId": "e324830c-f051-405e-adec-5f4174481c83",
+      "summary": "Signature request voided — Voiding",
+      "action": "signature.voided",
+      "occurredAt": "2026-09-08T00:01:07.940Z",
+      "targetType": "signature",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "signature.voided",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "8651f5a4-7c70-4f95-aaee-f604a449b00b"
+    },
+    {
+      "eventId": "b784f352-6301-4ced-9aab-6fb7efe9a77e",
+      "metadata": {
+        "provider": "fake",
+        "createdBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "b13bd091-08a7-49a3-992a-2caac87ef3be",
+        "scope": "deal_wide",
+        "envId": "e324830c-f051-405e-adec-5f4174481c83",
+        "version": 1,
+        "recipientUserIds": [
+          "115bb500-1001-7013-b792-59a80eda40e8"
+        ]
+      },
+      "targetId": "e324830c-f051-405e-adec-5f4174481c83",
+      "summary": "Sent for signature (1 signer(s), via fake)",
+      "action": "signature.requested",
+      "occurredAt": "2026-09-08T00:00:41.260Z",
+      "targetType": "signature",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "signature.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a41f5789-2657-4387-b3e1-42cd7e33a5b0"
+    },
+    {
+      "eventId": "9d6285d7-d21b-4f43-be34-eab054e8be32",
+      "metadata": {
+        "threadId": "320eaa0e-f4a0-4dd5-bb8b-5e127d1911e8",
+        "msgId": "124a5a55-4223-433c-9711-4b466ac60d55",
+        "authorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "deal_wide",
+        "mentions": []
+      },
+      "targetId": "124a5a55-4223-433c-9711-4b466ac60d55",
+      "summary": "Message posted",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T23:59:54.390Z",
+      "targetType": "message",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "188d27f0-bdb0-4c5f-95f7-292317650875"
+    },
+    {
+      "eventId": "c3430eb3-7cb0-479c-9df7-e82ededbe8a5",
+      "metadata": {
+        "threadId": "320eaa0e-f4a0-4dd5-bb8b-5e127d1911e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "subject": "Post closing message",
+        "scope": "deal_wide"
+      },
+      "targetId": "320eaa0e-f4a0-4dd5-bb8b-5e127d1911e8",
+      "summary": "Thread \"Post closing message\" created in deal_wide",
+      "action": "thread.created",
+      "occurredAt": "2026-09-07T23:59:43.570Z",
+      "targetType": "thread",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "thread.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7fb6bc88-9aef-438c-933e-56ee2b1a2931"
+    },
+    {
+      "eventId": "f46ca2e7-015c-4a2d-9cb3-6e0b1f2f5392",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "n": 3,
+        "scope": "deal_wide"
+      },
+      "targetId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+      "summary": "New version v3",
+      "action": "document.versioned",
+      "occurredAt": "2026-09-07T23:56:36.226Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.versioned",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "978340f0-3534-46d1-be36-8b8a083e0293"
+    },
+    {
+      "eventId": "4e288d55-0e00-4949-ae33-a18425acfa5e",
+      "metadata": {
+        "threadId": "22d03591-2aeb-4ee7-927f-f55ef39a8eb4",
+        "msgId": "7ae90727-811b-4b5b-bcc0-0b5fdd6d3ac5",
+        "authorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "side_private:buy",
+        "mentions": []
+      },
+      "targetId": "7ae90727-811b-4b5b-bcc0-0b5fdd6d3ac5",
+      "summary": "Message posted",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T23:55:58.223Z",
+      "targetType": "message",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "side_private:buy",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1f2f3567-8fe3-4b87-9a5b-1425f6067ae3"
+    },
+    {
+      "eventId": "bd61c268-4cfb-464d-9b82-4c4b3799e938",
+      "metadata": {
+        "action": "close_deal",
+        "payload": {
+          "reason": "Funded & Recorded"
+        },
+        "initiatedSide": "sell",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "2e57d6be-f258-48c5-b9bd-bc79a74ae644",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "2e57d6be-f258-48c5-b9bd-bc79a74ae644",
+      "summary": "Handshake approved: close_deal",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:54:37.293Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "786e9fad-67a2-4b30-b302-a018c072e91a"
+    },
+    {
+      "eventId": "5ef66105-9415-4e1c-a031-ab8fc39e8bbd",
+      "metadata": {
+        "reason": "Funded & Recorded",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "status": "CLOSED"
+      },
+      "targetId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "summary": "Deal closed — Funded & Recorded",
+      "action": "deal.status_changed",
+      "occurredAt": "2026-09-07T23:54:37.293Z",
+      "targetType": "deal",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "deal.status_changed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "786e9fad-67a2-4b30-b302-a018c072e91a"
+    },
+    {
+      "eventId": "34e786f4-f816-4e52-b95c-878ca1493a61",
+      "metadata": {
+        "approverIds": [
+          "115bb500-1001-7013-b792-59a80eda40e8",
+          "411ba500-60e1-70b7-750b-3ff10088b5d2"
+        ],
+        "payload": {
+          "reason": "Funded & Recorded"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "2e57d6be-f258-48c5-b9bd-bc79a74ae644",
+        "action": "close_deal",
+        "initiatedSide": "sell",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "2e57d6be-f258-48c5-b9bd-bc79a74ae644",
+      "summary": "Handshake requested: close_deal",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:50:56.761Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a0a58bb1-036b-47d7-b742-3ce5bcb7b89b"
+    },
+    {
+      "eventId": "7b715c0c-5d11-4764-9092-798efb66e1c9",
+      "metadata": {
+        "reason": "Not necessary",
+        "createdBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "scope": "deal_wide",
+        "envId": "7dda2a13-84cb-44ee-8b79-386d6c20fc09",
+        "userId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "7dda2a13-84cb-44ee-8b79-386d6c20fc09",
+      "summary": "Signature declined — Not necessary",
+      "action": "signature.declined",
+      "occurredAt": "2026-09-07T23:49:31.301Z",
+      "targetType": "signature",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "signature.declined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "0759e09f-4e72-4533-ac30-ffb79c644d73"
+    },
+    {
+      "eventId": "f116f02a-4085-4ae0-8dd7-3e71a7aef39a",
+      "metadata": {
+        "provider": "fake",
+        "createdBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "scope": "deal_wide",
+        "envId": "7dda2a13-84cb-44ee-8b79-386d6c20fc09",
+        "version": 2,
+        "recipientUserIds": [
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ]
+      },
+      "targetId": "7dda2a13-84cb-44ee-8b79-386d6c20fc09",
+      "summary": "Sent for signature (1 signer(s), via fake)",
+      "action": "signature.requested",
+      "occurredAt": "2026-09-07T23:48:59.542Z",
+      "targetType": "signature",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "signature.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "36191672-c85e-49bb-bb60-dec8c10b618e"
+    },
+    {
+      "eventId": "f63a1f60-3b66-47c6-be90-65cb214e8475",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "n": 2,
+        "scope": "deal_wide"
+      },
+      "targetId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+      "summary": "New version v2",
+      "action": "document.versioned",
+      "occurredAt": "2026-09-07T23:43:13.339Z",
+      "targetType": "document",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "document.versioned",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7892f438-51d6-434a-9a93-23c9a10483b3"
+    },
+    {
+      "eventId": "d60adc48-4081-4833-b423-07757e216378",
+      "metadata": {
+        "signedVersion": 2,
+        "envId": "3b924467-de91-4fb0-8f74-bb246d84c356",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "scope": "deal_wide"
+      },
+      "targetId": "3b924467-de91-4fb0-8f74-bb246d84c356",
+      "summary": "Signature complete — signed copy saved as v2",
+      "action": "signature.completed",
+      "occurredAt": "2026-09-07T23:43:13.339Z",
+      "targetType": "signature",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "signature.completed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7892f438-51d6-434a-9a93-23c9a10483b3"
+    },
+    {
+      "eventId": "49111b2d-8935-46a9-b0ee-f0fa389d6467",
+      "metadata": {
+        "envId": "3b924467-de91-4fb0-8f74-bb246d84c356",
+        "userId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "scope": "deal_wide"
+      },
+      "targetId": "3b924467-de91-4fb0-8f74-bb246d84c356",
+      "summary": "A signer completed the envelope",
+      "action": "signature.recipient_completed",
+      "occurredAt": "2026-09-07T23:43:12.659Z",
+      "targetType": "signature",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "signature.recipient_completed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7892f438-51d6-434a-9a93-23c9a10483b3"
+    },
+    {
+      "eventId": "29a53a66-eb7b-4166-90eb-f21956f94bc7",
+      "metadata": {
+        "provider": "fake",
+        "createdBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "scope": "deal_wide",
+        "envId": "3b924467-de91-4fb0-8f74-bb246d84c356",
+        "version": 1,
+        "recipientUserIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600"
+        ]
+      },
+      "targetId": "3b924467-de91-4fb0-8f74-bb246d84c356",
+      "summary": "Sent for signature (1 signer(s), via fake)",
+      "action": "signature.requested",
+      "occurredAt": "2026-09-07T23:40:28.595Z",
+      "targetType": "signature",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "signature.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "94b25453-1272-4406-bad3-ba1c85a88f57"
+    },
+    {
+      "eventId": "86d03cfe-1d1f-4603-9ad8-c7504e5746ea",
+      "metadata": {
+        "category": "Closing",
+        "uploadedBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+        "scope": "deal_wide"
+      },
+      "targetId": "146841a4-3d05-4db8-a4d0-716e7d641c7f",
+      "summary": "Document uploaded (Closing, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T23:40:18.640Z",
+      "targetType": "document",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f51ccee5-882b-4b26-a9bd-c753f08dcebb"
+    },
+    {
+      "eventId": "dd0b8254-9600-4e50-826d-eeb0e1de5d9d",
+      "metadata": {
+        "category": "Closing",
+        "uploadedBy": "61dba550-4091-704d-09a4-da34b12686ad",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "0103791c-7b7c-4dbc-a510-1449b8a83286",
+        "scope": "deal_wide"
+      },
+      "targetId": "0103791c-7b7c-4dbc-a510-1449b8a83286",
+      "summary": "Document uploaded (Closing, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T23:39:32.876Z",
+      "targetType": "document",
+      "actorId": "61dba550-4091-704d-09a4-da34b12686ad",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1e8dcf1f-f1bf-4535-92a0-0074d5030456"
+    },
+    {
+      "eventId": "b5e5473d-fbaf-47a9-b5b7-f7eca7154bbb",
+      "metadata": {
+        "action": "confirm_payment",
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 13500000,
+          "payId": "a023dcc2-846b-42ba-b655-26e2aaf28c8d"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "a03e2f2b-722a-4a68-805b-6949f369f9df",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "a03e2f2b-722a-4a68-805b-6949f369f9df",
+      "summary": "Handshake approved: confirm_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:38:12.142Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1e4cf5d1-f674-4d49-b750-52174f98911e"
+    },
+    {
+      "eventId": "2deeee4f-41ec-4faa-8ee7-bc700b37417f",
+      "metadata": {
+        "confirmedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "amount": 13500000,
+        "payId": "a023dcc2-846b-42ba-b655-26e2aaf28c8d",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds"
+      },
+      "targetId": "a023dcc2-846b-42ba-b655-26e2aaf28c8d",
+      "summary": "Payment confirmed — closing_funds $13500000",
+      "action": "payment.confirmed",
+      "occurredAt": "2026-09-07T23:38:12.142Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.confirmed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1e4cf5d1-f674-4d49-b750-52174f98911e"
+    },
+    {
+      "eventId": "4dcf692a-a8d4-4e5f-a61c-a382098f2304",
+      "metadata": {
+        "payee": "escrow",
+        "amount": 13500000,
+        "recordedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "method": "wire",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds",
+        "scope": "deal_wide",
+        "payId": "a023dcc2-846b-42ba-b655-26e2aaf28c8d",
+        "payer": "lender"
+      },
+      "targetId": "a023dcc2-846b-42ba-b655-26e2aaf28c8d",
+      "summary": "Payment recorded — closing_funds $13500000 via wire (lender → escrow), pending confirmation",
+      "action": "payment.recorded",
+      "occurredAt": "2026-09-07T23:38:01.063Z",
+      "targetType": "payment",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "payment.recorded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "d4f33bfa-46d8-4207-91e0-a24ee1bae6e8"
+    },
+    {
+      "eventId": "3b0cf19c-1203-4ceb-aef4-58c3a94122e0",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 13500000,
+          "payId": "a023dcc2-846b-42ba-b655-26e2aaf28c8d"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "a03e2f2b-722a-4a68-805b-6949f369f9df",
+        "action": "confirm_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "a03e2f2b-722a-4a68-805b-6949f369f9df",
+      "summary": "Handshake requested: confirm_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:38:01.063Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "d4f33bfa-46d8-4207-91e0-a24ee1bae6e8"
+    },
+    {
+      "eventId": "85da8fad-3ee3-4135-adef-0106e3c3d476",
+      "metadata": {
+        "action": "confirm_payment",
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 13500000,
+          "payId": "970815cf-ee51-4159-839c-6c4e16c664ca"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "ec5a313d-06af-44b6-89af-4eb4d5be039b",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "ec5a313d-06af-44b6-89af-4eb4d5be039b",
+      "summary": "Handshake approved: confirm_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:37:41.975Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "31ac7831-9a8b-442e-816b-68a72900fc9f"
+    },
+    {
+      "eventId": "4237efc5-29d7-43c6-a2b0-af71a9fed6c9",
+      "metadata": {
+        "confirmedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "amount": 13500000,
+        "payId": "970815cf-ee51-4159-839c-6c4e16c664ca",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds"
+      },
+      "targetId": "970815cf-ee51-4159-839c-6c4e16c664ca",
+      "summary": "Payment confirmed — closing_funds $13500000",
+      "action": "payment.confirmed",
+      "occurredAt": "2026-09-07T23:37:41.975Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.confirmed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "31ac7831-9a8b-442e-816b-68a72900fc9f"
+    },
+    {
+      "eventId": "7b6eaf2b-0f78-4a32-934e-ced1eb92bff9",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 13500000,
+          "payId": "970815cf-ee51-4159-839c-6c4e16c664ca"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "ec5a313d-06af-44b6-89af-4eb4d5be039b",
+        "action": "confirm_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "ec5a313d-06af-44b6-89af-4eb4d5be039b",
+      "summary": "Handshake requested: confirm_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:37:33.619Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "453c1fd9-fcc7-4811-ba18-51acd91b0ae5"
+    },
+    {
+      "eventId": "0e6fe412-543f-423f-ba01-af4252e7002a",
+      "metadata": {
+        "payee": "escrow",
+        "amount": 13500000,
+        "recordedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "method": "wire",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds",
+        "scope": "deal_wide",
+        "payId": "970815cf-ee51-4159-839c-6c4e16c664ca",
+        "payer": "buyer"
+      },
+      "targetId": "970815cf-ee51-4159-839c-6c4e16c664ca",
+      "summary": "Payment recorded — closing_funds $13500000 via wire (buyer → escrow), pending confirmation",
+      "action": "payment.recorded",
+      "occurredAt": "2026-09-07T23:37:33.619Z",
+      "targetType": "payment",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "payment.recorded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "453c1fd9-fcc7-4811-ba18-51acd91b0ae5"
+    },
+    {
+      "eventId": "1cc8ff67-0cce-4311-a5ff-913283b5c6e4",
+      "metadata": {
+        "action": "void_payment",
+        "payload": {
+          "reason": "Incorrect payment",
+          "payId": "225fd790-5350-4079-a1a2-f96acb6a150e"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "f4b7ec1e-d6ca-4c0f-b63a-7af4c5f55ddd",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "f4b7ec1e-d6ca-4c0f-b63a-7af4c5f55ddd",
+      "summary": "Handshake approved: void_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:30:12.167Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "842f03a1-72b4-4ad6-a583-bd764a7b4e27"
+    },
+    {
+      "eventId": "1aa0694f-5515-4d19-a97e-4c5569671aaf",
+      "metadata": {
+        "reason": "Incorrect payment",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "payId": "225fd790-5350-4079-a1a2-f96acb6a150e"
+      },
+      "targetId": "225fd790-5350-4079-a1a2-f96acb6a150e",
+      "summary": "Payment voided — Incorrect payment",
+      "action": "payment.voided",
+      "occurredAt": "2026-09-07T23:30:12.167Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.voided",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "842f03a1-72b4-4ad6-a583-bd764a7b4e27"
+    },
+    {
+      "eventId": "46c0bc74-031b-45f1-9b98-49ef80cd88ab",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "reason": "Incorrect payment",
+          "payId": "225fd790-5350-4079-a1a2-f96acb6a150e"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "f4b7ec1e-d6ca-4c0f-b63a-7af4c5f55ddd",
+        "action": "void_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "f4b7ec1e-d6ca-4c0f-b63a-7af4c5f55ddd",
+      "summary": "Handshake requested: void_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:30:07.977Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "35a70a3e-ce4c-4984-89d5-8f7e684c338b"
+    },
+    {
+      "eventId": "c151e867-d780-4b46-b573-12484c83f32a",
+      "metadata": {
+        "action": "void_payment",
+        "payload": {
+          "reason": "Overpayment",
+          "payId": "27040cad-fb9b-49e6-afed-e84d54d35b55"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "781742ad-7fc3-4e99-94e2-552fad654575",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "781742ad-7fc3-4e99-94e2-552fad654575",
+      "summary": "Handshake approved: void_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:29:38.480Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "2a1e30ba-8728-4fc9-bf94-7b2e9f39514b"
+    },
+    {
+      "eventId": "35a1c754-171e-45eb-aa24-9bcdf69cb076",
+      "metadata": {
+        "reason": "Overpayment",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "payId": "27040cad-fb9b-49e6-afed-e84d54d35b55"
+      },
+      "targetId": "27040cad-fb9b-49e6-afed-e84d54d35b55",
+      "summary": "Payment voided — Overpayment",
+      "action": "payment.voided",
+      "occurredAt": "2026-09-07T23:29:38.480Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.voided",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "2a1e30ba-8728-4fc9-bf94-7b2e9f39514b"
+    },
+    {
+      "eventId": "2d7d6d71-82ba-4abf-9895-99681edc7fc9",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "reason": "Overpayment",
+          "payId": "27040cad-fb9b-49e6-afed-e84d54d35b55"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "781742ad-7fc3-4e99-94e2-552fad654575",
+        "action": "void_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "781742ad-7fc3-4e99-94e2-552fad654575",
+      "summary": "Handshake requested: void_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:29:32.980Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "55c25493-4f7f-45a0-a3bd-7b0ab1a4a7eb"
+    },
+    {
+      "eventId": "f215ad29-1a26-4b32-8df4-c2b73783ec6e",
+      "metadata": {
+        "confirmedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "amount": 9800000,
+        "payId": "27040cad-fb9b-49e6-afed-e84d54d35b55",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds"
+      },
+      "targetId": "27040cad-fb9b-49e6-afed-e84d54d35b55",
+      "summary": "Payment confirmed — closing_funds $9800000",
+      "action": "payment.confirmed",
+      "occurredAt": "2026-09-07T23:24:29.664Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.confirmed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7611e35f-7d6a-4a59-84be-a747eceb23bf"
+    },
+    {
+      "eventId": "166bd3ae-ef4e-487a-9474-51d52ac55520",
+      "metadata": {
+        "action": "confirm_payment",
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 9800000,
+          "payId": "27040cad-fb9b-49e6-afed-e84d54d35b55"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "c6d389e2-0c9f-40f7-b982-6fc4db7aa454",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "c6d389e2-0c9f-40f7-b982-6fc4db7aa454",
+      "summary": "Handshake approved: confirm_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:24:29.664Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7611e35f-7d6a-4a59-84be-a747eceb23bf"
+    },
+    {
+      "eventId": "eb30c708-91c9-44a9-8133-9c2c13aadc73",
+      "metadata": {
+        "confirmedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "amount": 13750000,
+        "payId": "225fd790-5350-4079-a1a2-f96acb6a150e",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds"
+      },
+      "targetId": "225fd790-5350-4079-a1a2-f96acb6a150e",
+      "summary": "Payment confirmed — closing_funds $13750000",
+      "action": "payment.confirmed",
+      "occurredAt": "2026-09-07T23:24:28.340Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.confirmed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f5028ce9-f48f-4447-a859-f636123d41ef"
+    },
+    {
+      "eventId": "9c7c20ed-7b8d-4f69-9dab-ffd7887a0190",
+      "metadata": {
+        "action": "confirm_payment",
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 13750000,
+          "payId": "225fd790-5350-4079-a1a2-f96acb6a150e"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "09458d28-2f58-4c9e-85ba-c5ce4f607476",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "09458d28-2f58-4c9e-85ba-c5ce4f607476",
+      "summary": "Handshake approved: confirm_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:24:28.340Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f5028ce9-f48f-4447-a859-f636123d41ef"
+    },
+    {
+      "eventId": "d087af5f-4275-44da-82c1-cf536daea190",
+      "metadata": {
+        "payee": "escrow",
+        "amount": 9800000,
+        "recordedBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "method": "wire",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds",
+        "scope": "deal_wide",
+        "payId": "27040cad-fb9b-49e6-afed-e84d54d35b55",
+        "payer": "lender"
+      },
+      "targetId": "27040cad-fb9b-49e6-afed-e84d54d35b55",
+      "summary": "Payment recorded — closing_funds $9800000 via wire (lender → escrow), pending confirmation",
+      "action": "payment.recorded",
+      "occurredAt": "2026-09-07T23:21:12.792Z",
+      "targetType": "payment",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "payment.recorded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "d4321af8-c2b7-42cf-a53e-8b7f2d0061dc"
+    },
+    {
+      "eventId": "392589d6-09d3-40da-80e8-65fe8973639c",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 9800000,
+          "payId": "27040cad-fb9b-49e6-afed-e84d54d35b55"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "c6d389e2-0c9f-40f7-b982-6fc4db7aa454",
+        "action": "confirm_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "c6d389e2-0c9f-40f7-b982-6fc4db7aa454",
+      "summary": "Handshake requested: confirm_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:21:12.792Z",
+      "targetType": "handshake",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "d4321af8-c2b7-42cf-a53e-8b7f2d0061dc"
+    },
+    {
+      "eventId": "fb80b837-36d6-4dd1-a3db-8cf4c606cd04",
+      "metadata": {
+        "payee": "escrow",
+        "amount": 13750000,
+        "recordedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "method": "wire",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "closing_funds",
+        "scope": "deal_wide",
+        "payId": "225fd790-5350-4079-a1a2-f96acb6a150e",
+        "payer": "buyer"
+      },
+      "targetId": "225fd790-5350-4079-a1a2-f96acb6a150e",
+      "summary": "Payment recorded — closing_funds $13750000 via wire (buyer → escrow), pending confirmation",
+      "action": "payment.recorded",
+      "occurredAt": "2026-09-07T23:19:30.464Z",
+      "targetType": "payment",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "payment.recorded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "397c937f-4f39-4eab-86eb-b044885d899b"
+    },
+    {
+      "eventId": "ec6d6860-04c5-46ff-ac8c-5057934d5475",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "kind": "closing_funds",
+          "amount": 13750000,
+          "payId": "225fd790-5350-4079-a1a2-f96acb6a150e"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "09458d28-2f58-4c9e-85ba-c5ce4f607476",
+        "action": "confirm_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "09458d28-2f58-4c9e-85ba-c5ce4f607476",
+      "summary": "Handshake requested: confirm_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:19:30.464Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "397c937f-4f39-4eab-86eb-b044885d899b"
+    },
+    {
+      "eventId": "9b08ffc1-05f1-43c6-bca9-94c63b934d7c",
+      "metadata": {
+        "action": "advance_stage",
+        "payload": {},
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "477d7131-886e-4352-b19f-f2f25a43d558",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "477d7131-886e-4352-b19f-f2f25a43d558",
+      "summary": "Handshake approved: advance_stage",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:18:20.287Z",
+      "targetType": "handshake",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "6b309c19-47d4-4f2a-8214-4f8e219355df"
+    },
+    {
+      "eventId": "5695acd9-d810-42d8-b3e8-6686009cd758",
+      "metadata": {
+        "firmNow": false,
+        "from": 5,
+        "to": 6,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "6",
+      "summary": "Advanced to stage 6",
+      "action": "stage.advanced",
+      "occurredAt": "2026-09-07T23:18:20.287Z",
+      "targetType": "stage",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "stage.advanced",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "6b309c19-47d4-4f2a-8214-4f8e219355df"
+    },
+    {
+      "eventId": "0b8542e8-e34c-471e-821a-d48823c49746",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {},
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "477d7131-886e-4352-b19f-f2f25a43d558",
+        "action": "advance_stage",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "477d7131-886e-4352-b19f-f2f25a43d558",
+      "summary": "Handshake requested: advance_stage",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:18:02.945Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "82271697-9455-4a75-aa6b-61a0af602ecf"
+    },
+    {
+      "eventId": "e0c1ce90-d468-4e24-922b-196448e050cd",
+      "metadata": {
+        "category": "Title",
+        "uploadedBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "94cf182a-92fc-4de1-9db4-b9ba24df79b1",
+        "scope": "deal_wide"
+      },
+      "targetId": "94cf182a-92fc-4de1-9db4-b9ba24df79b1",
+      "summary": "Document uploaded (Title, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T23:15:37.210Z",
+      "targetType": "document",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "3f5e29a9-6dd6-41c2-83ee-e09211293d2d"
+    },
+    {
+      "eventId": "5b7212c5-99e3-4fe8-ac5a-d7b51103e08c",
+      "metadata": {
+        "threadId": "72be0293-5d2c-4944-86be-2afeaf01ffac",
+        "msgId": "06141c68-9077-4f30-92f6-6d986ff4b579",
+        "authorId": "61dba550-4091-704d-09a4-da34b12686ad",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "deal_wide",
+        "mentions": []
+      },
+      "targetId": "06141c68-9077-4f30-92f6-6d986ff4b579",
+      "summary": "Message posted",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T23:14:40.541Z",
+      "targetType": "message",
+      "actorId": "61dba550-4091-704d-09a4-da34b12686ad",
+      "scope": "deal_wide",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "ef552938-6a82-4c2c-8c8e-471f5d920abc"
+    },
+    {
+      "eventId": "ec92ef93-e4a7-4121-a332-3bed4fe3e41c",
+      "metadata": {
+        "threadId": "72be0293-5d2c-4944-86be-2afeaf01ffac",
+        "msgId": "baf39737-1fe9-470f-a530-46dd0cd05257",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "deal_wide"
+      },
+      "targetId": "baf39737-1fe9-470f-a530-46dd0cd05257",
+      "summary": "Message removed",
+      "action": "message.deleted",
+      "occurredAt": "2026-09-07T23:14:27.443Z",
+      "targetType": "message",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "message.deleted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "93097a1a-648d-42ca-95c6-463dded544a0"
+    },
+    {
+      "eventId": "07023786-abd9-433a-85e0-7b72f7ad351e",
+      "metadata": {
+        "threadId": "72be0293-5d2c-4944-86be-2afeaf01ffac",
+        "msgId": "baf39737-1fe9-470f-a530-46dd0cd05257",
+        "authorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "deal_wide",
+        "mentions": []
+      },
+      "targetId": "baf39737-1fe9-470f-a530-46dd0cd05257",
+      "summary": "Message posted",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T23:14:09.343Z",
+      "targetType": "message",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "5fbd6ea0-007c-44ab-9c43-049d6b1c0ca7"
+    },
+    {
+      "eventId": "125f4697-af02-47bb-9e30-4c2d2bf715fe",
+      "metadata": {
+        "category": "Title",
+        "uploadedBy": "61dba550-4091-704d-09a4-da34b12686ad",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "7f87570b-b42e-4ce3-890f-87738d1783aa",
+        "scope": "deal_wide"
+      },
+      "targetId": "7f87570b-b42e-4ce3-890f-87738d1783aa",
+      "summary": "Document uploaded (Title, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T23:13:09.463Z",
+      "targetType": "document",
+      "actorId": "61dba550-4091-704d-09a4-da34b12686ad",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "09a39c6e-9c82-41fe-ace0-a85fabe4a81c"
+    },
+    {
+      "eventId": "cc52484d-b0aa-49f3-99ea-04541ac9874c",
+      "metadata": {
+        "category": "Title",
+        "uploadedBy": "61dba550-4091-704d-09a4-da34b12686ad",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "b13bd091-08a7-49a3-992a-2caac87ef3be",
+        "scope": "deal_wide"
+      },
+      "targetId": "b13bd091-08a7-49a3-992a-2caac87ef3be",
+      "summary": "Document uploaded (Title, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T23:12:52.104Z",
+      "targetType": "document",
+      "actorId": "61dba550-4091-704d-09a4-da34b12686ad",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "03eaa317-0128-4c28-8a3f-56c75c59781e"
+    },
+    {
+      "eventId": "af321693-63ea-402c-b1b0-fc72f651a148",
+      "metadata": {
+        "action": "advance_stage",
+        "payload": {},
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "57501ed7-29da-4c12-8af6-cfc41cd0bc43",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "57501ed7-29da-4c12-8af6-cfc41cd0bc43",
+      "summary": "Handshake approved: advance_stage",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T23:11:34.049Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "58aa5137-6e13-4f10-9009-3b0b45a5b35f"
+    },
+    {
+      "eventId": "4abd52c3-f8e4-4ebe-adc1-1da0155a01c8",
+      "metadata": {
+        "firmNow": false,
+        "from": 4,
+        "to": 5,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "5",
+      "summary": "Advanced to stage 5",
+      "action": "stage.advanced",
+      "occurredAt": "2026-09-07T23:11:34.049Z",
+      "targetType": "stage",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "stage.advanced",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "58aa5137-6e13-4f10-9009-3b0b45a5b35f"
+    },
+    {
+      "eventId": "e39319b4-e0a7-4fb1-9f21-1280dcda295c",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {},
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "57501ed7-29da-4c12-8af6-cfc41cd0bc43",
+        "action": "advance_stage",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "57501ed7-29da-4c12-8af6-cfc41cd0bc43",
+      "summary": "Handshake requested: advance_stage",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T23:11:29.349Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a14b9dd3-9636-4d7a-baea-3703db5d4225"
+    },
+    {
+      "eventId": "91cb3999-b8b6-4d06-bfa9-4fe66b419df4",
+      "metadata": {
+        "itemId": "t3",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:51.636Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a529f364-4c6e-4951-b448-69a6473fb9f5"
+    },
+    {
+      "eventId": "5e0eb29d-c4fa-4261-ba42-c88bf744b3b0",
+      "metadata": {
+        "itemId": "t2",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:51.075Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "ea981dab-b4a4-4081-a199-3c003af69f0e"
+    },
+    {
+      "eventId": "baacf77a-3575-4398-adf1-2cfe03140ec2",
+      "metadata": {
+        "itemId": "t1",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:50.305Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "3f1da01d-d40d-4305-bfa4-d913d47fcb7a"
+    },
+    {
+      "eventId": "7bad0ec8-82c1-42b5-9dfc-a56fc09c8879",
+      "metadata": {
+        "itemId": "t0",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:49.915Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f09dd3db-42dd-4aff-b4f0-4407522c239f"
+    },
+    {
+      "eventId": "4e8dda1c-fc83-41e2-853f-151e5a88dc29",
+      "metadata": {
+        "itemId": "t3",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:47.535Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "21cd1352-db1e-4fe1-844c-947cafa4d330"
+    },
+    {
+      "eventId": "71c0cae6-d935-4ea5-9ad5-2f9f63fdef15",
+      "metadata": {
+        "itemId": "t2",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:46.135Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "eb9942cb-67e7-4981-b401-fa5282c9dca8"
+    },
+    {
+      "eventId": "0f69a24e-5f6c-4ae2-a18d-28cbb1b1d555",
+      "metadata": {
+        "itemId": "t1",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:45.255Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a4e594bc-1e60-4c10-8e56-aa8e7be391c0"
+    },
+    {
+      "eventId": "90e6009b-79c1-433d-8c81-8872be15ca20",
+      "metadata": {
+        "itemId": "t0",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:44.762Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1456e320-3418-4065-b662-7618c16ec11c"
+    },
+    {
+      "eventId": "d2c43ed7-7128-43d4-9e0b-54a96eadc9b8",
+      "metadata": {
+        "itemId": "t1",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:43.162Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "3fda49cc-db62-493b-81dc-47f3c17432b9"
+    },
+    {
+      "eventId": "25071cb4-86be-4bf7-9b5d-2cab06a7639f",
+      "metadata": {
+        "itemId": "t0",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:42.506Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "8c1af3b4-89e2-42dd-b1c6-0b7ad8bca2e9"
+    },
+    {
+      "eventId": "bb4f5ae3-a52c-4d52-84d7-40cf2deab226",
+      "metadata": {
+        "itemId": "t0",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:41.652Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "62e9d39b-5713-4343-b4f9-5dd1e17b7b4c"
+    },
+    {
+      "eventId": "e5195609-bd8b-4114-b91c-59060c6549de",
+      "metadata": {
+        "itemId": "t1",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 4
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T23:01:41.027Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "52283077-7e7d-489b-b6ed-7c08a9301c3d"
+    },
+    {
+      "eventId": "9c5a4031-1057-49a4-9930-e13b772669a9",
+      "metadata": {
+        "threadId": "da38c5d0-6259-43f5-ac08-1b9f25cf619c",
+        "msgId": "a486d4ca-d599-4ebd-af31-674ab5a437a0",
+        "authorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "channel:agent",
+        "mentions": []
+      },
+      "targetId": "a486d4ca-d599-4ebd-af31-674ab5a437a0",
+      "summary": "Message posted",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T22:57:13.103Z",
+      "targetType": "message",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "channel:agent",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "364b531a-424e-44c6-b9ff-5a470d9911f4"
+    },
+    {
+      "eventId": "a5c35627-adb2-4442-82a6-f094200f8a48",
+      "metadata": {
+        "threadId": "e0c98090-67de-460e-94c3-d47640a28733",
+        "msgId": "b8c3bc2b-55c7-4320-b309-60367cd5ef00",
+        "authorId": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "side_private:buy",
+        "mentions": [
+          "712b6570-6051-7049-57bf-9da813f61777"
+        ]
+      },
+      "targetId": "b8c3bc2b-55c7-4320-b309-60367cd5ef00",
+      "summary": "Message posted (with @mentions)",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T22:49:09.684Z",
+      "targetType": "message",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "side_private:buy",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a1da90a6-bb8c-4f45-af80-202a7da0e313"
+    },
+    {
+      "eventId": "db9cbfa3-251d-4bef-82e6-29aff9517435",
+      "metadata": {
+        "threadId": "da38c5d0-6259-43f5-ac08-1b9f25cf619c",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "subject": "Agent retention",
+        "scope": "channel:agent"
+      },
+      "targetId": "da38c5d0-6259-43f5-ac08-1b9f25cf619c",
+      "summary": "Thread \"Agent retention\" created in channel:agent",
+      "action": "thread.created",
+      "occurredAt": "2026-09-07T22:48:54.182Z",
+      "targetType": "thread",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "channel:agent",
+      "detailType": "thread.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "0b20912a-aece-4652-adad-158fbd707913"
+    },
+    {
+      "eventId": "1646cb85-b0f2-4dfe-a210-07736d4c2fae",
+      "metadata": {
+        "threadId": "e0c98090-67de-460e-94c3-d47640a28733",
+        "toScope": "side_private:buy",
+        "droppedUserId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "e0c98090-67de-460e-94c3-d47640a28733",
+      "summary": "Thread converted to side_private:buy",
+      "action": "thread.converted",
+      "occurredAt": "2026-09-07T22:48:00.962Z",
+      "targetType": "thread",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "side_private:buy",
+      "detailType": "thread.converted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "785bb646-4d00-4e75-b749-e5337930c45c"
+    },
+    {
+      "eventId": "87c647c2-2983-4d0f-ad8b-c9c2bd9c526d",
+      "metadata": {
+        "threadId": "22d03591-2aeb-4ee7-927f-f55ef39a8eb4",
+        "msgId": "46079c65-414a-4813-b7ef-e6c6b982f395",
+        "authorId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "side_private:buy",
+        "mentions": [
+          "115bb500-1001-7013-b792-59a80eda40e8",
+          "411ba500-60e1-70b7-750b-3ff10088b5d2"
+        ]
+      },
+      "targetId": "46079c65-414a-4813-b7ef-e6c6b982f395",
+      "summary": "Message posted (with @mentions)",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T22:40:35.688Z",
+      "targetType": "message",
+      "actorId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+      "scope": "side_private:buy",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "2187d703-6978-41d2-b100-52782a9f8afc"
+    },
+    {
+      "eventId": "7a95a7c4-e007-4206-9469-40f94600761e",
+      "metadata": {
+        "category": "Financing",
+        "uploadedBy": "414b1510-70c1-704a-939d-d5c4d39125a8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "b76bb6eb-b587-4020-bb1c-22ecdb607e64",
+        "scope": "side_private:buy"
+      },
+      "targetId": "b76bb6eb-b587-4020-bb1c-22ecdb607e64",
+      "summary": "Document uploaded (Financing, side_private:buy)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T22:40:05.142Z",
+      "targetType": "document",
+      "actorId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+      "scope": "side_private:buy",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "98bc3ca6-d8f7-4efb-a55c-dbea96223596"
+    },
+    {
+      "eventId": "a17e448b-86c3-4323-b2b4-b828e19c626c",
+      "metadata": {
+        "firmNow": false,
+        "from": 3,
+        "to": 4,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "4",
+      "summary": "Advanced to stage 4",
+      "action": "stage.advanced",
+      "occurredAt": "2026-09-07T22:38:40.013Z",
+      "targetType": "stage",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "stage.advanced",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "85887882-3323-4727-9392-e11dca2d4df7"
+    },
+    {
+      "eventId": "424a89c0-fa2b-45f2-812a-2577e1920345",
+      "metadata": {
+        "action": "advance_stage",
+        "payload": {},
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "03129d40-0f4d-403e-be42-4bbfdb055e6c",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "03129d40-0f4d-403e-be42-4bbfdb055e6c",
+      "summary": "Handshake approved: advance_stage",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T22:38:40.013Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "85887882-3323-4727-9392-e11dca2d4df7"
+    },
+    {
+      "eventId": "4ee207a1-4e6f-413b-b7bb-a0c714faf0eb",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {},
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "03129d40-0f4d-403e-be42-4bbfdb055e6c",
+        "action": "advance_stage",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "03129d40-0f4d-403e-be42-4bbfdb055e6c",
+      "summary": "Handshake requested: advance_stage",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T22:38:27.973Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "bd75b67b-146b-42f8-b0b9-d223e94f68cf"
+    },
+    {
+      "eventId": "c5fc360c-9228-4be9-b655-04d0fc71db2e",
+      "metadata": {
+        "action": "edit_dates",
+        "payload": {
+          "targetClosingDate": "2026-12-10"
+        },
+        "initiatedSide": "sell",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "dfa9bf4e-749f-4e04-a03d-ec5d5fb68fa4",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "dfa9bf4e-749f-4e04-a03d-ec5d5fb68fa4",
+      "summary": "Handshake approved: edit_dates",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T22:37:44.461Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4dffc622-39d6-42ac-b2cd-61ff09b4e2c3"
+    },
+    {
+      "eventId": "4c9abc25-3fb4-4784-86f9-41909eaa4b2f",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "changed": {
+          "targetClosingDate": {
+            "from": "2026-11-30",
+            "to": "2026-12-10"
+          }
+        }
+      },
+      "targetId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "summary": "Terms edited — targetClosingDate: 2026-11-30 → 2026-12-10",
+      "action": "deal.updated",
+      "occurredAt": "2026-09-07T22:37:44.461Z",
+      "targetType": "deal",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "deal.updated",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4dffc622-39d6-42ac-b2cd-61ff09b4e2c3"
+    },
+    {
+      "eventId": "80ee6988-bebd-4ebf-a4f2-26495855e6e8",
+      "metadata": {
+        "approverIds": [
+          "115bb500-1001-7013-b792-59a80eda40e8",
+          "411ba500-60e1-70b7-750b-3ff10088b5d2"
+        ],
+        "payload": {
+          "targetClosingDate": "2026-12-10"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "dfa9bf4e-749f-4e04-a03d-ec5d5fb68fa4",
+        "action": "edit_dates",
+        "initiatedSide": "sell",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "dfa9bf4e-749f-4e04-a03d-ec5d5fb68fa4",
+      "summary": "Handshake requested: edit_dates",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T22:37:07.514Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "6f050cac-c281-4056-9a13-94445f96da96"
+    },
+    {
+      "eventId": "830944c2-fda8-40b8-8cf3-b57d905e7c5d",
+      "metadata": {
+        "reason": "Voiding for future payment",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "payId": "0c324da6-e572-4d08-9851-291c993152fc"
+      },
+      "targetId": "0c324da6-e572-4d08-9851-291c993152fc",
+      "summary": "Payment voided — Voiding for future payment",
+      "action": "payment.voided",
+      "occurredAt": "2026-09-07T22:34:59.876Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.voided",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "15ced90c-6530-4942-9ed6-138493e91727"
+    },
+    {
+      "eventId": "34a08656-566b-43f7-9eb2-c3d54460ee9b",
+      "metadata": {
+        "action": "void_payment",
+        "payload": {
+          "reason": "Voiding for future payment",
+          "payId": "0c324da6-e572-4d08-9851-291c993152fc"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "57de9063-5e22-4361-9ef9-b42764ff3e1d",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "57de9063-5e22-4361-9ef9-b42764ff3e1d",
+      "summary": "Handshake approved: void_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T22:34:59.876Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "15ced90c-6530-4942-9ed6-138493e91727"
+    },
+    {
+      "eventId": "4e4a49cb-51bc-445a-805b-2b5571a77f6f",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "reason": "Voiding for future payment",
+          "payId": "0c324da6-e572-4d08-9851-291c993152fc"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "57de9063-5e22-4361-9ef9-b42764ff3e1d",
+        "action": "void_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "57de9063-5e22-4361-9ef9-b42764ff3e1d",
+      "summary": "Handshake requested: void_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T22:34:55.830Z",
+      "targetType": "handshake",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1da7c868-7259-4aaa-b40a-fc49a24122a0"
+    },
+    {
+      "eventId": "b3c830e5-5a87-4266-8e81-00b2442f0041",
+      "metadata": {
+        "confirmedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "amount": 15000,
+        "payId": "0c324da6-e572-4d08-9851-291c993152fc",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "extension_fee"
+      },
+      "targetId": "0c324da6-e572-4d08-9851-291c993152fc",
+      "summary": "Payment confirmed — extension_fee $15000",
+      "action": "payment.confirmed",
+      "occurredAt": "2026-09-07T22:34:32.690Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.confirmed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1b95b5a9-f533-454c-a8ab-e805b91298b1"
+    },
+    {
+      "eventId": "afa11f7c-bab1-4f94-832e-e1c0fc1f116c",
+      "metadata": {
+        "action": "confirm_payment",
+        "payload": {
+          "kind": "extension_fee",
+          "amount": 15000,
+          "payId": "0c324da6-e572-4d08-9851-291c993152fc"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "5706c681-841a-47df-a18c-5dfc64b99d6d",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "5706c681-841a-47df-a18c-5dfc64b99d6d",
+      "summary": "Handshake approved: confirm_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T22:34:32.690Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1b95b5a9-f533-454c-a8ab-e805b91298b1"
+    },
+    {
+      "eventId": "e0ed0c81-df33-4ead-855a-96ff1f7c0a60",
+      "metadata": {
+        "payee": "seller",
+        "amount": 15000,
+        "recordedBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "method": "check",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "extension_fee",
+        "scope": "deal_wide",
+        "payId": "0c324da6-e572-4d08-9851-291c993152fc",
+        "payer": "buyer"
+      },
+      "targetId": "0c324da6-e572-4d08-9851-291c993152fc",
+      "summary": "Payment recorded — extension_fee $15000 via check (buyer → seller), pending confirmation",
+      "action": "payment.recorded",
+      "occurredAt": "2026-09-07T22:33:26.733Z",
+      "targetType": "payment",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "payment.recorded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "84c0bb64-0f0f-418e-ab65-f7e084f2ec7b"
+    },
+    {
+      "eventId": "3220ff81-61a9-4e72-8261-a9f5756505b2",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "kind": "extension_fee",
+          "amount": 15000,
+          "payId": "0c324da6-e572-4d08-9851-291c993152fc"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "5706c681-841a-47df-a18c-5dfc64b99d6d",
+        "action": "confirm_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "5706c681-841a-47df-a18c-5dfc64b99d6d",
+      "summary": "Handshake requested: confirm_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T22:33:26.733Z",
+      "targetType": "handshake",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "84c0bb64-0f0f-418e-ab65-f7e084f2ec7b"
+    },
+    {
+      "eventId": "e621f63a-e936-4b0d-a9c2-4eb9a79f75d3",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+        "hsId": "618bc53d-e67f-4d63-80e4-604a018c895b",
+        "scope": "deal_wide"
+      },
+      "targetId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+      "summary": "Document archived (delete handshake completed)",
+      "action": "document.archived",
+      "occurredAt": "2026-09-07T22:31:22.592Z",
+      "targetType": "document",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "document.archived",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "536afd71-f68a-4606-b3e0-3864631ad434"
+    },
+    {
+      "eventId": "df57808a-49dd-4bf5-9115-9c548c457e35",
+      "metadata": {
+        "action": "delete_document",
+        "payload": {
+          "docId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+          "scope": "deal_wide"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "618bc53d-e67f-4d63-80e4-604a018c895b",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "618bc53d-e67f-4d63-80e4-604a018c895b",
+      "summary": "Handshake approved: delete_document",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T22:31:00.601Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "536afd71-f68a-4606-b3e0-3864631ad434"
+    },
+    {
+      "eventId": "4c200eca-4a57-401e-ab4f-0663607a92a9",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "docId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+          "scope": "deal_wide"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "618bc53d-e67f-4d63-80e4-604a018c895b",
+        "action": "delete_document",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "618bc53d-e67f-4d63-80e4-604a018c895b",
+      "summary": "Handshake requested: delete_document",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T22:13:49.107Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4523a70d-b125-4ea1-8d4a-69a7ddb18188"
+    },
+    {
+      "eventId": "a1cdacb9-dcc4-4165-b8fc-9f643a93fdc9",
+      "metadata": {
+        "requesterSide": "buy",
+        "requestedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "requesterRole": "BUYER",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+        "scope": "deal_wide"
+      },
+      "targetId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+      "summary": "Deletion requested by BUYER",
+      "action": "document.delete_requested",
+      "occurredAt": "2026-09-07T22:13:42.871Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.delete_requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4523a70d-b125-4ea1-8d4a-69a7ddb18188"
+    },
+    {
+      "eventId": "2811f950-2999-4a09-a85f-0098aa087296",
+      "metadata": {
+        "category": "Other",
+        "uploadedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+        "scope": "deal_wide"
+      },
+      "targetId": "d43f70b9-2d15-42d9-b7aa-927e5145fd61",
+      "summary": "Document uploaded (Other, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T22:13:35.045Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4507a30c-4a66-422a-b48b-0d8dbdad672a"
+    },
+    {
+      "eventId": "8a711393-77ad-4cbb-9d76-1075858cb842",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+        "hsId": "94a128bb-6ff0-45f1-ad88-299cbe90f360",
+        "scope": "deal_wide"
+      },
+      "targetId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+      "summary": "Document archived (delete handshake completed)",
+      "action": "document.archived",
+      "occurredAt": "2026-09-07T22:10:53.083Z",
+      "targetType": "document",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "document.archived",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7b43251b-381c-4d2c-8f5e-57ba680f0c64"
+    },
+    {
+      "eventId": "f198e68c-aec3-4120-98b2-8a02b896ee15",
+      "metadata": {
+        "action": "delete_document",
+        "payload": {
+          "docId": "6184859c-a484-4ff8-b93d-f06491f534cc"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "94a128bb-6ff0-45f1-ad88-299cbe90f360",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "94a128bb-6ff0-45f1-ad88-299cbe90f360",
+      "summary": "Handshake approved: delete_document",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T22:10:31.244Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7b43251b-381c-4d2c-8f5e-57ba680f0c64"
+    },
+    {
+      "eventId": "3b2f8f1e-d968-4bb4-91eb-02d0a0b69957",
+      "metadata": {
+        "requesterSide": "buy",
+        "requestedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "requesterRole": "BUYER",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+        "scope": "deal_wide"
+      },
+      "targetId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+      "summary": "Deletion requested by BUYER",
+      "action": "document.delete_requested",
+      "occurredAt": "2026-09-07T22:04:57.384Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.delete_requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f3d2940b-a2a9-42b3-8fb0-0db826986dfd"
+    },
+    {
+      "eventId": "7d233c87-9ce4-4211-ae5d-2f73faeb798b",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "docId": "6184859c-a484-4ff8-b93d-f06491f534cc"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "94a128bb-6ff0-45f1-ad88-299cbe90f360",
+        "action": "delete_document",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "94a128bb-6ff0-45f1-ad88-299cbe90f360",
+      "summary": "Handshake requested: delete_document",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T22:01:34.143Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "816e7d9a-30e3-4f05-9d7a-05f09e9894b0"
+    },
+    {
+      "eventId": "5611ee6e-535c-4fcb-9775-3d8316b87bad",
+      "metadata": {
+        "requesterSide": "buy",
+        "requestedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "requesterRole": "BUYER",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "6184859c-a484-4ff8-b93d-f06491f534cc"
+      },
+      "targetId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+      "summary": "Deletion requested by BUYER",
+      "action": "document.delete_requested",
+      "occurredAt": "2026-09-07T22:01:32.110Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.delete_requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4eb4980c-0b29-4bc0-9d99-4a22dd74aa59"
+    },
+    {
+      "eventId": "eb7da0b2-44e6-45f4-9253-96a3a09c7b20",
+      "metadata": {
+        "requesterSide": "buy",
+        "requestedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "requesterRole": "BUYER",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "6184859c-a484-4ff8-b93d-f06491f534cc"
+      },
+      "targetId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+      "summary": "Deletion requested by BUYER",
+      "action": "document.delete_requested",
+      "occurredAt": "2026-09-07T22:01:23.050Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.delete_requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "816e7d9a-30e3-4f05-9d7a-05f09e9894b0"
+    },
+    {
+      "eventId": "a9c72c9e-9ddd-47fa-b74e-520f205c3798",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+        "scope": "deal_wide"
+      },
+      "targetId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+      "summary": "Document promoted to deal-wide",
+      "action": "document.promoted",
+      "occurredAt": "2026-09-07T22:01:19.710Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.promoted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "9de99d6f-b924-45b4-ba54-1a61ed559138"
+    },
+    {
+      "eventId": "47ea493d-7731-4b06-a026-2164b6560297",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "bf67f39a-f554-4bc2-9f3d-0e4fe94e38a3",
+        "scope": "deal_wide"
+      },
+      "targetId": "bf67f39a-f554-4bc2-9f3d-0e4fe94e38a3",
+      "summary": "Document promoted to deal-wide",
+      "action": "document.promoted",
+      "occurredAt": "2026-09-07T21:32:07.339Z",
+      "targetType": "document",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "document.promoted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "bcbc902b-f7f0-4252-9074-14c23c861766"
+    },
+    {
+      "eventId": "0500663e-5744-446c-a143-73326f482429",
+      "metadata": {
+        "mode": "opened",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "bf67f39a-f554-4bc2-9f3d-0e4fe94e38a3",
+        "n": 1,
+        "by": "115bb500-1001-7013-b792-59a80eda40e8",
+        "scope": "side_private:buy"
+      },
+      "targetId": "bf67f39a-f554-4bc2-9f3d-0e4fe94e38a3",
+      "summary": "Document opened (v1) by 115bb500-1001-7013-b792-59a80eda40e8",
+      "action": "document.accessed",
+      "occurredAt": "2026-09-07T21:23:28.787Z",
+      "targetType": "document",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "side_private:buy",
+      "detailType": "document.accessed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "86e95a3c-878e-4394-ad97-7ccf550f620f"
+    },
+    {
+      "eventId": "b1ba778e-2893-4bc5-ae71-4c3958cd08a6",
+      "metadata": {
+        "threadId": "22d03591-2aeb-4ee7-927f-f55ef39a8eb4",
+        "msgId": "8c7fec06-7c24-4c54-8236-d372a3282de0",
+        "authorId": "c17b5530-70c1-7038-b787-b32e33ff07b8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "side_private:buy",
+        "mentions": []
+      },
+      "targetId": "8c7fec06-7c24-4c54-8236-d372a3282de0",
+      "summary": "Message posted",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T21:21:19.210Z",
+      "targetType": "message",
+      "actorId": "c17b5530-70c1-7038-b787-b32e33ff07b8",
+      "scope": "side_private:buy",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "68f66088-785f-47d9-a498-f1d6f351fae8"
+    },
+    {
+      "eventId": "2f10b670-f5db-48cf-aca6-b56670c9194a",
+      "metadata": {
+        "category": "Inspection",
+        "uploadedBy": "c17b5530-70c1-7038-b787-b32e33ff07b8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "bf67f39a-f554-4bc2-9f3d-0e4fe94e38a3",
+        "scope": "side_private:buy"
+      },
+      "targetId": "bf67f39a-f554-4bc2-9f3d-0e4fe94e38a3",
+      "summary": "Document uploaded (Inspection, side_private:buy)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T21:20:40.599Z",
+      "targetType": "document",
+      "actorId": "c17b5530-70c1-7038-b787-b32e33ff07b8",
+      "scope": "side_private:buy",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "0f8a1f8f-8ccc-47c8-8c24-6ab11fc72d58"
+    },
+    {
+      "eventId": "c9d8507e-4dc6-4003-bfb2-383427f5ce83",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "reqId": "78ed56e3-caf7-4f81-b105-b98d389edf81",
+        "scope": "deal_wide"
+      },
+      "targetId": "78ed56e3-caf7-4f81-b105-b98d389edf81",
+      "summary": "Request cancelled",
+      "action": "docrequest.cancelled",
+      "occurredAt": "2026-09-07T21:14:53.813Z",
+      "targetType": "doc-request",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "docrequest.cancelled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "c59e6d9f-d21f-4cdc-b85a-0eb3cd7a0788"
+    },
+    {
+      "eventId": "9df9a22e-9fa7-4dc5-b96c-d2c413ecd686",
+      "metadata": {
+        "targetUserId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+        "category": "Purchase Agreement",
+        "createdBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "reqId": "78ed56e3-caf7-4f81-b105-b98d389edf81",
+        "scope": "deal_wide"
+      },
+      "targetId": "78ed56e3-caf7-4f81-b105-b98d389edf81",
+      "summary": "Requested a Purchase Agreement document (41bbb500-a0b1-7044-1708-d6f81ddf6d0d)",
+      "action": "docrequest.created",
+      "occurredAt": "2026-09-07T21:14:51.953Z",
+      "targetType": "doc-request",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "docrequest.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "31e2457d-f306-4029-a262-d55517e73d0b"
+    },
+    {
+      "eventId": "8ab773e8-8f6c-47c8-ae32-dbc30db35cb8",
+      "metadata": {
+        "reason": "Not ready",
+        "createdBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "reqId": "80ba97ab-3046-428b-97c4-a0e0adbcc5f3",
+        "scope": "deal_wide"
+      },
+      "targetId": "80ba97ab-3046-428b-97c4-a0e0adbcc5f3",
+      "summary": "Request declined — Not ready",
+      "action": "docrequest.declined",
+      "occurredAt": "2026-09-07T21:14:22.290Z",
+      "targetType": "doc-request",
+      "actorId": "61dba550-4091-704d-09a4-da34b12686ad",
+      "scope": "deal_wide",
+      "detailType": "docrequest.declined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "5d5740a7-1296-4f9d-aa82-19c651dcdc47"
+    },
+    {
+      "eventId": "0060602c-78b1-47cf-b88b-e639a37c919a",
+      "metadata": {
+        "targetUserId": "61dba550-4091-704d-09a4-da34b12686ad",
+        "category": "Title",
+        "createdBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "reqId": "80ba97ab-3046-428b-97c4-a0e0adbcc5f3",
+        "scope": "deal_wide"
+      },
+      "targetId": "80ba97ab-3046-428b-97c4-a0e0adbcc5f3",
+      "summary": "Requested a Title document (61dba550-4091-704d-09a4-da34b12686ad)",
+      "action": "docrequest.created",
+      "occurredAt": "2026-09-07T21:13:20.532Z",
+      "targetType": "doc-request",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "docrequest.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "c3089415-c285-4734-9df9-4002d88edc52"
+    },
+    {
+      "eventId": "e2fabda8-bc1d-4f95-aa54-8ccb4db7bb60",
+      "metadata": {
+        "createdBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "fulfilledDocId": "af1eaa99-ef3c-4f68-b5ad-0a5c1d9d9935",
+        "reqId": "d107f4de-c523-4f9d-9e49-bf27e9e6e173",
+        "scope": "deal_wide"
+      },
+      "targetId": "d107f4de-c523-4f9d-9e49-bf27e9e6e173",
+      "summary": "Request fulfilled with af1eaa99-ef3c-4f68-b5ad-0a5c1d9d9935",
+      "action": "docrequest.fulfilled",
+      "occurredAt": "2026-09-07T21:12:11.034Z",
+      "targetType": "doc-request",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "docrequest.fulfilled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "59fab535-35df-45f3-b17f-c333c322f2cf"
+    },
+    {
+      "eventId": "c9f89759-1fa4-4daf-9d4a-b2b7ec018c4b",
+      "metadata": {
+        "category": "Other",
+        "uploadedBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "af1eaa99-ef3c-4f68-b5ad-0a5c1d9d9935",
+        "scope": "deal_wide"
+      },
+      "targetId": "af1eaa99-ef3c-4f68-b5ad-0a5c1d9d9935",
+      "summary": "Document uploaded (Other, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T21:03:54.799Z",
+      "targetType": "document",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1fd61b84-43ac-4368-ad58-29e0b82a4b24"
+    },
+    {
+      "eventId": "445dd637-8342-4297-8136-02fd862e302a",
+      "metadata": {
+        "category": "Financing",
+        "createdBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "reqId": "d107f4de-c523-4f9d-9e49-bf27e9e6e173",
+        "scope": "deal_wide",
+        "targetRole": "SELLER"
+      },
+      "targetId": "d107f4de-c523-4f9d-9e49-bf27e9e6e173",
+      "summary": "Requested a Financing document (SELLER)",
+      "action": "docrequest.created",
+      "occurredAt": "2026-09-07T21:01:19.800Z",
+      "targetType": "doc-request",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "docrequest.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "030c777f-8ab4-4967-a3ee-8455c2a97e05"
+    },
+    {
+      "eventId": "914fa323-7da6-412c-a9d6-48ca2d40eaa3",
+      "metadata": {
+        "firmNow": true,
+        "from": 2,
+        "to": 3,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "3",
+      "summary": "Advanced to stage 3 — deal is now firm",
+      "action": "stage.advanced",
+      "occurredAt": "2026-09-07T20:55:18.336Z",
+      "targetType": "stage",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "stage.advanced",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "baa55601-d3a9-4785-a1fb-90b5282e936b"
+    },
+    {
+      "eventId": "2005e12a-9e95-43f8-8094-a385b33a6f2f",
+      "metadata": {
+        "action": "advance_stage",
+        "payload": {},
+        "initiatedSide": "sell",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "beea485e-71f8-4213-b0f3-4e25b44d7fa6",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "beea485e-71f8-4213-b0f3-4e25b44d7fa6",
+      "summary": "Handshake approved: advance_stage",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T20:55:18.336Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "baa55601-d3a9-4785-a1fb-90b5282e936b"
+    },
+    {
+      "eventId": "bd597a10-f12a-4aaa-81b6-5e9e1c6598d7",
+      "metadata": {
+        "approverIds": [
+          "115bb500-1001-7013-b792-59a80eda40e8",
+          "411ba500-60e1-70b7-750b-3ff10088b5d2"
+        ],
+        "payload": {},
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "beea485e-71f8-4213-b0f3-4e25b44d7fa6",
+        "action": "advance_stage",
+        "initiatedSide": "sell",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "beea485e-71f8-4213-b0f3-4e25b44d7fa6",
+      "summary": "Handshake requested: advance_stage",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T20:54:58.398Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "7a4aa033-4301-460d-bab2-bd346aa61060"
+    },
+    {
+      "eventId": "f2e9b3b6-5733-4a8f-afef-a2573039303b",
+      "metadata": {
+        "confirmedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "amount": 250000,
+        "payId": "d56d7bdf-deb4-4565-8c43-7985f9fb799d",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "earnest_money"
+      },
+      "targetId": "d56d7bdf-deb4-4565-8c43-7985f9fb799d",
+      "summary": "Payment confirmed — earnest_money $250000",
+      "action": "payment.confirmed",
+      "occurredAt": "2026-09-07T20:51:11.975Z",
+      "targetType": "payment",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "payment.confirmed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "6ab06c81-228a-4839-b692-c387778864b5"
+    },
+    {
+      "eventId": "141a97b7-1957-4d90-ada4-8b39f0d0d819",
+      "metadata": {
+        "action": "confirm_payment",
+        "payload": {
+          "kind": "earnest_money",
+          "amount": 250000,
+          "payId": "d56d7bdf-deb4-4565-8c43-7985f9fb799d"
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "3cc5dab1-9fe1-4349-9ac2-119367c785f2",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "3cc5dab1-9fe1-4349-9ac2-119367c785f2",
+      "summary": "Handshake approved: confirm_payment",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T20:51:11.975Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "6ab06c81-228a-4839-b692-c387778864b5"
+    },
+    {
+      "eventId": "f8c05873-355f-442a-b1cf-445258a88e85",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "kind": "earnest_money",
+          "amount": 250000,
+          "payId": "d56d7bdf-deb4-4565-8c43-7985f9fb799d"
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "3cc5dab1-9fe1-4349-9ac2-119367c785f2",
+        "action": "confirm_payment",
+        "initiatedSide": "buy",
+        "initiatedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2"
+      },
+      "targetId": "3cc5dab1-9fe1-4349-9ac2-119367c785f2",
+      "summary": "Handshake requested: confirm_payment",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T20:36:10.314Z",
+      "targetType": "handshake",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "45b0c547-1a09-43fa-a58c-d52b70ad7b25"
+    },
+    {
+      "eventId": "6d78ef24-c4b1-4338-be9e-109f026c2580",
+      "metadata": {
+        "payee": "escrow",
+        "amount": 250000,
+        "recordedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "method": "wire",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "kind": "earnest_money",
+        "scope": "deal_wide",
+        "payId": "d56d7bdf-deb4-4565-8c43-7985f9fb799d",
+        "payer": "buyer"
+      },
+      "targetId": "d56d7bdf-deb4-4565-8c43-7985f9fb799d",
+      "summary": "Payment recorded — earnest_money $250000 via wire (buyer → escrow), pending confirmation",
+      "action": "payment.recorded",
+      "occurredAt": "2026-09-07T20:36:10.314Z",
+      "targetType": "payment",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "payment.recorded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "45b0c547-1a09-43fa-a58c-d52b70ad7b25"
+    },
+    {
+      "eventId": "4293111a-d95a-450d-b5bb-bd36c7d8bade",
+      "metadata": {
+        "category": "Financing",
+        "uploadedBy": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+        "scope": "side_private:buy"
+      },
+      "targetId": "6184859c-a484-4ff8-b93d-f06491f534cc",
+      "summary": "Document uploaded (Financing, side_private:buy)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T20:30:57.582Z",
+      "targetType": "document",
+      "actorId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "scope": "side_private:buy",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "c4518a79-cbca-481c-95b2-ea67d058954b"
+    },
+    {
+      "eventId": "b3d7caf6-44d1-4c59-9a58-21eee4be165d",
+      "metadata": {
+        "reason": "Voiding",
+        "envId": "bccede32-da29-40c2-8480-0d39190e36ab",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "767cd0b1-d2d8-41c1-8466-7f4ba80d4327",
+        "scope": "deal_wide"
+      },
+      "targetId": "bccede32-da29-40c2-8480-0d39190e36ab",
+      "summary": "Signature request voided — Voiding",
+      "action": "signature.voided",
+      "occurredAt": "2026-09-07T20:28:08.182Z",
+      "targetType": "signature",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "signature.voided",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "08af6e3a-63da-4162-9fcf-ed124e7048ad"
+    },
+    {
+      "eventId": "2b9c1fb6-a042-46e3-baeb-4beb365cc92f",
+      "metadata": {
+        "provider": "fake",
+        "createdBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "767cd0b1-d2d8-41c1-8466-7f4ba80d4327",
+        "scope": "deal_wide",
+        "envId": "bccede32-da29-40c2-8480-0d39190e36ab",
+        "version": 1,
+        "recipientUserIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600"
+        ]
+      },
+      "targetId": "bccede32-da29-40c2-8480-0d39190e36ab",
+      "summary": "Sent for signature (1 signer(s), via fake)",
+      "action": "signature.requested",
+      "occurredAt": "2026-09-07T20:27:58.440Z",
+      "targetType": "signature",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "signature.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "2aae06b6-ea71-42a4-a5b1-64274d5f0ff7"
+    },
+    {
+      "eventId": "93307db7-5028-459f-9e17-4bbddab8f3ce",
+      "metadata": {
+        "reason": "Declined",
+        "createdBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "767cd0b1-d2d8-41c1-8466-7f4ba80d4327",
+        "scope": "deal_wide",
+        "envId": "7d3be3d4-dbaa-4f9d-be2f-a8dac47cbdeb",
+        "userId": "e13bc590-70f1-70bf-f77e-51d14899d600"
+      },
+      "targetId": "7d3be3d4-dbaa-4f9d-be2f-a8dac47cbdeb",
+      "summary": "Signature declined — Declined",
+      "action": "signature.declined",
+      "occurredAt": "2026-09-07T20:26:42.362Z",
+      "targetType": "signature",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "signature.declined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "2b6d5af1-c6df-428d-89a7-005ef29c408b"
+    },
+    {
+      "eventId": "c6085165-cda6-4d34-bbb2-9951cce33a30",
+      "metadata": {
+        "provider": "fake",
+        "createdBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "767cd0b1-d2d8-41c1-8466-7f4ba80d4327",
+        "scope": "deal_wide",
+        "envId": "7d3be3d4-dbaa-4f9d-be2f-a8dac47cbdeb",
+        "version": 1,
+        "recipientUserIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600"
+        ]
+      },
+      "targetId": "7d3be3d4-dbaa-4f9d-be2f-a8dac47cbdeb",
+      "summary": "Sent for signature (1 signer(s), via fake)",
+      "action": "signature.requested",
+      "occurredAt": "2026-09-07T20:25:54.173Z",
+      "targetType": "signature",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "signature.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4c87cc6e-2cdc-4805-9f3d-5c72492d8985"
+    },
+    {
+      "eventId": "5fc8200f-20e4-4cd3-b6f6-01e2536a4e4f",
+      "metadata": {
+        "category": "Disclosure",
+        "uploadedBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "767cd0b1-d2d8-41c1-8466-7f4ba80d4327",
+        "scope": "deal_wide"
+      },
+      "targetId": "767cd0b1-d2d8-41c1-8466-7f4ba80d4327",
+      "summary": "Document uploaded (Disclosure, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T20:24:30.304Z",
+      "targetType": "document",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "ac9aaa49-911e-4f08-b01b-1dee9b8e1e64"
+    },
+    {
+      "eventId": "79be7000-9be9-4903-a55e-6171bc96c053",
+      "metadata": {
+        "mode": "opened",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "n": 4,
+        "by": "712b6570-6051-7049-57bf-9da813f61777",
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "Document opened (v4) by 712b6570-6051-7049-57bf-9da813f61777",
+      "action": "document.accessed",
+      "occurredAt": "2026-09-07T20:22:10.177Z",
+      "targetType": "document",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "document.accessed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "b2c08f8a-4e74-4079-b075-628fcb1a15d3"
+    },
+    {
+      "eventId": "2b6dc699-a001-42e9-8988-0ff02c7c45eb",
+      "metadata": {
+        "mode": "downloaded",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "n": 4,
+        "by": "712b6570-6051-7049-57bf-9da813f61777",
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "Document downloaded (v4) by 712b6570-6051-7049-57bf-9da813f61777",
+      "action": "document.accessed",
+      "occurredAt": "2026-09-07T20:22:05.070Z",
+      "targetType": "document",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "document.accessed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "46f344af-d7db-4be5-a8c6-5a81764f5e89"
+    },
+    {
+      "eventId": "82a6b65b-a166-4f77-b177-cf6bf302bec2",
+      "metadata": {
+        "signedVersion": 4,
+        "envId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "scope": "deal_wide"
+      },
+      "targetId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+      "summary": "Signature complete — signed copy saved as v4",
+      "action": "signature.completed",
+      "occurredAt": "2026-09-07T20:16:01.674Z",
+      "targetType": "signature",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "signature.completed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e9479f9d-bdb0-4558-97aa-754f38a26855"
+    },
+    {
+      "eventId": "4b89e4f9-1438-4a51-9bb2-f9dfb14c8ec8",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "n": 4,
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "New version v4",
+      "action": "document.versioned",
+      "occurredAt": "2026-09-07T20:16:01.674Z",
+      "targetType": "document",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "document.versioned",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e9479f9d-bdb0-4558-97aa-754f38a26855"
+    },
+    {
+      "eventId": "e0a41074-e080-4777-828b-823da6dbecf0",
+      "metadata": {
+        "envId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+        "userId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "scope": "deal_wide"
+      },
+      "targetId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+      "summary": "A signer completed the envelope",
+      "action": "signature.recipient_completed",
+      "occurredAt": "2026-09-07T20:16:00.914Z",
+      "targetType": "signature",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "signature.recipient_completed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e9479f9d-bdb0-4558-97aa-754f38a26855"
+    },
+    {
+      "eventId": "16076b16-1a18-4c35-b259-757a412c49dd",
+      "metadata": {
+        "envId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+        "userId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "scope": "deal_wide"
+      },
+      "targetId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+      "summary": "A signer completed the envelope",
+      "action": "signature.recipient_completed",
+      "occurredAt": "2026-09-07T20:14:07.177Z",
+      "targetType": "signature",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "signature.recipient_completed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "66eb7906-bc70-4a19-8a77-ee7b8ca84f75"
+    },
+    {
+      "eventId": "d66c6947-7ad2-40a2-a932-e67662334c35",
+      "metadata": {
+        "provider": "fake",
+        "createdBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "scope": "deal_wide",
+        "envId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+        "version": 3,
+        "recipientUserIds": [
+          "411ba500-60e1-70b7-750b-3ff10088b5d2",
+          "e13bc590-70f1-70bf-f77e-51d14899d600"
+        ]
+      },
+      "targetId": "80f9ea83-99f0-4275-a8dd-d0046b6e24b9",
+      "summary": "Sent for signature (2 signer(s), via fake)",
+      "action": "signature.requested",
+      "occurredAt": "2026-09-07T20:09:09.763Z",
+      "targetType": "signature",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "signature.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "19cb8adf-8ab6-4203-a7c0-c5b54c862afa"
+    },
+    {
+      "eventId": "8fa066c7-c9b8-4e3f-8642-aceb9b9c5af0",
+      "metadata": {
+        "action": "edit_price",
+        "payload": {
+          "price": 14000000
+        },
+        "initiatedSide": "buy",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "736bcd9c-2dc8-4bf6-be1b-314de414489a",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "736bcd9c-2dc8-4bf6-be1b-314de414489a",
+      "summary": "Handshake approved: edit_price",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T20:04:43.076Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "8f5df6fe-0629-401a-a9ed-0a720e69810d"
+    },
+    {
+      "eventId": "59a5d40f-440e-4038-abea-943cae87b457",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "changed": {
+          "price": {
+            "from": 14250000,
+            "to": 14000000
+          }
+        }
+      },
+      "targetId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "summary": "Terms edited — price: 14250000 → 14000000",
+      "action": "deal.updated",
+      "occurredAt": "2026-09-07T20:04:43.076Z",
+      "targetType": "deal",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "deal.updated",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "8f5df6fe-0629-401a-a9ed-0a720e69810d"
+    },
+    {
+      "eventId": "2ffaa840-3c41-445d-b850-e67d4210486f",
+      "metadata": {
+        "approverIds": [
+          "e13bc590-70f1-70bf-f77e-51d14899d600",
+          "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+        ],
+        "payload": {
+          "price": 14000000
+        },
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "736bcd9c-2dc8-4bf6-be1b-314de414489a",
+        "action": "edit_price",
+        "initiatedSide": "buy",
+        "initiatedBy": "115bb500-1001-7013-b792-59a80eda40e8"
+      },
+      "targetId": "736bcd9c-2dc8-4bf6-be1b-314de414489a",
+      "summary": "Handshake requested: edit_price",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T20:02:25.504Z",
+      "targetType": "handshake",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e2f475ef-8949-42a9-8773-9000e36c3320"
+    },
+    {
+      "eventId": "e4bd3477-c8e9-4545-a517-ab64712712ef",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "n": 3,
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "New version v3",
+      "action": "document.versioned",
+      "occurredAt": "2026-09-07T19:57:23.135Z",
+      "targetType": "document",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "document.versioned",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a28be28a-f73a-4a9e-af27-c00f2ecf1be2"
+    },
+    {
+      "eventId": "224856ae-71a8-40c1-b596-7b69b17de57c",
+      "metadata": {
+        "firmNow": false,
+        "from": 1,
+        "to": 2,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "2",
+      "summary": "Advanced to stage 2",
+      "action": "stage.advanced",
+      "occurredAt": "2026-09-07T19:10:53.714Z",
+      "targetType": "stage",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "stage.advanced",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "0e848460-3e7b-409d-8af6-bb2ca2e00c7e"
+    },
+    {
+      "eventId": "ec7f043c-287a-47c5-a9a3-3b30217610d3",
+      "metadata": {
+        "action": "advance_stage",
+        "payload": {},
+        "initiatedSide": "sell",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "afc63294-ac32-4908-94c3-a2b0b4901976",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "afc63294-ac32-4908-94c3-a2b0b4901976",
+      "summary": "Handshake approved: advance_stage",
+      "action": "handshake.approved",
+      "occurredAt": "2026-09-07T19:10:53.713Z",
+      "targetType": "handshake",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "handshake.approved",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "0e848460-3e7b-409d-8af6-bb2ca2e00c7e"
+    },
+    {
+      "eventId": "df41336c-75be-4c4a-885b-d499f09e75f0",
+      "metadata": {
+        "reason": "We need more time",
+        "initiatedSide": "sell",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "f23a1019-d13e-44bf-ae70-d3651f18c943",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "f23a1019-d13e-44bf-ae70-d3651f18c943",
+      "summary": "Handshake rejected — We need more time",
+      "action": "handshake.rejected",
+      "occurredAt": "2026-09-07T19:09:59.392Z",
+      "targetType": "handshake",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "handshake.rejected",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a556acac-4077-43fb-a3c3-35aae0df8f8e"
+    },
+    {
+      "eventId": "dd656c10-7b48-42f3-a696-229a96aa81b9",
+      "metadata": {
+        "approverIds": [
+          "115bb500-1001-7013-b792-59a80eda40e8",
+          "411ba500-60e1-70b7-750b-3ff10088b5d2"
+        ],
+        "payload": {},
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "afc63294-ac32-4908-94c3-a2b0b4901976",
+        "action": "advance_stage",
+        "initiatedSide": "sell",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "afc63294-ac32-4908-94c3-a2b0b4901976",
+      "summary": "Handshake requested: advance_stage",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T19:00:15.059Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e1bcad30-7fb4-41e7-89ae-2f39b02bcbe1"
+    },
+    {
+      "eventId": "8e0ea904-4c3e-42c1-875b-59af1f44fac1",
+      "metadata": {
+        "approverIds": [
+          "115bb500-1001-7013-b792-59a80eda40e8",
+          "411ba500-60e1-70b7-750b-3ff10088b5d2"
+        ],
+        "payload": {},
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "hsId": "f23a1019-d13e-44bf-ae70-d3651f18c943",
+        "action": "advance_stage",
+        "initiatedSide": "sell",
+        "initiatedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161"
+      },
+      "targetId": "f23a1019-d13e-44bf-ae70-d3651f18c943",
+      "summary": "Handshake requested: advance_stage",
+      "action": "handshake.requested",
+      "occurredAt": "2026-09-07T19:00:10.567Z",
+      "targetType": "handshake",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "handshake.requested",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "63bcd909-656c-4b1f-9e53-336ad4a26e44"
+    },
+    {
+      "eventId": "8c101962-e0ed-4fcd-8717-8b7423223b23",
+      "metadata": {
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "n": 2,
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "New version v2",
+      "action": "document.versioned",
+      "occurredAt": "2026-09-07T18:57:07.213Z",
+      "targetType": "document",
+      "actorId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "scope": "deal_wide",
+      "detailType": "document.versioned",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "584f4e2e-9598-4538-affe-675f04bee59e"
+    },
+    {
+      "eventId": "86044059-cb47-435b-a773-477561faba16",
+      "metadata": {
+        "mode": "downloaded",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "n": 1,
+        "by": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "Document downloaded (v1) by 41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "action": "document.accessed",
+      "occurredAt": "2026-09-07T18:50:27.784Z",
+      "targetType": "document",
+      "actorId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "scope": "deal_wide",
+      "detailType": "document.accessed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "b9f23e7d-480a-4d12-9be7-5af7a6b2d9ee"
+    },
+    {
+      "eventId": "a45eb4c8-2222-4692-bbe4-17ae1bdc011a",
+      "metadata": {
+        "mode": "opened",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "n": 1,
+        "by": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "Document opened (v1) by 41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "action": "document.accessed",
+      "occurredAt": "2026-09-07T18:50:21.619Z",
+      "targetType": "document",
+      "actorId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "scope": "deal_wide",
+      "detailType": "document.accessed",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "4b511721-920a-42cb-9d44-3e80ef641d9d"
+    },
+    {
+      "eventId": "b121c497-6ad0-4f5b-892e-9a0fd1b5da34",
+      "metadata": {
+        "itemId": "t0",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 1
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T18:50:14.205Z",
+      "targetType": "event",
+      "actorId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e227206d-416d-4b7a-bf30-2d040b5d7430"
+    },
+    {
+      "eventId": "b5d76ab0-a868-4fd7-982c-100c5f9ed8ad",
+      "metadata": {
+        "category": "Purchase Agreement",
+        "uploadedBy": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "docId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+        "scope": "deal_wide"
+      },
+      "targetId": "111c7847-29f1-4e55-a419-d95236a7ef56",
+      "summary": "Document uploaded (Purchase Agreement, deal_wide)",
+      "action": "document.uploaded",
+      "occurredAt": "2026-09-07T18:46:49.702Z",
+      "targetType": "document",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "document.uploaded",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1af15650-07a4-4a43-bca7-18103b064a68"
+    },
+    {
+      "eventId": "8005e5e7-8d8d-4107-bab1-a4134a6fd665",
+      "metadata": {
+        "itemId": "t0",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 1
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T18:13:20.636Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f34950e6-638a-4506-8007-3439f85287ff"
+    },
+    {
+      "eventId": "f779f99a-ab4b-4599-8f8e-fcc4a65ae9ff",
+      "metadata": {
+        "itemId": "t0",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 1
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T18:13:18.722Z",
+      "targetType": "event",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a4cf04e7-0dac-4923-8370-5f48cc60eb46"
+    },
+    {
+      "eventId": "fc03d7a7-4a58-4cd2-a529-1bd649532651",
+      "metadata": {
+        "threadId": "e0c98090-67de-460e-94c3-d47640a28733",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "subject": "Agent Coordination",
+        "scope": "channel:agent"
+      },
+      "targetId": "e0c98090-67de-460e-94c3-d47640a28733",
+      "summary": "Thread \"Agent Coordination\" created in channel:agent",
+      "action": "thread.created",
+      "occurredAt": "2026-09-07T18:13:10.587Z",
+      "targetType": "thread",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "channel:agent",
+      "detailType": "thread.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "253afdb0-1172-44a8-b3e3-2861ae733ff3"
+    },
+    {
+      "eventId": "0d3935f3-74f7-4111-a02a-fb1e65d0d0ae",
+      "metadata": {
+        "threadId": "22d03591-2aeb-4ee7-927f-f55ef39a8eb4",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "subject": "Buy side financing",
+        "scope": "side_private:buy"
+      },
+      "targetId": "22d03591-2aeb-4ee7-927f-f55ef39a8eb4",
+      "summary": "Thread \"Buy side financing\" created in side_private:buy",
+      "action": "thread.created",
+      "occurredAt": "2026-09-07T18:12:21.729Z",
+      "targetType": "thread",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "side_private:buy",
+      "detailType": "thread.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f3ed7ed2-b18e-447d-9343-082f77441c61"
+    },
+    {
+      "eventId": "2edf692f-742c-4e92-bf04-42fb1dc4bf8e",
+      "metadata": {
+        "threadId": "72be0293-5d2c-4944-86be-2afeaf01ffac",
+        "msgId": "41a9d301-2d33-4fa7-b395-4eb70c5b7732",
+        "authorId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "deal_wide",
+        "mentions": []
+      },
+      "targetId": "41a9d301-2d33-4fa7-b395-4eb70c5b7732",
+      "summary": "Message posted",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T18:09:46.185Z",
+      "targetType": "message",
+      "actorId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+      "scope": "deal_wide",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "50c6279a-e918-4ab5-b328-3cba6ebf47d7"
+    },
+    {
+      "eventId": "23218eea-b1e0-46ef-8a44-62d33190318b",
+      "metadata": {
+        "threadId": "72be0293-5d2c-4944-86be-2afeaf01ffac",
+        "msgId": "dd83181d-763d-4146-8472-19b43a8bdd05",
+        "authorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "scope": "deal_wide",
+        "mentions": [
+          "414b1510-70c1-704a-939d-d5c4d39125a8"
+        ]
+      },
+      "targetId": "dd83181d-763d-4146-8472-19b43a8bdd05",
+      "summary": "Message posted (with @mentions)",
+      "action": "message.posted",
+      "occurredAt": "2026-09-07T18:08:17.656Z",
+      "targetType": "message",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "message.posted",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e32fc570-df8c-4122-a1b0-ac37df2f99af"
+    },
+    {
+      "eventId": "71e34761-25fa-4036-842a-820aaea7bc8d",
+      "metadata": {
+        "threadId": "72be0293-5d2c-4944-86be-2afeaf01ffac",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "subject": "Kickoff & Logistics",
+        "scope": "deal_wide"
+      },
+      "targetId": "72be0293-5d2c-4944-86be-2afeaf01ffac",
+      "summary": "Thread \"Kickoff & Logistics\" created in deal_wide",
+      "action": "thread.created",
+      "occurredAt": "2026-09-07T17:51:22.637Z",
+      "targetType": "thread",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "thread.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "21d28220-b672-44b8-bd49-1eef42421cc2"
+    },
+    {
+      "eventId": "a062d0c2-c082-4e57-8cca-afc0a543a52e",
+      "metadata": {
+        "side": "neutral",
+        "role": "TITLE_AGENT",
+        "userId": "61dba550-4091-704d-09a4-da34b12686ad",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "61dba550-4091-704d-09a4-da34b12686ad",
+      "summary": "TITLE_AGENT joined (neutral)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:50:14.835Z",
+      "targetType": "member",
+      "actorId": "61dba550-4091-704d-09a4-da34b12686ad",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f5468149-0d1b-46af-b5b8-6613d51a2a76"
+    },
+    {
+      "eventId": "877a281d-cc10-4a4e-a805-80f11e34b8af",
+      "metadata": {
+        "side": "buy",
+        "role": "LENDER",
+        "userId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+      "summary": "LENDER joined (buy)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:49:00.032Z",
+      "targetType": "member",
+      "actorId": "414b1510-70c1-704a-939d-d5c4d39125a8",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a391c4ef-e0b1-4ad0-99ea-a46b72f77b4c"
+    },
+    {
+      "eventId": "fc99cde1-2ed9-489a-8412-96635670e2c6",
+      "metadata": {
+        "side": "neutral",
+        "role": "TITLE_AGENT",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-title@cre-portal.example",
+        "token": "a3762245-d45d-42d6-b96d-67bb0696ccb6"
+      },
+      "targetId": "seed-title@cre-portal.example",
+      "summary": "Invited seed-title@cre-portal.example as TITLE_AGENT (neutral)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:48:31.137Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "eb53dafd-76eb-4428-a720-68a3e1885970"
+    },
+    {
+      "eventId": "beac19b6-b49f-46cc-b239-aca8767c7114",
+      "metadata": {
+        "side": "buy",
+        "role": "BUYER_ATTORNEY",
+        "userId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "summary": "BUYER_ATTORNEY joined (buy)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:40:42.465Z",
+      "targetType": "member",
+      "actorId": "41bbb500-a0b1-7044-1708-d6f81ddf6d0d",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "460e5875-9a68-4afd-99ac-ba8803318621"
+    },
+    {
+      "eventId": "01140cc9-0ad2-4bb3-b491-11b7e8fbae7d",
+      "metadata": {
+        "side": "buy",
+        "role": "OTHER",
+        "userId": "c17b5530-70c1-7038-b787-b32e33ff07b8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "c17b5530-70c1-7038-b787-b32e33ff07b8",
+      "summary": "OTHER joined (buy)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:36:58.018Z",
+      "targetType": "member",
+      "actorId": "c17b5530-70c1-7038-b787-b32e33ff07b8",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "9a967bc8-bdec-442c-992f-4b606d7eb1fb"
+    },
+    {
+      "eventId": "0459ae3a-e23b-4321-b9b2-19da9f25f430",
+      "metadata": {
+        "side": "buy",
+        "role": "OTHER",
+        "invitedBy": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-inspector@cre-portal.example",
+        "token": "9bcab36d-aae1-4657-9ac7-de3fa0d678a3"
+      },
+      "targetId": "seed-inspector@cre-portal.example",
+      "summary": "Invited seed-inspector@cre-portal.example as OTHER (buy)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:35:40.217Z",
+      "targetType": "invite",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "b42bb526-3a60-4f79-a34b-4e07cf03b19e"
+    },
+    {
+      "eventId": "b1061028-63a5-4809-8215-53780b0ab77d",
+      "metadata": {
+        "side": "buy",
+        "role": "LENDER",
+        "invitedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-lender@cre-portal.example",
+        "token": "00c7b0fd-c633-48b9-9de4-d78e6feca871"
+      },
+      "targetId": "seed-lender@cre-portal.example",
+      "summary": "Invited seed-lender@cre-portal.example as LENDER (buy)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:35:20.909Z",
+      "targetType": "invite",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "83733ecc-cc36-46da-82ba-b2deef0139ae"
+    },
+    {
+      "eventId": "d471ebf6-f15d-4e69-9bbd-7e073e777951",
+      "metadata": {
+        "side": "buy",
+        "role": "BUYER_ATTORNEY",
+        "invitedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-buyerattorney@cre-portal.example",
+        "token": "9763f9f4-1c11-45fb-a031-481b2a589e55"
+      },
+      "targetId": "seed-buyerattorney@cre-portal.example",
+      "summary": "Invited seed-buyerattorney@cre-portal.example as BUYER_ATTORNEY (buy)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:34:22.810Z",
+      "targetType": "invite",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a69d8081-dd27-4e6c-9ab3-41acc0bbfe8e"
+    },
+    {
+      "eventId": "a5417d63-9c30-42f7-94bd-200c43894e9c",
+      "metadata": {
+        "side": "buy",
+        "role": "BUYER",
+        "invitedBy": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-buyerattorney@cre-portal.example",
+        "token": "8136108f-f904-469a-a08f-b2b0e0435118"
+      },
+      "targetId": "seed-buyerattorney@cre-portal.example",
+      "summary": "Invited seed-buyerattorney@cre-portal.example as BUYER (buy)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:32:25.207Z",
+      "targetType": "invite",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "c7b49e1e-df1e-49ac-b2b6-a09b6576bc42"
+    },
+    {
+      "eventId": "0ec2a292-d4f7-4960-b2ac-c4cb463e7b3d",
+      "metadata": {
+        "side": "buy",
+        "role": "BUYER_AGENT",
+        "userId": "115bb500-1001-7013-b792-59a80eda40e8",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "summary": "BUYER_AGENT joined (buy)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:25:41.149Z",
+      "targetType": "member",
+      "actorId": "115bb500-1001-7013-b792-59a80eda40e8",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "1da386af-667e-4ed6-a0d9-5abb7c165e58"
+    },
+    {
+      "eventId": "6c64b0ff-0ce5-46a7-83f9-972cbd3ea1d8",
+      "metadata": {
+        "side": "buy",
+        "role": "BUYER",
+        "userId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "summary": "BUYER joined (buy)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:23:56.811Z",
+      "targetType": "member",
+      "actorId": "411ba500-60e1-70b7-750b-3ff10088b5d2",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "10a846d4-a665-41fd-b152-57460f98a180"
+    },
+    {
+      "eventId": "cd72c0c4-091a-4fb2-b10f-b10938a4198d",
+      "metadata": {
+        "side": "buy",
+        "role": "BUYER_AGENT",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-buyeragent@cre-portal.example",
+        "token": "dfbafb75-72fb-4326-861a-36a6fb394701"
+      },
+      "targetId": "seed-buyeragent@cre-portal.example",
+      "summary": "Invited seed-buyeragent@cre-portal.example as BUYER_AGENT (buy)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:23:12.131Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "66bb41b5-b736-474c-8044-1c917bab7a26"
+    },
+    {
+      "eventId": "7c715166-ec07-4676-9ca4-c738a94a2d11",
+      "metadata": {
+        "side": "buy",
+        "role": "BUYER",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-buyer@cre-portal.example",
+        "token": "17ac3eb2-4521-4346-8c26-011b6a7dfd79"
+      },
+      "targetId": "seed-buyer@cre-portal.example",
+      "summary": "Invited seed-buyer@cre-portal.example as BUYER (buy)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:22:25.299Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e521a0a9-7513-4f42-9122-7d3dd54149bc"
+    },
+    {
+      "eventId": "0a111a9e-9467-41a8-b692-ddaa7b937707",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER",
+        "userId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "summary": "SELLER joined (sell)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:15:25.393Z",
+      "targetType": "member",
+      "actorId": "e13bc590-70f1-70bf-f77e-51d14899d600",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "c9fe7684-02a8-49a2-9e13-534f9c3117c0"
+    },
+    {
+      "eventId": "beb5e3b4-882a-4f0e-ba05-63f44614270d",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER_ATTORNEY",
+        "userId": "712b6570-6051-7049-57bf-9da813f61777",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "712b6570-6051-7049-57bf-9da813f61777",
+      "summary": "SELLER_ATTORNEY joined (sell)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T17:13:34.912Z",
+      "targetType": "member",
+      "actorId": "712b6570-6051-7049-57bf-9da813f61777",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "35030441-a286-47ff-a018-d8bf0b85b91d"
+    },
+    {
+      "eventId": "02c805ef-c234-4949-b601-2abb1aab5e51",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER_ATTORNEY",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-sellerattorney@cre-portal.example",
+        "token": "051387ad-2982-4ae6-94e3-217aaecc5381"
+      },
+      "targetId": "seed-sellerattorney@cre-portal.example",
+      "summary": "Invited seed-sellerattorney@cre-portal.example as SELLER_ATTORNEY (sell)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:12:52.714Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e081732c-6ab7-4882-ba64-e87b6fc0557f"
+    },
+    {
+      "eventId": "e2ba481b-426c-4b36-bacf-501a2eaaa13f",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-seller@cre-portal.example",
+        "token": "bcf77bde-cca5-42b3-87ea-4a111dcff5e8"
+      },
+      "targetId": "seed-seller@cre-portal.example",
+      "summary": "Invited seed-seller@cre-portal.example as SELLER (sell)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T17:12:20.493Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "f93066d3-80f5-429e-b1c8-5df7caec4923"
+    },
+    {
+      "eventId": "4b71c91e-dd99-4de9-959c-7d8aced2441c",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-seller@cre-portal.example",
+        "token": "d7cf7111-5953-488c-b15b-aed09087077e"
+      },
+      "targetId": "seed-seller@cre-portal.example",
+      "summary": "Invited seed-seller@cre-portal.example as SELLER (sell)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T15:43:52.319Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "8238fdc8-7791-4a9c-9f2b-78e4422280fe"
+    },
+    {
+      "eventId": "1774d109-cda7-4afe-9bfc-07e523aab6ff",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER_ATTORNEY",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-sellerattorney@cre-portal.example",
+        "token": "b8b74cab-d59a-4ea5-b51a-260b862aeb1c"
+      },
+      "targetId": "seed-sellerattorney@cre-portal.example",
+      "summary": "Invited seed-sellerattorney@cre-portal.example as SELLER_ATTORNEY (sell)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T15:43:22.299Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "a140c4e0-5f4c-4ea9-b0b4-efefe3c2bc8a"
+    },
+    {
+      "eventId": "db7022f0-37e0-4cfd-bdce-f67258889ce0",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER_ATTORNEY",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-sellerattorney@cre-portal.example",
+        "token": "10a4df92-9dce-472a-b61e-6cd8da69cc23"
+      },
+      "targetId": "seed-sellerattorney@cre-portal.example",
+      "summary": "Invited seed-sellerattorney@cre-portal.example as SELLER_ATTORNEY (sell)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T15:43:00.063Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "d83a2e83-c206-4fae-969b-0426625ee8b1"
+    },
+    {
+      "eventId": "5afdeb89-9e80-44b8-8813-5cecd01a6aeb",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER",
+        "invitedBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "email": "seed-seller@cre-portal.example",
+        "token": "e63389bc-423c-4beb-962f-392fb14ae6c2"
+      },
+      "targetId": "seed-seller@cre-portal.example",
+      "summary": "Invited seed-seller@cre-portal.example as SELLER (sell)",
+      "action": "member.invited",
+      "occurredAt": "2026-09-07T15:42:42.739Z",
+      "targetType": "invite",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.invited",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "ddbb845f-81fa-4e6c-91d7-cb3566cccb6e"
+    },
+    {
+      "eventId": "e6eb5604-92c1-4320-bd84-d5bfcc7b625e",
+      "metadata": {
+        "itemId": "t0",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 1
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T15:40:47.819Z",
+      "targetType": "event",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "e39547fa-e14e-4c42-9015-1d55ba5fa6a0"
+    },
+    {
+      "eventId": "dfb8722b-fffd-486f-951e-d81bc041a9b4",
+      "metadata": {
+        "itemId": "t0",
+        "done": false,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 1
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T15:40:47.180Z",
+      "targetType": "event",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "5a0e1e27-a21c-4271-8f25-0079ee8918b8"
+    },
+    {
+      "eventId": "0a2a07bb-7a8b-4ed5-b840-3698a85433df",
+      "metadata": {
+        "itemId": "t0",
+        "done": true,
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "n": 1
+      },
+      "summary": "checklist.item_toggled",
+      "action": "checklist.item_toggled",
+      "occurredAt": "2026-09-07T15:40:46.280Z",
+      "targetType": "event",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "checklist.item_toggled",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "eeddb7e9-ba8a-4610-9c9b-4e17c09f6d44"
+    },
+    {
+      "eventId": "e97c36a0-ed08-49d9-9087-56571e983caa",
+      "metadata": {
+        "side": "sell",
+        "role": "SELLER_AGENT",
+        "userId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3"
+      },
+      "targetId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "summary": "SELLER_AGENT joined (sell)",
+      "action": "member.joined",
+      "occurredAt": "2026-09-07T15:35:58.972Z",
+      "targetType": "member",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "member.joined",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "84470fc7-841c-41e9-9eda-8b5ae22db06a"
+    },
+    {
+      "eventId": "ab6ec83f-a32e-4e2a-8c80-f2695f0fa7a1",
+      "metadata": {
+        "address": "1200 Congress Ave, Austin TX",
+        "createdBy": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+        "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+        "propertyType": "office"
+      },
+      "targetId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "summary": "Deal created",
+      "action": "deal.created",
+      "occurredAt": "2026-09-07T15:35:58.971Z",
+      "targetType": "deal",
+      "actorId": "e1ab7550-e041-7073-7a4b-b2b7cf4dc161",
+      "scope": "deal_wide",
+      "detailType": "deal.created",
+      "dealId": "dd693ebf-7e09-481f-bc9d-5d34a30d9fe3",
+      "correlationId": "84470fc7-841c-41e9-9eda-8b5ae22db06a"
+    }
+  ]
+}

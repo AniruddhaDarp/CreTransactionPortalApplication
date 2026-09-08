@@ -31,11 +31,16 @@ describe('DealsStack', () => {
     });
   });
 
-  it('routes the document delete-saga events from cre.documents into an SQS queue with a DLQ', () => {
+  it('routes the document + thread delete-saga events into an SQS queue with a DLQ', () => {
     t.hasResourceProperties('AWS::Events::Rule', {
       EventPattern: {
-        source: ['cre.documents'],
-        'detail-type': Match.arrayWith(['document.delete_requested', 'document.archived']),
+        source: ['cre.documents', 'cre.chat'],
+        'detail-type': Match.arrayWith([
+          'document.delete_requested',
+          'document.archived',
+          'thread.delete_requested',
+          'thread.deleted',
+        ]),
       },
     });
     t.resourceCountIs('AWS::SQS::Queue', 2); // consumer queue + DLQ
@@ -45,8 +50,8 @@ describe('DealsStack', () => {
     });
   });
 
-  it('registers all 30 JWT-authorized routes', () => {
-    t.resourceCountIs('AWS::ApiGatewayV2::Route', 30);
+  it('registers all 31 JWT-authorized routes', () => {
+    t.resourceCountIs('AWS::ApiGatewayV2::Route', 31);
     t.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', { AuthorizerType: 'JWT' });
     for (const rk of [
       'POST /v1/deals',

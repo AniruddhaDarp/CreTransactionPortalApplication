@@ -25,6 +25,17 @@ export function isConfigured(cfg: AppConfig): boolean {
   return Boolean(cfg.userPoolId && cfg.userPoolClientId && cfg.apiBaseUrl);
 }
 
+/**
+ * The path the user was on before sign-in (an invite link, a deep-linked deal).
+ * `redirect_uri` must be `/` (the only registered Cognito callback), so we carry
+ * the real destination through the OIDC `state` and restore it after the code
+ * exchange. `signinRedirect` is always called with this as `state`.
+ */
+export const preLoginPath = (): string => {
+  const p = window.location.pathname + window.location.search;
+  return p.startsWith('/') && !p.startsWith('/?code=') ? p : '/';
+};
+
 /** Settings object for react-oidc-context (auth-code + PKCE). */
 export function oidcSettings(cfg: AppConfig) {
   return {
@@ -34,7 +45,20 @@ export function oidcSettings(cfg: AppConfig) {
     post_logout_redirect_uri: `${window.location.origin}/`,
     response_type: 'code',
     scope: 'openid email profile',
-    onSigninCallback: () => window.history.replaceState({}, '', '/'),
+    onSigninCallback: (user?: unknown) => {
+      const st = (user as { state?: unknown } | undefined)?.state;
+      let target = '/';
+      if (st && typeof st === 'object' && 'returnTo' in st) {
+        const rt = String((st as { returnTo?: unknown }).returnTo ?? '/');
+        if (rt.startsWith('/') && !rt.startsWith('/?code=')) target = rt;
+      }
+      if (target === '/') {
+        window.history.replaceState({}, '', '/');
+      } else {
+        // full reload so BrowserRouter mounts on the restored path (e.g. /accept/…)
+        window.location.replace(target);
+      }
+    },
   };
 }
 

@@ -41,6 +41,15 @@ export function plan(detailType: string, d: Record<string, unknown>): Plan | nul
         inviteRole: str(d.role),
       };
 
+    case 'member.invite_declined':
+      return {
+        recipients: { users: [str(d.invitedBy)] },
+        type: 'invite_declined',
+        title: `${str(d.email)} declined your invitation${d.role ? ` (${str(d.role)})` : ''}`,
+        targetType: 'deal',
+        targetId: str(d.dealId),
+      };
+
     case 'handshake.requested':
       return {
         recipients: { users: (d.approverIds as string[]) ?? [] },
@@ -167,11 +176,28 @@ export function plan(detailType: string, d: Record<string, unknown>): Plan | nul
       };
 
     case 'thread.converted':
-      if (!d.droppedUserId) return null;
+      if (d.droppedUserId) {
+        return {
+          recipients: { users: [str(d.droppedUserId)] },
+          type: 'thread_converted',
+          title: `A private thread you were in moved to ${str(d.toScope)} — you were removed`,
+          targetType: 'thread',
+          targetId: str(d.threadId),
+        };
+      }
       return {
-        recipients: { users: [str(d.droppedUserId)] },
+        recipients: { allMembers: true },
         type: 'thread_converted',
-        title: `A private thread you were in moved to ${str(d.toScope)} — you were removed`,
+        title: 'A private channel was opened up to the whole deal',
+        targetType: 'thread',
+        targetId: str(d.threadId),
+      };
+
+    case 'thread.deleted':
+      return {
+        recipients: { allMembers: true },
+        type: 'thread_deleted',
+        title: `A channel thread was deleted${d.subject ? ` — “${str(d.subject)}”` : ''}`,
         targetType: 'thread',
         targetId: str(d.threadId),
       };

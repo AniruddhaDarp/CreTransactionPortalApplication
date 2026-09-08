@@ -107,6 +107,20 @@ export function summarize(detailType: string, d: Record<string, unknown>): Descr
         targetId: s(d.threadId),
         summary: `Thread converted to ${s(d.toScope)}`,
       };
+    case 'thread.delete_requested':
+      return {
+        action: detailType,
+        targetType: 'thread',
+        targetId: s(d.threadId),
+        summary: `Deletion requested for channel "${s(d.subject)}"`,
+      };
+    case 'thread.deleted':
+      return {
+        action: detailType,
+        targetType: 'thread',
+        targetId: s(d.threadId),
+        summary: `Channel thread deleted${d.subject ? ` — "${s(d.subject)}"` : ''}`,
+      };
     case 'message.posted':
       return {
         action: detailType,

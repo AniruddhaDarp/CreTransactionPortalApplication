@@ -52,11 +52,19 @@ describe('plan', () => {
     expect(closed.recipients).toEqual({ allMembers: true });
   });
 
-  it('thread.converted notifies the dropped user only when there is one', () => {
-    expect(plan('thread.converted', { threadId: 't', toScope: 'side_private:buy' })).toBeNull();
+  it('thread.converted: the dropped user when there is one, else all members', () => {
+    expect(
+      plan('thread.converted', { threadId: 't', toScope: 'deal_wide' })!.recipients,
+    ).toEqual({ allMembers: true });
     expect(
       plan('thread.converted', { threadId: 't', toScope: 'side_private:buy', droppedUserId: 'u7' })!.recipients,
     ).toEqual({ users: ['u7'] });
+  });
+
+  it('thread.deleted → all members', () => {
+    expect(
+      plan('thread.deleted', { threadId: 't', subject: 'Agent channel' })!.recipients,
+    ).toEqual({ allMembers: true });
   });
 
   it('member.invited → invitation email only, no in-app row', () => {
@@ -64,6 +72,18 @@ describe('plan', () => {
     expect(p.recipients).toEqual({ inviteEmail: 'x@y.com' });
     expect(p.inviteToken).toBe('tok');
     expect(p.email).toBe(true);
+  });
+
+  it('member.invite_declined → notify the inviter', () => {
+    const p = plan('member.invite_declined', {
+      dealId: 'd',
+      email: 'x@y.com',
+      role: 'BUYER_ATTORNEY',
+      invitedBy: 'u7',
+    })!;
+    expect(p.recipients).toEqual({ users: ['u7'] });
+    expect(p.type).toBe('invite_declined');
+    expect(p.title).toContain('x@y.com');
   });
 
   it('payment.confirmed / voided → all members; payment.recorded is not itself a notification', () => {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { buildCtx } from './context.js';
 import * as handshake from './handshake.js';
 import * as repo from './repo.js';
-import { emit, param, requireMember } from './shared.js';
+import { assertActive, emit, param, requireMember } from './shared.js';
 
 const rejectSchema = z.object({ reason: z.string().max(500).optional() });
 
@@ -20,8 +20,11 @@ export const handshakeRoutes: Record<string, RouteHandler> = {
 
   'POST /v1/deals/{dealId}/handshakes/{hsId}/approve': async (ctx) => {
     const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
+    // `close_deal` is approved while the deal is still ACTIVE; anything else on a
+    // closed deal is a stale request that can no longer take effect.
     const hs = await repo.getHandshake(deal.dealId, param(ctx, 'hsId'));
     if (!hs) throw new HttpError(404, 'handshake not found');
+    if (hs.action !== 'close_deal' && hs.action !== 'cancel_deal') assertActive(deal);
     const { events } = await handshake.decide({
       deal,
       hs,

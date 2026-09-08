@@ -19,8 +19,6 @@ const newThreadSchema = z.object({
   stageTag: z.number().int().min(1).max(6).optional(),
 });
 
-const convertSchema = z.object({ toSide: z.enum(['buy', 'sell']) });
-
 const newMessageSchema = z.object({
   body: z.string().min(1).max(8000),
   mentions: z.array(z.string().max(80)).max(20).optional(),
@@ -53,10 +51,19 @@ function assertCanCreate(mv: repo.MemberView, scope: Scope): void {
 
 const maskBody = (m: repo.Message) => (m.deletedAt ? '[message removed]' : m.body);
 
+/** Once a deal is CLOSED / CANCELLED the workspace is a read-only record. */
+async function assertDealActive(dealId: string): Promise<void> {
+  const status = (await repo.getDealStatus(dealId)) ?? 'ACTIVE';
+  if (status !== 'ACTIVE') {
+    throw new HttpError(409, `the deal is ${status.toLowerCase()} — the workspace is read-only`);
+  }
+}
+
 export const handler = router({
   'POST /v1/deals/{dealId}/threads': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const mv = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const input = parseBody(newThreadSchema, ctx.body ?? {});
     assertCanCreate(mv, input.scope);
     const thread: repo.Thread = {
@@ -82,6 +89,7 @@ export const handler = router({
     const dealId = param(ctx, 'dealId');
     const mv = await requireViewer(dealId, ctx.userId);
     const visible = (await repo.listThreads(dealId)).filter((t) => {
+      if (t.deletedAt) return false;
       try {
         assertCanSee(mv, t.scope);
         return true;
@@ -92,11 +100,14 @@ export const handler = router({
     return { body: { threads: visible } };
   },
 
+  // Either agent (or either attorney) may open their private channel to the
+  // whole deal. Unilateral, history retained, nobody dropped.
   'POST /v1/deals/{dealId}/threads/{threadId}/convert': async (ctx) => {
     const dealId = param(ctx, 'dealId');
     const mv = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const thread = await repo.getThread(dealId, param(ctx, 'threadId'));
-    if (!thread) throw new HttpError(404, 'thread not found');
+    if (!thread || thread.deletedAt) throw new HttpError(404, 'thread not found');
     if (thread.scope !== 'channel:agent' && thread.scope !== 'channel:attorney') {
       throw new HttpError(400, 'only agent/attorney channel threads can be converted');
     }
@@ -106,29 +117,19 @@ export const handler = router({
     if (thread.scope === 'channel:attorney' && !isAttorney(mv.role)) {
       throw new HttpError(403, 'only an attorney may convert the attorney channel');
     }
-    const { toSide } = parseBody(convertSchema, ctx.body ?? {});
-    if (toSide !== mv.side) throw new HttpError(403, 'you can only pull a thread onto your own side');
-    const toScope: Scope = toSide === 'buy' ? 'side_private:buy' : 'side_private:sell';
-
-    const others = (await repo.listMemberViews(dealId)).filter(
-      (m) =>
-        m.status === 'active' &&
-        m.side !== toSide &&
-        (thread.scope === 'channel:agent' ? isAgent(m.role) : isAttorney(m.role)),
-    );
+    const toScope: Scope = 'deal_wide';
     await repo.convertThread(dealId, thread.threadId, toScope, thread.scope);
 
-    const now = new Date().toISOString();
     await repo.postMessage(
       {
         dealId,
         threadId: thread.threadId,
         msgId: crypto.randomUUID(),
         authorId: ctx.userId,
-        body: `Thread moved to ${toSide}-side private.`,
+        body: 'This channel was opened up to the whole deal.',
         mentions: [],
         attachments: [],
-        createdAt: now,
+        createdAt: new Date().toISOString(),
         system: true,
       },
       [],
@@ -136,15 +137,43 @@ export const handler = router({
     await emit(dealId, ctx.correlationId, ctx.userId, [
       {
         type: 'thread.converted',
-        detail: {
-          dealId,
-          threadId: thread.threadId,
-          toScope,
-          droppedUserId: others[0]?.userId,
-        },
+        detail: { dealId, threadId: thread.threadId, toScope, by: ctx.userId },
       },
     ]);
     return { body: { ...thread, scope: toScope, convertedFrom: thread.scope } };
+  },
+
+  // Request deletion of a channel — handshake-gated (a deal lead approves).
+  'DELETE /v1/deals/{dealId}/threads/{threadId}': async (ctx) => {
+    const dealId = param(ctx, 'dealId');
+    const mv = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
+    const thread = await repo.getThread(dealId, param(ctx, 'threadId'));
+    if (!thread || thread.deletedAt) throw new HttpError(404, 'thread not found');
+    if (thread.scope !== 'channel:agent' && thread.scope !== 'channel:attorney') {
+      throw new HttpError(400, 'only agent/attorney channel threads can be deleted');
+    }
+    if (thread.scope === 'channel:agent' && !isAgent(mv.role)) {
+      throw new HttpError(403, 'only an agent may delete the agent channel');
+    }
+    if (thread.scope === 'channel:attorney' && !isAttorney(mv.role)) {
+      throw new HttpError(403, 'only an attorney may delete the attorney channel');
+    }
+    await emit(dealId, ctx.correlationId, ctx.userId, [
+      {
+        type: 'thread.delete_requested',
+        detail: {
+          dealId,
+          threadId: thread.threadId,
+          subject: thread.subject,
+          scope: thread.scope,
+          requestedBy: ctx.userId,
+          requesterRole: mv.role,
+          requesterSide: mv.side,
+        },
+      },
+    ]);
+    return { status: 202, body: { status: 'delete_requested' } };
   },
 
   'GET /v1/deals/{dealId}/threads/{threadId}/messages': async (ctx) => {
@@ -171,6 +200,7 @@ export const handler = router({
     const dealId = param(ctx, 'dealId');
     const threadId = param(ctx, 'threadId');
     const mv = await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const thread = await repo.getThread(dealId, threadId);
     if (!thread) throw new HttpError(404, 'thread not found');
     assertCanSee(mv, thread.scope);
@@ -212,6 +242,7 @@ export const handler = router({
     const dealId = param(ctx, 'dealId');
     const threadId = param(ctx, 'threadId');
     await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const thread = await repo.getThread(dealId, threadId);
     if (!thread) throw new HttpError(404, 'thread not found');
     const msg = await repo.getMessage(dealId, threadId, param(ctx, 'msgId'));
@@ -229,6 +260,7 @@ export const handler = router({
     const dealId = param(ctx, 'dealId');
     const threadId = param(ctx, 'threadId');
     await requireViewer(dealId, ctx.userId);
+    await assertDealActive(dealId);
     const thread = await repo.getThread(dealId, threadId);
     if (!thread) throw new HttpError(404, 'thread not found');
     const msg = await repo.getMessage(dealId, threadId, param(ctx, 'msgId'));

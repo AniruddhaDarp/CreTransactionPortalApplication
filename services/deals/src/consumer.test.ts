@@ -56,7 +56,7 @@ describe('deals delete-saga consumer', () => {
     vi.mocked(repo.listHandshakes).mockResolvedValue([]);
     vi.mocked(handshake.initiate).mockResolvedValue({
       hs: { hsId: 'hs1' } as never,
-      event: { type: 'handshake.requested', detail: { hsId: 'hs1' } },
+      events: [{ type: 'handshake.requested', detail: { hsId: 'hs1' } }],
     });
 
     await invoke(
@@ -66,6 +66,9 @@ describe('deals delete-saga consumer', () => {
           env: env({
             detail: {
               docId: 'doc1',
+              scope: 'deal_wide',
+              category: 'Other',
+              title: 'Scratch notes',
               requestedBy: 'buyer1',
               requesterRole: 'BUYER',
               requesterSide: 'buy',
@@ -76,7 +79,11 @@ describe('deals delete-saga consumer', () => {
     );
 
     expect(handshake.initiate).toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'delete_document', payload: { docId: 'doc1' }, actorId: 'buyer1' }),
+      expect.objectContaining({
+        action: 'delete_document',
+        payload: { docId: 'doc1', scope: 'deal_wide', category: 'Other', title: 'Scratch notes' },
+        actorId: 'buyer1',
+      }),
     );
     expect(emit).toHaveBeenCalledWith('d1', 'c1', 'buyer1', [
       { type: 'handshake.requested', detail: { hsId: 'hs1' } },
@@ -96,6 +103,9 @@ describe('deals delete-saga consumer', () => {
           env: env({
             detail: {
               docId: 'doc1',
+              scope: 'deal_wide',
+              category: 'Other',
+              title: 'Scratch notes',
               requestedBy: 'buyer1',
               requesterRole: 'BUYER',
               requesterSide: 'buy',
@@ -150,6 +160,9 @@ describe('deals delete-saga consumer', () => {
           env: env({
             detail: {
               docId: 'doc1',
+              scope: 'deal_wide',
+              category: 'Other',
+              title: 'Scratch notes',
               requestedBy: 'buyer1',
               requesterRole: 'BUYER',
               requesterSide: 'buy',

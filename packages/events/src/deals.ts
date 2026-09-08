@@ -63,6 +63,13 @@ export const memberRemovedSchema = z.object({
   removedBy: z.string(),
 });
 
+export const memberInviteDeclinedSchema = z.object({
+  dealId: z.string(),
+  email: z.string(),
+  role: roleSchema,
+  invitedBy: z.string(),
+});
+
 // --- milestones + handshakes (Module 5) ---------------------------------
 
 const changeMap = z.record(z.string(), z.object({ from: z.unknown(), to: z.unknown() }));
@@ -164,6 +171,7 @@ export const dealEventSchemas = {
   'member.joined': memberJoinedSchema,
   'member.role_changed': memberRoleChangedSchema,
   'member.removed': memberRemovedSchema,
+  'member.invite_declined': memberInviteDeclinedSchema,
   'stage.advanced': stageAdvancedSchema,
   'stage.updated': stageUpdatedSchema,
   'handshake.requested': handshakeRequestedSchema,

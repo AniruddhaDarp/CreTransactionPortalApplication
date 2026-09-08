@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "build": "pnpm -r build",
     "synth": "pnpm --filter infra synth",
-    "sync-config": "node scripts/sync-config.mjs"
+    "sync-config": "node scripts/sync-config.mjs",
+    "deploy-web": "node scripts/deploy-web.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

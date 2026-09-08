@@ -30,6 +30,8 @@ export function NewDeal({ api }: { api: DealsApi }) {
           };
           const label = String(d.get('label') ?? '');
           if (label) body.label = label;
+          const earnest = Number(d.get('earnestMoney') ?? 0);
+          if (earnest > 0) body.earnestMoney = earnest;
           const closing = String(d.get('targetClosingDate') ?? '');
           if (closing) body.targetClosingDate = closing;
           setBusy(true);
@@ -59,6 +61,10 @@ export function NewDeal({ api }: { api: DealsApi }) {
           <label className="field">
             <span>Accepted price (USD)</span>
             <input className="input" name="price" type="number" min={1} required />
+          </label>
+          <label className="field">
+            <span>Earnest money (USD, optional)</span>
+            <input className="input" name="earnestMoney" type="number" min={0} />
           </label>
           <label className="field">
             <span>Label (optional)</span>

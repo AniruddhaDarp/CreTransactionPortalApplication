@@ -28,6 +28,7 @@ export interface Thread {
   createdBy: string;
   createdAt: string;
   convertedFrom?: Scope;
+  deletedAt?: string;
 }
 
 export interface Message {
@@ -67,6 +68,7 @@ export function tableName(): string {
 }
 
 const memberViewKey = (d: string, u: string) => ({ PK: `DEAL#${d}`, SK: `MEMBERVIEW#${u}` });
+const dealMetaKey = (d: string) => ({ PK: `DEAL#${d}`, SK: 'DEALMETA' });
 const threadKey = (d: string, t: string) => ({ PK: `DEAL#${d}`, SK: `THREAD#${t}` });
 const msgSk = (t: string, ts: string, m: string) => `MSG#${t}#${ts}#${m}`;
 const rcptKey = (d: string, m: string, u: string) => ({ PK: `DEAL#${d}`, SK: `RCPT#${m}#${u}` });
@@ -139,6 +141,25 @@ export async function upsertMemberView(
   }
 }
 
+// --- deal lifecycle projection (written by the consumer) ---------------
+
+export async function setDealStatus(dealId: string, status: string): Promise<void> {
+  await docClient().send(
+    new PutCommand({
+      TableName: tableName(),
+      Item: { ...dealMetaKey(dealId), dealId, status },
+    }),
+  );
+}
+
+/** `ACTIVE` unless a `deal.status_changed` has landed here saying otherwise. */
+export async function getDealStatus(dealId: string): Promise<string> {
+  const r = await docClient().send(
+    new GetCommand({ TableName: tableName(), Key: dealMetaKey(dealId) }),
+  );
+  return String((r.Item as { status?: string } | undefined)?.status ?? 'ACTIVE');
+}
+
 // --- threads ----------------------------------------------------------
 
 export async function putThread(thread: Thread): Promise<void> {
@@ -166,6 +187,17 @@ export async function listThreads(dealId: string): Promise<Thread[]> {
     }),
   );
   return (r.Items ?? []).map((i) => clean<Thread>(i));
+}
+
+export async function archiveThread(dealId: string, threadId: string): Promise<void> {
+  await docClient().send(
+    new UpdateCommand({
+      TableName: tableName(),
+      Key: threadKey(dealId, threadId),
+      UpdateExpression: 'SET deletedAt = if_not_exists(deletedAt, :now)',
+      ExpressionAttributeValues: { ':now': new Date().toISOString() },
+    }),
+  );
 }
 
 export async function convertThread(

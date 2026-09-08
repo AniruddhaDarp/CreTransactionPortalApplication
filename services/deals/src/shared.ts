@@ -18,6 +18,13 @@ export async function requireMember(
   return { deal, membership };
 }
 
+/** Reject a mutating request once the deal is CLOSED / CANCELLED (read-only record). */
+export function assertActive(deal: DealMeta): void {
+  if (deal.status !== 'ACTIVE') {
+    throw new HttpError(409, `the deal is ${deal.status.toLowerCase()} — the workspace is read-only`);
+  }
+}
+
 export const param = (ctx: RequestContext, name: string): string => {
   const v = ctx.pathParams[name];
   if (!v) throw new HttpError(400, `missing path parameter: ${name}`);

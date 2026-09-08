@@ -2,6 +2,7 @@ import { sideOf, type Role, type Side } from '@cre/authz';
 import { createLogger } from '@cre/platform';
 import type { SQSBatchItemFailure, SQSHandler } from 'aws-lambda';
 import * as repo from './repo.js';
+import { emit } from './shared.js';
 
 /** Envelope inside every EventBridge event's `detail`. */
 interface Envelope {
@@ -61,6 +62,43 @@ async function process(type: string, env: Envelope): Promise<void> {
       status: 'removed',
       version: env.occurredAt,
     });
+  } else if (type === 'deal.status_changed') {
+    await repo.setDealStatus(env.dealId, String(d.status));
+  }
+
+  // A `delete_thread` handshake was approved in Deals — archive the channel here
+  // and close the saga with `thread.deleted`.
+  if (type === 'handshake.approved' && d.action === 'delete_thread') {
+    const payload = (d.payload ?? {}) as Record<string, unknown>;
+    const threadId = String(payload.threadId ?? '');
+    if (threadId) {
+      await repo.archiveThread(env.dealId, threadId);
+      await repo.postMessage(
+        {
+          dealId: env.dealId,
+          threadId,
+          msgId: crypto.randomUUID(),
+          authorId: env.actorId ?? 'system',
+          body: 'This channel was deleted.',
+          mentions: [],
+          attachments: [],
+          createdAt: new Date().toISOString(),
+          system: true,
+        },
+        [],
+      );
+      await emit(env.dealId, env.correlationId, env.actorId ?? '', [
+        {
+          type: 'thread.deleted',
+          detail: {
+            dealId: env.dealId,
+            threadId,
+            subject: payload.subject ? String(payload.subject) : undefined,
+            hsId: String(d.hsId ?? ''),
+          },
+        },
+      ]);
+    }
   }
 
   if (FEED_KINDS.has(type)) {

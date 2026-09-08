@@ -20,7 +20,7 @@ beforeEach(() => {
   eb.on(PutEventsCommand).resolves({ FailedEntryCount: 0 });
   vi.mocked(handshake.initiate).mockResolvedValue({
     hs: { hsId: 'h1', action: 'confirm_payment' } as never,
-    event: { type: 'handshake.requested', detail: {} },
+    events: [{ type: 'handshake.requested', detail: {} }],
   });
 });
 
@@ -56,6 +56,7 @@ const payment = (over: Partial<Payment> = {}): Payment => ({
   payer: 'buyer',
   payee: 'escrow',
   paidOn: '2026-09-01',
+  appliesToPrice: true,
   status: 'recorded',
   recordedBy: 'admin',
   recordedAt: 't',
@@ -95,20 +96,58 @@ describe('POST /v1/deals/{dealId}/payments', () => {
     expect(res.statusCode).toBe(201);
     expect(vi.mocked(repo.putPayment)).toHaveBeenCalledOnce();
     const stored = vi.mocked(repo.putPayment).mock.calls[0]![0];
-    expect(stored).toMatchObject({ status: 'recorded', payer: 'buyer', payee: 'escrow', recordedBy: 'admin' });
+    expect(stored).toMatchObject({
+      status: 'recorded',
+      payer: 'buyer',
+      payee: 'escrow',
+      recordedBy: 'admin',
+      appliesToPrice: true, // earnest money paid by the buyer -> counts toward the price
+    });
     expect(vi.mocked(handshake.initiate).mock.calls[0]![0]).toMatchObject({ action: 'confirm_payment' });
     expect(vi.mocked(repo.setPaymentHs)).toHaveBeenCalledWith('d1', stored.payId, 'confirmHsId', 'h1');
     expect(detailTypes()).toEqual(expect.arrayContaining(['payment.recorded', 'handshake.requested']));
   });
 
-  it('403s a non-lead (plain seller)', async () => {
+  it('lender proceeds default to NOT counting toward the price; an explicit flag wins', async () => {
+    vi.mocked(repo.getDeal).mockResolvedValue(deal());
+    vi.mocked(repo.getMembership).mockResolvedValue(member());
+
+    await run(
+      event({
+        routeKey: REC,
+        path: { dealId: 'd1' },
+        body: { ...body, kind: 'closing_funds', payer: 'lender', amount: 10_000_000 },
+      }),
+    );
+    expect(vi.mocked(repo.putPayment).mock.calls.at(-1)![0].appliesToPrice).toBe(false);
+
+    await run(
+      event({
+        routeKey: REC,
+        path: { dealId: 'd1' },
+        body: { ...body, kind: 'other', payer: 'buyer', appliesToPrice: true },
+      }),
+    );
+    expect(vi.mocked(repo.putPayment).mock.calls.at(-1)![0].appliesToPrice).toBe(true);
+  });
+
+  it('403s a non-lead (a sell-side attorney)', async () => {
+    vi.mocked(repo.getDeal).mockResolvedValue(deal());
+    vi.mocked(repo.getMembership).mockResolvedValue(
+      member({ userId: 'atty', role: 'SELLER_ATTORNEY', isAdmin: false }),
+    );
+    const res = await run(event({ routeKey: REC, path: { dealId: 'd1' }, sub: 'atty', body }));
+    expect(res.statusCode).toBe(403);
+    expect(vi.mocked(repo.putPayment)).not.toHaveBeenCalled();
+  });
+
+  it('lets a plain SELLER record (sell-side lead)', async () => {
     vi.mocked(repo.getDeal).mockResolvedValue(deal());
     vi.mocked(repo.getMembership).mockResolvedValue(
       member({ userId: 'seller', role: 'SELLER', isAdmin: false }),
     );
     const res = await run(event({ routeKey: REC, path: { dealId: 'd1' }, sub: 'seller', body }));
-    expect(res.statusCode).toBe(403);
-    expect(vi.mocked(repo.putPayment)).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(201);
   });
 
   it('409s when the deal is not ACTIVE', async () => {
@@ -169,13 +208,21 @@ describe('POST /v1/deals/{dealId}/payments/{payId}/confirm', () => {
 describe('POST /v1/deals/{dealId}/payments/{payId}/void', () => {
   const rk = 'POST /v1/deals/{dealId}/payments/{payId}/void';
 
+  it('409s once the deal is closed (read-only record)', async () => {
+    vi.mocked(repo.getDeal).mockResolvedValue(deal({ status: 'CLOSED' }));
+    vi.mocked(repo.getMembership).mockResolvedValue(member());
+    vi.mocked(repo.getPayment).mockResolvedValue(payment({ status: 'confirmed' }));
+    const res = await run(event({ routeKey: rk, path: { dealId: 'd1', payId: 'p1' } }));
+    expect(res.statusCode).toBe(409);
+  });
+
   it('opens a void_payment handshake for a confirmed payment', async () => {
     vi.mocked(repo.getDeal).mockResolvedValue(deal());
     vi.mocked(repo.getMembership).mockResolvedValue(member());
     vi.mocked(repo.getPayment).mockResolvedValue(payment({ status: 'confirmed' }));
     vi.mocked(handshake.initiate).mockResolvedValue({
       hs: { hsId: 'hv', action: 'void_payment' } as never,
-      event: { type: 'handshake.requested', detail: {} },
+      events: [{ type: 'handshake.requested', detail: {} }],
     });
     const res = await run(
       event({ routeKey: rk, path: { dealId: 'd1', payId: 'p1' }, body: { reason: 'dup entry' } }),

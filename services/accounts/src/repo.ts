@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { BatchGetCommand, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '@cre/platform';
 
 export interface Profile {
@@ -47,6 +47,18 @@ export async function getProfile(userId: string): Promise<Profile | undefined> {
     new GetCommand({ TableName: tableName(), Key: key(userId), ConsistentRead: false }),
   );
   return res.Item ? toProfile(res.Item) : undefined;
+}
+
+/** Batch display-name lookup. Unknown ids are simply absent from the result. */
+export async function getProfiles(userIds: string[]): Promise<Profile[]> {
+  const ids = [...new Set(userIds.filter(Boolean))].slice(0, 100);
+  if (ids.length === 0) return [];
+  const res = await docClient().send(
+    new BatchGetCommand({
+      RequestItems: { [tableName()]: { Keys: ids.map((id) => key(id)) } },
+    }),
+  );
+  return (res.Responses?.[tableName()] ?? []).map((i) => toProfile(i));
 }
 
 /** Idempotent create — throws `ConditionalCheckFailedException` if it already exists. */

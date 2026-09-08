@@ -747,3 +747,207 @@ design §6 **role→category visibility matrix**.
   → both sign → envelope completed, signed copy saved as v2, downloads as a real
   PDF containing "SIGNED COPY" → a 2nd envelope declined → a 3rd voided → audit
   carries every `signature.*` event.
+
+## 23 — Full-deal walkthrough (docs/05)
+
+> Add the tests to the interactive UI too and run the ones you are able to.
+> [Added §11 Payments (T11.1–T11.8) + §12 E-signature (T12.1–T12.9) to the
+> interactive checklist artifact — 88 tests; ran all 17 live via a 15-check
+> negative/routing probe plus the two full E2E scripts, all pass.]
+>
+> Okay for the final step, draw up a step by step walkthrough which tests a full
+> deal going from start to finish. It can involve multiple users. We should test
+> all the functionality like communication, deal moving from one step to
+> another, handshakes, recording payments, etc.
+
+**Outcome — `docs/05-full-deal-walkthrough.md`:** one scripted scenario that
+carries a single purchase (1200 Congress Ave, $14.25M → $14.0M) from *offer
+accepted* to *closed* with the full nine-role cast, structured as seven acts
+(one per milestone stage, plus an audit-verification act). Each step names who
+acts, what to do, and what to expect. Covers, in narrative order: roster
+build-out + the ≤2/≤2/≤7 buy-side limits; all four chat scopes, @mention vs.
+plain, soft edit/delete, the channel→side conversion + drop notification;
+the document room with versioning, presigned access logging, the
+role→category matrix (LENDER/TITLE/sell-side negatives), one-way promotion, the
+delete handshake saga, and document requests (fulfil/decline/cancel); the
+6-stage pipeline with a handshake on every advance and the firm flip at Attorney
+Review; the `edit_price` / `edit_dates` / `close_deal` handshakes;
+recording payments (earnest money, extension fee, closing funds) with the
+confirm and void handshakes; e-signature (multi-recipient sign → version
+write-back, decline, void, signer-visibility 400); read-only-after-close; and a
+closing act that proves **no god view** in the audit trail and its CSV/JSON
+export. Ends with a coverage table mapping every feature to the step(s) that
+exercised it. Prompt-log practice: this entry.
+
+## 24 — Same-side approval for side-private document deletion
+
+> Question on 3.4. If the scratch doc is a buy side one, why is seller permission
+> required to delete it? Self side doc deletion should be allowed to sell/buy
+> side admins.
+> [Chose option A of three: side-private deletes are approved by the other lead
+> on the initiating side, not the counterparty; deal-wide deletes unchanged.]
+
+**Outcome:** `@cre/authz` gains `approverSideFor(action, initiatedSide, scope)`
+and `canApproveHandshake(...)` — for `delete_document` on a `side_private:*`
+scope the approver side is the *initiating* side, otherwise the counterparty.
+`document.delete_requested` now carries `scope`; the Deals delete-saga consumer
+threads it into `handshake.initiate`, whose approver resolution and
+auto-approve-when-sole-lead branch key off it. `handshake.decide` uses
+`canApproveHandshake` so a same-side co-lead can approve (and the counterparty
+cannot). `initiate()` now returns `{ hs, events[] }` (was `{ hs, event }`) to
+carry the extra `handshake.approved` when a request self-approves; all eight
+call sites updated. SPA: Milestones `HandshakeSides` and the Actions tab render
+the same-side wording; the Documents delete note is scope-aware. New unit tests
+in `packages/authz` and `services/deals` (deals 63, authz 38). Deployed
+`CrePortalDeals` + `CrePortalDocuments`.
+
+## 25 — Documents row actions as a dropdown
+
+> In the documents view, instead of having the buttons next to each other, make
+> it a dropdown for view/download/promote/request, etc.
+
+**Outcome:** a `RowMenu` ("Actions ▾") in `web/src/routes/Documents.tsx` — a
+fixed-positioned popover (so the table's horizontal-scroll container can't clip
+it) that closes on outside-click / Escape / scroll. The per-document row now
+shows one trigger; View / Download / Promote to deal-wide / Request delete move
+inside it, each gated as before. Per-version buttons in the expanded panel are
+unchanged.
+
+## 26 — Delete approver follows document visibility; richer approval detail
+
+> Since this was a financing doc which the sell side won't be able to see, buyer
+> shouldn't need to request deletion on it. Additionally, seller received an
+> option to approve archival of a doc he can't access. Additionally, for the
+> action, show more information like which resource is in question and what
+> modification is being performed.
+> [Also: "I should also be able to act on the request from the documents tab.
+> Similar for other actions too."]
+
+**Outcome:** `approverSideFor` now decides same-side vs counterparty by whether a
+lead on the counterparty side can actually *see* the document — scope **and**
+category (`canSeeDocument`). A buy-initiated delete of a deal-wide
+Financing/Appraisal doc is therefore approved by the buy side's own second lead
+(or self-approves if sole lead); the seller is never pulled in. `document.
+delete_requested` carries `category` + `title`; the handshake payload threads
+both through so `decide()` routes approval correctly and the UI can name the
+doc. Actions/Milestones descriptions now read e.g. `Archive: Scratch notes ·
+Financing · deal-wide` / `New purchase price: $14,000,000` /
+`Mark the current milestone complete and move to the next`. The Documents tab's
+"Pending document deletions" list gained inline Approve/Reject for the
+handshake's approver (matching Payments/Milestones), so a pending handshake can
+be actioned wherever its resource lives. New tests in `@cre/authz` (category
+routing) and `services/deals` (deal-wide blind-category delete stays same-side).
+
+## 27 — Channels: open to deal-wide; delete a channel (handshake-gated)
+
+> Instead of making the agent / lawyer channels buy-side or sell side, give
+> either side the option to open it deal wide. That way the lawyers or agents can
+> unilaterally make their private conversations public to the deal. Also add an
+> option to delete channel with permissions to channel admins and handshake
+> required.
+> [Chosen: replace side-private conversion with deal-wide only; channel delete
+> initiated by either agent/attorney of that channel, approved by a counterparty
+> deal lead; soft archive with audit retention.]
+
+**Outcome:** `POST …/threads/{id}/convert` now always converts an agent/attorney
+channel straight to `deal_wide` (unilateral, history kept, nobody dropped,
+`thread.converted` → all-members notification). New `DELETE …/threads/{id}`
+emits `thread.delete_requested`; a Deals consumer opens a `delete_thread`
+handshake (new `HandshakeAction`, `deleteThread` capability = any agent/attorney,
+counterparty lead approves); on `handshake.approved` the Chat consumer
+soft-archives the thread (`deletedAt`, hidden from lists, messages retained) and
+emits `thread.deleted`, which closes the saga and notifies all members. Touches
+`@cre/authz`, `@cre/events` (chat schemas), `services/{chat,deals,notifications,
+audit}`, `infra/{chat,deals,notifications}-stack` (chat routes 10→11; Deals
+consumer rule now spans `cre.chat` too), and the SPA (Chat thread-header
+"Make deal-wide" / "Delete channel"; Actions & Milestones describe
+`delete_thread`). 305 tests green.
+
+## 28 — Payments vs. price; milestone bar polish
+
+> Should the price be updated once a payment is confirmed? Or at least track the
+> payments made so far and not allow posting of a payment which exceeds the
+> accepted price.
+> [Decided: don't touch the price; add a "toward the price" summary + a soft
+> warning (recordable anyway) when confirmed+pending price-applicable payments
+> would exceed the accepted price. Price-applicable kinds = earnest money,
+> additional deposit, closing funds.]
+> Also: keep the current milestone-bar segment a distinct colour (pending), and
+> show completed-stage count starting at 0 instead of the 1-based stage number.
+
+**Outcome:** SPA-only. `Payments` gains `acceptedPrice`; a card above the table
+shows `$confirmed toward the $price accepted price · $pending awaiting
+confirmation` and `$remaining` (turns into an "over the accepted price" danger
+pill when negative). The record-payment form soft-warns via the in-app dialog
+when a price-applicable payment would push the confirmed+pending total over the
+accepted price — still recordable after acknowledging. `StageBar` now paints
+completed segments accent, the current (in-progress) segment `--warn`, the rest
+grey; the header reads "N / 6 complete" (= currentStage − 1).
+
+## 28a — Per-payment "counts toward the price" flag
+
+> Now that we track completed payments and it affects the overall count, how
+> should we deal with step 6.1? Maybe it should be an option when recording a
+> payment whether it should go towards the overall payment tally.
+> [Yes — explicit per-payment flag, not a kind heuristic.]
+
+**Outcome:** `Payment` gains `appliesToPrice: boolean` (deals service + schema +
+repo). `POST /payments` takes an optional `appliesToPrice`; when omitted the
+default is `PRICE_KINDS.has(kind) && payer === 'buyer'` — so the buyer's
+earnest money / deposits / cash-to-close count, but the **lender's** closing-
+funds wire (a funding source) and fees/"other" do not. SPA: a "Counts toward
+the purchase price" checkbox on the record form, pre-ticked from the same
+default and reactive to the kind/payer selects; the tally, soft-warning and a
+"· price" tag on each row all key off the stored flag (older rows fall back to
+the kind). Fixes 6.1 — the lender proceeds no longer blow the tally past the
+accepted price.
+
+## 29 — Signature requests surface in Actions + on the document row
+
+> For 6.2, the request to sign a document should not only be in the versions of
+> the doc for the requested party. It should show up in the actions and also in
+> the document-level view (instead of inside the versions tab for the doc).
+
+**Outcome:** new `GET /v1/deals/{dealId}/signatures` (Documents service) returns
+every envelope in the deal the caller is a party to (recipient) or created,
+each with recipients; backed by `repo.listEnvelopesForDeal` (a `begins_with(SK,
+'SIG#')` query — envelopes are already deal-partitioned). Documents-stack routes
+17→18. SPA: the **Actions** tab gains a "Documents to sign" section (inline
+Sign / Decline) for envelopes where the caller is a pending recipient; the
+**Documents table** shows a `✍ awaiting your signature` / `sent for signature`
+/ `signature pending` pill on the affected row. The per-document
+`SignaturePanel` (in the expanded card) stays as the full management view.
+
+## 30 — Closing the deal is the final milestone step
+
+> For 6.3, how can the seller agent set the deal status to closed? Let it be the
+> final advancement path in the milestones — to request the deal being completed.
+
+**Outcome:** SPA-only (the `POST /v1/deals/{id}/status` route already opens a
+`close_deal` handshake when the deal is firm — it just had no UI). `deals-api`
+gains `setDealStatus`. In `Milestones`, once the deal is in stage 6 the advance
+control becomes **"Request deal completion (close)"** (shown to a lead via
+`capabilities.changeDealStatus`), which asks for an optional note and POSTs
+`{ status: 'CLOSED' }`. The resulting `close_deal` handshake shows in the
+Pending-handshakes card and the Actions tab for the counterparty to approve;
+a pending one flips the control to "⏳ Deal completion requested". No separate
+"deal status" control.
+
+## 31 — Read-only enforcement in Chat & Documents after deal close
+
+> For 6.4: able to upload doc versions, start threads, request doc signatures,
+> post to threads post deal close. Not able to request milestone advancement /
+> record payments. Also, a document-signature action doesn't increase the Actions
+> tab count.
+
+**Outcome:** the Deals service already blocked advance/payments on a non-ACTIVE
+deal, but Chat and Documents never knew the deal's lifecycle. Both now keep a
+`DEALMETA` projection row (`{ status }`) written by their consumers on
+`deal.status_changed`, and every mutating route calls `assertDealActive(dealId)`
+→ **409** once the deal is CLOSED/CANCELLED (create/post/edit/delete thread &
+message, convert; upload doc & version, promote, delete, doc-requests +
+fulfil/decline/cancel, send-for-signature + sign + void). Reads stay open.
+Documents-stack consumer rule gains `deal.status_changed`. `scripts/backfill-
+deal-status.mjs` seeds the projection row for deals closed before this change.
+Separately, the DealDetail Actions-tab badge now also counts envelopes awaiting
+the viewer's signature (`api.dealSignatures`), not just handshakes.

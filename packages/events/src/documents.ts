@@ -58,6 +58,9 @@ export const documentAccessedSchema = z.object({
 export const documentDeleteRequestedSchema = z.object({
   dealId: z.string(),
   docId: z.string(),
+  scope: scopeSchema,
+  category: categorySchema,
+  title: z.string().optional(),
   requestedBy: z.string(),
   requesterRole: z.string(),
   requesterSide: z.string(),

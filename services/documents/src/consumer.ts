@@ -38,6 +38,8 @@ async function dispatch(type: string, env: Envelope): Promise<void> {
       status: 'removed',
       version: env.occurredAt,
     });
+  } else if (type === 'deal.status_changed') {
+    await repo.setDealStatus(env.dealId, String(d.status));
   } else if (type === 'handshake.approved' && d.action === 'delete_document') {
     const payload = (d.payload ?? {}) as { docId?: string };
     const docId = String(payload.docId ?? '');

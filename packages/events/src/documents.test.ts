@@ -23,6 +23,9 @@ describe('document event schemas', () => {
       'document.delete_requested': {
         dealId: 'd',
         docId: 'x',
+        scope: 'side_private:buy',
+        category: 'Financing',
+        title: 'Loan term sheet',
         requestedBy: 'u',
         requesterRole: 'BUYER',
         requesterSide: 'buy',

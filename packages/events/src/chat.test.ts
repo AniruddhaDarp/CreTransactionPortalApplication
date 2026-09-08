@@ -30,7 +30,17 @@ describe('chat event schemas', () => {
   it('every registry entry parses its fixture', () => {
     const fixtures: Record<string, unknown> = {
       'thread.created': { dealId: 'd', threadId: 't', scope: 'deal_wide', subject: 'General' },
-      'thread.converted': { dealId: 'd', threadId: 't', toScope: 'side_private:sell', droppedUserId: 'u9' },
+      'thread.converted': { dealId: 'd', threadId: 't', toScope: 'deal_wide', by: 'u1' },
+      'thread.delete_requested': {
+        dealId: 'd',
+        threadId: 't',
+        subject: 'Agent channel',
+        scope: 'channel:agent',
+        requestedBy: 'u1',
+        requesterRole: 'BUYER_AGENT',
+        requesterSide: 'buy',
+      },
+      'thread.deleted': { dealId: 'd', threadId: 't', subject: 'Agent channel', hsId: 'h1' },
       'message.posted': {
         dealId: 'd',
         threadId: 't',

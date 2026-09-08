@@ -1,4 +1,9 @@
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  BatchGetCommand,
+  DynamoDBDocumentClient,
+  GetCommand,
+  UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handler } from './handler.js';
@@ -10,7 +15,9 @@ const ddb = mockClient(DynamoDBDocumentClient);
 process.env.ACCOUNTS_TABLE = 'accounts-test';
 beforeEach(() => ddb.reset());
 
-function event(over: { routeKey?: string; body?: string; sub?: string } = {}) {
+function event(
+  over: { routeKey?: string; body?: string; sub?: string; query?: Record<string, string> } = {},
+) {
   const routeKey = over.routeKey ?? 'GET /v1/me';
   return {
     routeKey,
@@ -19,7 +26,7 @@ function event(over: { routeKey?: string; body?: string; sub?: string } = {}) {
     body: over.body,
     isBase64Encoded: false,
     pathParameters: {},
-    queryStringParameters: {},
+    queryStringParameters: over.query ?? {},
     requestContext: {
       requestId: 'r1',
       http: { method: routeKey.split(' ')[0] },
@@ -41,6 +48,28 @@ describe('accounts handler', () => {
   it('GET /v1/me 404s before the profile is provisioned', async () => {
     ddb.on(GetCommand).resolves({});
     expect((await run(event())).statusCode).toBe(404);
+  });
+
+  it('GET /v1/profiles returns name + company for the requested ids (unknown ids omitted)', async () => {
+    ddb.on(BatchGetCommand).resolves({
+      Responses: {
+        'accounts-test': [
+          { userId: 'u1', name: 'Selena Ortiz', company: 'Ortiz CRE', email: 'x@y.com', phone: '555' },
+          { userId: 'u2', name: 'Sam Reed' },
+        ],
+      },
+    });
+    const res = await run(event({ routeKey: 'GET /v1/profiles', query: { ids: 'u1, u2 ,missing' } }));
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).profiles).toEqual([
+      { userId: 'u1', name: 'Selena Ortiz', company: 'Ortiz CRE' },
+      { userId: 'u2', name: 'Sam Reed', company: undefined },
+    ]);
+  });
+
+  it('GET /v1/profiles with no ids returns an empty list', async () => {
+    const res = await run(event({ routeKey: 'GET /v1/profiles', query: {} }));
+    expect(JSON.parse(res.body).profiles).toEqual([]);
   });
 
   it('PUT /v1/me validates and updates', async () => {

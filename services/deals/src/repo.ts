@@ -103,7 +103,7 @@ export interface Handshake {
   initiatedBy: string;
   initiatedSide: Side;
   status: HandshakeStatus;
-  sagaState?: 'awaiting_document';
+  sagaState?: 'awaiting_document' | 'awaiting_thread';
   decidedBy?: string;
   decisionReason?: string;
   createdAt: string;
@@ -121,6 +121,8 @@ export interface Payment {
   reference?: string;
   paidOn: string;
   note?: string;
+  /** Whether this payment counts toward the "paid so far vs. accepted price" tally. */
+  appliesToPrice: boolean;
   status: PaymentStatus;
   recordedBy: string;
   recordedAt: string;
@@ -425,6 +427,19 @@ export async function listInvites(dealId: string): Promise<Invite[]> {
     }),
   );
   return (r.Items ?? []).map((i) => clean<Invite>(i));
+}
+
+/** Pending invitations addressed to `email`, across every deal (GSI2 by email). */
+export async function listPendingInvitesForEmail(email: string): Promise<Invite[]> {
+  const r = await docClient().send(
+    new QueryCommand({
+      TableName: tableName(),
+      IndexName: 'gsi2',
+      KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :sk)',
+      ExpressionAttributeValues: { ':pk': `EMAIL#${email.toLowerCase()}`, ':sk': 'INVITE#' },
+    }),
+  );
+  return (r.Items ?? []).map((i) => clean<Invite>(i)).filter((i) => i.status === 'pending');
 }
 
 export async function revokeInvite(dealId: string, token: string): Promise<void> {

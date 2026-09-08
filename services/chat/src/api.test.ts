@@ -15,6 +15,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   eb.reset();
   eb.on(PutEventsCommand).resolves({ FailedEntryCount: 0 });
+  vi.mocked(repo.getDealStatus).mockResolvedValue('ACTIVE');
 });
 
 const mv = (over: Partial<MemberView> = {}): MemberView => ({
@@ -70,6 +71,19 @@ describe('threads', () => {
     expect(types()).toContain('thread.created');
   });
 
+  it('409s any write once the deal is CLOSED (read-only record)', async () => {
+    vi.mocked(repo.getMemberView).mockResolvedValue(mv());
+    vi.mocked(repo.getDealStatus).mockResolvedValue('CLOSED');
+    const res = await run(
+      event({
+        routeKey: 'POST /v1/deals/{dealId}/threads',
+        path: { dealId: 'd1' },
+        body: { subject: 'x', scope: 'deal_wide' },
+      }),
+    );
+    expect(res.statusCode).toBe(409);
+  });
+
   it('403s a non-agent trying to open the agent channel', async () => {
     vi.mocked(repo.getMemberView).mockResolvedValue(mv({ role: 'BUYER' }));
     const res = await run(event({ routeKey: 'POST /v1/deals/{dealId}/threads', path: { dealId: 'd1' }, body: { subject: 'x', scope: 'channel:agent' } }));
@@ -82,17 +96,48 @@ describe('threads', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('filters GET /threads to what the caller can see', async () => {
+  it('filters GET /threads to what the caller can see and hides deleted threads', async () => {
     vi.mocked(repo.getMemberView).mockResolvedValue(mv({ side: 'buy', role: 'BUYER' }));
     vi.mocked(repo.listThreads).mockResolvedValue([
       thread({ threadId: 'wide', scope: 'deal_wide' }),
       thread({ threadId: 'buy', scope: 'side_private:buy' }),
       thread({ threadId: 'sell', scope: 'side_private:sell' }),
       thread({ threadId: 'att', scope: 'channel:attorney' }),
+      thread({ threadId: 'gone', scope: 'deal_wide', deletedAt: 't' }),
     ]);
     const res = await run(event({ routeKey: 'GET /v1/deals/{dealId}/threads', path: { dealId: 'd1' } }));
     const ids = JSON.parse(res.body).threads.map((t: Thread) => t.threadId);
     expect(ids.sort()).toEqual(['buy', 'wide']);
+  });
+
+  it('an agent converts the agent channel straight to deal-wide', async () => {
+    vi.mocked(repo.getMemberView).mockResolvedValue(mv({ role: 'BUYER_AGENT', side: 'buy' }));
+    vi.mocked(repo.getThread).mockResolvedValue(thread({ threadId: 't1', scope: 'channel:agent' }));
+    vi.mocked(repo.convertThread).mockResolvedValue();
+    vi.mocked(repo.postMessage).mockResolvedValue();
+    const res = await run(
+      event({ routeKey: 'POST /v1/deals/{dealId}/threads/{threadId}/convert', path: { dealId: 'd1', threadId: 't1' } }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).scope).toBe('deal_wide');
+    expect(types()).toContain('thread.converted');
+  });
+
+  it('a non-agent cannot delete the agent channel; an agent gets a 202 + thread.delete_requested', async () => {
+    vi.mocked(repo.getThread).mockResolvedValue(thread({ threadId: 't1', scope: 'channel:agent' }));
+
+    vi.mocked(repo.getMemberView).mockResolvedValue(mv({ role: 'BUYER', side: 'buy' }));
+    const bad = await run(
+      event({ routeKey: 'DELETE /v1/deals/{dealId}/threads/{threadId}', path: { dealId: 'd1', threadId: 't1' } }),
+    );
+    expect(bad.statusCode).toBe(403);
+
+    vi.mocked(repo.getMemberView).mockResolvedValue(mv({ role: 'BUYER_AGENT', side: 'buy' }));
+    const ok = await run(
+      event({ routeKey: 'DELETE /v1/deals/{dealId}/threads/{threadId}', path: { dealId: 'd1', threadId: 't1' } }),
+    );
+    expect(ok.statusCode).toBe(202);
+    expect(types()).toContain('thread.delete_requested');
   });
 });
 

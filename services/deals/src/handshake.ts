@@ -1,7 +1,10 @@
 import {
+  approverSideFor,
   can,
+  canApproveHandshake,
   initiateActionFor,
-  isHandshakeApprover,
+  isBuySideLead,
+  isSellSideLead,
   type AuthzContext,
   type HandshakeAction,
 } from '@cre/authz';
@@ -21,7 +24,7 @@ export interface DealEventOut {
 interface ApplyResult {
   effects: TransactItem[];
   events: DealEventOut[];
-  saga?: 'awaiting_document';
+  saga?: 'awaiting_document' | 'awaiting_thread';
 }
 
 type Applier = (deal: DealMeta, payload: Record<string, unknown>, actorId: string) => ApplyResult;
@@ -85,7 +88,7 @@ const applyAdvance: Applier = (deal, _payload, actorId) => {
 
 const applyStatus =
   (status: 'CLOSED' | 'CANCELLED'): Applier =>
-  (deal, payload) => {
+  (deal, payload, actorId) => {
     if (deal.status !== 'ACTIVE') throw new HttpError(409, `deal is already ${deal.status}`);
     const now = new Date().toISOString();
     const values: Record<string, unknown> = { ':s': status, ':now': now, ':active': 'ACTIVE' };
@@ -94,19 +97,33 @@ const applyStatus =
       expr += ', actualClosingDate = :acd';
       values[':acd'] = now.slice(0, 10);
     }
-    return {
-      effects: [
-        {
-          Update: {
-            TableName: T(),
-            Key: K.dealKey(deal.dealId),
-            UpdateExpression: expr,
-            ExpressionAttributeNames: { '#status': 'status' },
-            ExpressionAttributeValues: values,
-            ConditionExpression: '#status = :active',
-          },
+    const effects: TransactItem[] = [
+      {
+        Update: {
+          TableName: T(),
+          Key: K.dealKey(deal.dealId),
+          UpdateExpression: expr,
+          ExpressionAttributeNames: { '#status': 'status' },
+          ExpressionAttributeValues: values,
+          ConditionExpression: '#status = :active',
         },
-      ],
+      },
+    ];
+    // Completing the deal completes its final milestone too.
+    if (status === 'CLOSED') {
+      effects.push({
+        Update: {
+          TableName: T(),
+          Key: K.stageKey(deal.dealId, deal.currentStage),
+          UpdateExpression: 'SET #st = :done, completedBy = :by, completedAt = :now',
+          ExpressionAttributeNames: { '#st': 'status' },
+          ExpressionAttributeValues: { ':done': 'completed', ':by': actorId, ':now': now },
+          ConditionExpression: 'attribute_exists(SK)',
+        },
+      });
+    }
+    return {
+      effects,
       events: [
         {
           type: 'deal.status_changed',
@@ -173,6 +190,12 @@ const applyDeleteDocument: Applier = (_deal, payload) => {
   if (!payload.docId) throw new HttpError(400, 'docId is required');
   // The archive itself happens in the Documents service; this only opens the saga.
   return { effects: [], events: [], saga: 'awaiting_document' };
+};
+
+const applyDeleteThread: Applier = (_deal, payload) => {
+  if (!payload.threadId) throw new HttpError(400, 'threadId is required');
+  // The Chat service archives the thread on handshake.approved; this only opens the saga.
+  return { effects: [], events: [], saga: 'awaiting_thread' };
 };
 
 const applyConfirmPayment: Applier = (deal, payload, actorId) => {
@@ -246,6 +269,7 @@ const REGISTRY: Record<HandshakeAction, Applier> = {
   edit_price: applyEditPrice,
   edit_dates: applyEditDates,
   delete_document: applyDeleteDocument,
+  delete_thread: applyDeleteThread,
   confirm_payment: applyConfirmPayment,
   void_payment: applyVoidPayment,
 };
@@ -258,7 +282,7 @@ export async function initiate(args: {
   action: HandshakeAction;
   payload: Record<string, unknown>;
   actorId: string;
-}): Promise<{ hs: Handshake; event: DealEventOut }> {
+}): Promise<{ hs: Handshake; events: DealEventOut[] }> {
   const { deal, authz, action, payload, actorId } = args;
 
   if (!can(initiateActionFor(action), authz)) {
@@ -267,48 +291,88 @@ export async function initiate(args: {
   // Pre-flight the effect so an obviously-invalid request fails now, not on approve.
   REGISTRY[action](deal, payload, actorId);
 
+  const approverSide = approverSideFor(
+    action,
+    authz.side,
+    String(payload.scope ?? ''),
+    String(payload.category ?? ''),
+  );
+  const leadOfApproverSide = approverSide === 'sell' ? isSellSideLead : isBuySideLead;
+
   const active = (await repo.listMembers(deal.dealId)).filter((m) => m.status === 'active');
-  const approverIds =
-    authz.side === 'sell'
-      ? active.filter((m) => m.role === 'BUYER' || m.role === 'BUYER_AGENT').map((m) => m.userId)
-      : active.filter((m) => m.userId === deal.createdBy).map((m) => m.userId);
+  const approverIds = active
+    .filter((m) => m.userId !== actorId && leadOfApproverSide(m.role))
+    .map((m) => m.userId);
 
-  if (approverIds.length === 0) {
-    throw new HttpError(
-      409,
-      authz.side === 'sell'
-        ? "invite the buyer's side before initiating this handshake"
-        : 'the deal admin is not available to approve',
-    );
-  }
-
-  const hs: Handshake = {
+  const now = new Date().toISOString();
+  const base = {
     dealId: deal.dealId,
     hsId: crypto.randomUUID(),
     action,
     payload,
     initiatedBy: actorId,
     initiatedSide: authz.side,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
+    createdAt: now,
   };
-  await repo.putHandshake(hs, approverIds);
-
-  return {
-    hs,
-    event: {
-      type: 'handshake.requested',
-      detail: {
-        dealId: deal.dealId,
-        hsId: hs.hsId,
-        action,
-        payload,
-        initiatedBy: actorId,
-        initiatedSide: authz.side,
-        approverIds,
-      },
+  const requested = (approvers: string[]): DealEventOut => ({
+    type: 'handshake.requested',
+    detail: {
+      dealId: deal.dealId,
+      hsId: base.hsId,
+      action,
+      payload,
+      initiatedBy: actorId,
+      initiatedSide: authz.side,
+      approverIds: approvers,
     },
-  };
+  });
+
+  if (approverIds.length === 0) {
+    // A side-private document archive with no *other* lead on the initiating
+    // side: the initiator is the sole lead, so their request is self-approving.
+    if (approverSide === authz.side) {
+      const result = REGISTRY[action](deal, payload, actorId);
+      const hs: Handshake = {
+        ...base,
+        status: result.saga ? 'approved' : 'completed',
+        decidedBy: actorId,
+        decidedAt: now,
+        sagaState: result.saga,
+      };
+      await repo.runTransaction([
+        { Put: { TableName: T(), Item: { ...K.hsKey(hs.dealId, hs.hsId), ...hs } } },
+        ...result.effects,
+      ]);
+      return {
+        hs,
+        events: [
+          requested([]),
+          {
+            type: 'handshake.approved',
+            detail: {
+              dealId: deal.dealId,
+              hsId: hs.hsId,
+              action,
+              payload,
+              initiatedBy: actorId,
+              initiatedSide: authz.side,
+            },
+          },
+          ...result.events,
+        ],
+      };
+    }
+    throw new HttpError(
+      409,
+      authz.side === 'sell'
+        ? "invite the buyer's side before initiating this handshake"
+        : 'no sell-side lead is available to approve',
+    );
+  }
+
+  const hs: Handshake = { ...base, status: 'pending' };
+  await repo.putHandshake(hs, approverIds);
+  return { hs, events: [requested(approverIds)] };
 }
 
 export async function decide(args: {
@@ -322,13 +386,19 @@ export async function decide(args: {
   const { deal, hs, authz, actorId, decision, reason } = args;
   if (hs.status !== 'pending') throw new HttpError(409, `handshake is already ${hs.status}`);
 
-  const isApprover = isHandshakeApprover(authz, hs.initiatedSide);
+  const canApprove = canApproveHandshake(
+    authz,
+    hs.action,
+    hs.initiatedSide,
+    String(hs.payload?.scope ?? ''),
+    String(hs.payload?.category ?? ''),
+  );
   const isInitiator = hs.initiatedBy === actorId;
-  if (decision === 'approve' && !isApprover) {
-    throw new HttpError(403, 'only a counterparty lead may approve this handshake');
+  if (decision === 'approve' && (!canApprove || isInitiator)) {
+    throw new HttpError(403, 'you are not an approver of this handshake');
   }
-  if (decision === 'reject' && !isApprover && !isInitiator) {
-    throw new HttpError(403, 'only a counterparty lead or the initiator may reject this handshake');
+  if (decision === 'reject' && !canApprove && !isInitiator) {
+    throw new HttpError(403, 'only an approver or the initiator may reject this handshake');
   }
 
   const now = new Date().toISOString();

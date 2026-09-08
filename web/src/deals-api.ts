@@ -32,6 +32,16 @@ export interface Invite {
   status: string;
 }
 
+export interface PendingInvite {
+  dealId: string;
+  token: string;
+  role: string;
+  side: string;
+  invitedBy: string;
+  expiresAt: string;
+  dealAddress: string | null;
+}
+
 export type Capabilities = Record<string, boolean>;
 
 export interface Stage {
@@ -59,6 +69,7 @@ export interface Handshake {
   status: 'pending' | 'approved' | 'rejected' | 'completed';
   initiatedBy: string;
   initiatedSide: string;
+  payload?: Record<string, unknown>;
   decisionReason?: string;
 }
 
@@ -108,6 +119,7 @@ export interface DocumentRow {
   versionCount: number;
   uploadedBy: string;
   createdAt: string;
+  updatedAt?: string;
   archivedAt?: string;
 }
 
@@ -171,6 +183,7 @@ export interface Payment {
   reference?: string;
   paidOn: string;
   note?: string;
+  appliesToPrice?: boolean;
   status: 'recorded' | 'confirmed' | 'void';
   recordedBy: string;
   recordedAt: string;
@@ -197,12 +210,35 @@ export interface AuditEvent {
 export function dealsApi(cfg: AppConfig, token: string) {
   const f = <T>(path: string, init?: RequestInit) => apiFetch<T>(cfg, token, path, init);
   return {
-    list: () => f<{ deals: Deal[] }>('/v1/deals'),
+    list: () => f<{ deals: Deal[]; pendingInvites?: PendingInvite[] }>('/v1/deals'),
     get: (id: string) =>
       f<Deal & { membership: Member; capabilities: Capabilities }>(`/v1/deals/${id}`),
     create: (body: Record<string, unknown>) =>
       f<Deal & { membership: Member }>('/v1/deals', { method: 'POST', body: JSON.stringify(body) }),
+    terms: (id: string, body: { price?: number; targetClosingDate?: string }) =>
+      f<{ handshakeId?: string; action?: string; status?: string } & Partial<Deal>>(
+        `/v1/deals/${id}/terms`,
+        { method: 'POST', body: JSON.stringify(body) },
+      ),
+    setDealStatus: (id: string, status: 'CLOSED' | 'CANCELLED', reason?: string) =>
+      f<{ handshakeId?: string; action?: string; status?: string } & Partial<Deal>>(
+        `/v1/deals/${id}/status`,
+        { method: 'POST', body: JSON.stringify({ status, reason }) },
+      ),
     members: (id: string) => f<{ members: Member[] }>(`/v1/deals/${id}/members`),
+    me: () =>
+      f<{
+        userId: string;
+        email: string;
+        name: string;
+        company?: string;
+        industryRole?: string;
+        phone?: string;
+      }>('/v1/me'),
+    profiles: (ids: string[]) =>
+      f<{ profiles: { userId: string; name: string; company?: string }[] }>(
+        `/v1/profiles?ids=${encodeURIComponent(ids.join(','))}`,
+      ),
     invites: (id: string) => f<{ invites: Invite[] }>(`/v1/deals/${id}/invites`),
     invite: (id: string, body: Record<string, unknown>) =>
       f<{ token: string; acceptUrl: string; email: string; role: string }>(
@@ -219,6 +255,8 @@ export function dealsApi(cfg: AppConfig, token: string) {
       ),
     accept: (id: string, tok: string) =>
       f<Member>(`/v1/deals/${id}/invites/${tok}/accept`, { method: 'POST' }),
+    declineInvite: (id: string, tok: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/invites/${tok}/decline`, { method: 'POST' }),
 
     // --- milestones + handshakes (Module 5) ---
     stages: (id: string) =>
@@ -250,18 +288,31 @@ export function dealsApi(cfg: AppConfig, token: string) {
       f<{ messages: ChatMessage[] }>(
         `/v1/deals/${id}/threads/${tid}/messages${after ? `?after=${encodeURIComponent(after)}` : ''}`,
       ),
-    postMessage: (id: string, tid: string, body: string) =>
+    postMessage: (id: string, tid: string, body: string, mentions?: string[]) =>
       f<{ msgId: string }>(`/v1/deals/${id}/threads/${tid}/messages`, {
         method: 'POST',
+        body: JSON.stringify(mentions && mentions.length ? { body, mentions } : { body }),
+      }),
+    editMessage: (id: string, tid: string, msgId: string, body: string) =>
+      f<{ editedAt: string }>(`/v1/deals/${id}/threads/${tid}/messages/${msgId}`, {
+        method: 'PATCH',
         body: JSON.stringify({ body }),
+      }),
+    deleteMessage: (id: string, tid: string, msgId: string) =>
+      f<{ deleted: boolean }>(`/v1/deals/${id}/threads/${tid}/messages/${msgId}`, {
+        method: 'DELETE',
       }),
     markThreadRead: (id: string, tid: string) =>
       f<{ readTs: string }>(`/v1/deals/${id}/threads/${tid}/read`, { method: 'POST' }),
-    convertThread: (id: string, tid: string, toSide: 'buy' | 'sell') =>
-      f<ChatThread>(`/v1/deals/${id}/threads/${tid}/convert`, {
-        method: 'POST',
-        body: JSON.stringify({ toSide }),
-      }),
+    messageReceipts: (id: string, tid: string, msgId: string) =>
+      f<{
+        rollup: 'sent' | 'received' | 'read';
+        recipients: { userId: string; deliveredAt?: string; readAt?: string }[];
+      }>(`/v1/deals/${id}/threads/${tid}/messages/${msgId}/receipts`),
+    convertThread: (id: string, tid: string) =>
+      f<ChatThread>(`/v1/deals/${id}/threads/${tid}/convert`, { method: 'POST' }),
+    deleteThread: (id: string, tid: string) =>
+      f<{ status: string }>(`/v1/deals/${id}/threads/${tid}`, { method: 'DELETE' }),
     activity: (id: string) => f<{ activity: FeedItem[] }>(`/v1/deals/${id}/activity`),
 
     // --- documents (Module 7) ---
@@ -310,16 +361,18 @@ export function dealsApi(cfg: AppConfig, token: string) {
     // --- e-signature (Module 12, stretch) ---
     signatures: (id: string, docId: string) =>
       f<{ envelopes: SignatureEnvelope[] }>(`/v1/deals/${id}/documents/${docId}/signature`),
+    dealSignatures: (id: string) =>
+      f<{ envelopes: SignatureEnvelope[] }>(`/v1/deals/${id}/signatures`),
     createSignature: (id: string, docId: string, body: Record<string, unknown>) =>
       f<SignatureEnvelope>(`/v1/deals/${id}/documents/${docId}/signature`, {
         method: 'POST',
         body: JSON.stringify(body),
       }),
     signEnvelope: (id: string, docId: string, envId: string, body?: Record<string, unknown>) =>
-      f<{ status: string }>(`/v1/deals/${id}/documents/${docId}/signature/${envId}/sign`, {
-        method: 'POST',
-        body: JSON.stringify(body ?? {}),
-      }),
+      f<{ status: string; signedVersion?: number; remaining?: number }>(
+        `/v1/deals/${id}/documents/${docId}/signature/${envId}/sign`,
+        { method: 'POST', body: JSON.stringify(body ?? {}) },
+      ),
     voidEnvelope: (id: string, docId: string, envId: string, reason?: string) =>
       f<{ status: string }>(`/v1/deals/${id}/documents/${docId}/signature/${envId}/void`, {
         method: 'POST',

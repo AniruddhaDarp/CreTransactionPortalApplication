@@ -2,11 +2,14 @@ import {
   isAgent,
   isAttorney,
   isBuySideLead,
+  isSellSideLead,
   ROLE_SIDE,
   type MembershipStatus,
   type Role,
+  type Scope,
   type Side,
 } from './roles.js';
+import { canSeeDocument, type DocumentCategory } from './documents.js';
 
 /**
  * Every authorization decision in the system. Actions in the "deal + membership"
@@ -42,6 +45,7 @@ export type Action =
   | 'createThreadSidePrivate'
   | 'createChannelThread'
   | 'convertChannelThread'
+  | 'deleteThread'
   | 'postMessage'
   // --- documents (refined in Module 7) ---
   | 'uploadDealWideDoc'
@@ -57,7 +61,11 @@ export type Action =
 export interface AuthzContext {
   role: Role;
   side: Side;
-  /** `role === 'SELLER_AGENT'` AND the deal's creator. */
+  /**
+   * `role === 'SELLER_AGENT'` AND the deal's creator — the initial seat.
+   * Informational only: authority is role-based (see `isSellSideLead` /
+   * `isBuySideLead`), so a plain SELLER has the same rights as the SELLER_AGENT.
+   */
   isAdmin: boolean;
   /** Attorney Review completed. */
   isFirm: boolean;
@@ -73,31 +81,31 @@ export function can(action: Action, ctx: AuthzContext): boolean {
 
   if (ctx.status !== 'active') return false;
 
-  const admin = ctx.isAdmin;
+  const sellLead = isSellSideLead(ctx.role);
   const buyLead = isBuySideLead(ctx.role);
   const notOther = ctx.role !== 'OTHER';
   const managesSide = (s: Side | undefined): boolean =>
-    s === 'buy' ? buyLead : s === 'sell' || s === 'neutral' ? admin : false;
+    s === 'buy' ? buyLead : s === 'sell' || s === 'neutral' ? sellLead : false;
 
   switch (action) {
     // --- deal fields ---
     case 'editDealFields':
-      return admin;
+      return sellLead; // the deal record is the seller's listing info
     case 'editPurchasePrice':
-      return admin || buyLead; // always a handshake — "may initiate"
+      return sellLead || buyLead; // always a handshake — "may initiate"
     case 'editDates':
-      return ctx.isFirm ? admin || buyLead : admin;
+      return ctx.isFirm ? sellLead || buyLead : sellLead;
     case 'changeDealStatus':
-      return ctx.isFirm ? admin || buyLead : admin;
+      return ctx.isFirm ? sellLead || buyLead : sellLead;
 
     // --- invitations ---
     case 'inviteSellSide':
     case 'inviteTitle':
-      return admin;
+      return sellLead;
     case 'inviteBuySide':
-      // the admin bootstraps the buy side (there is no buy-side lead yet);
+      // a sell-side lead bootstraps the buy side (there is no buy-side lead yet);
       // once a BUYER / BUYER_AGENT has joined they manage the rest of the roster.
-      return admin || buyLead;
+      return sellLead || buyLead;
     case 'inviteOther':
       return managesSide(ctx.targetSide);
 
@@ -111,9 +119,9 @@ export function can(action: Action, ctx: AuthzContext): boolean {
 
     // --- milestones (Module 5) ---
     case 'advanceMilestone':
-      return admin || buyLead; // "may initiate the advance handshake"
+      return sellLead || buyLead; // "may initiate the advance handshake"
     case 'editStageMeta':
-      return admin || buyLead; // stage notes / target dates
+      return sellLead || buyLead; // stage notes / target dates
     case 'editChecklist':
       return notOther;
 
@@ -124,6 +132,7 @@ export function can(action: Action, ctx: AuthzContext): boolean {
       return true; // any active member of that side (incl. OTHER); side match checked by caller
     case 'createChannelThread':
     case 'convertChannelThread':
+    case 'deleteThread':
       return isAgent(ctx.role) || isAttorney(ctx.role);
     case 'postMessage':
       return true; // OTHER only in a side-private thread — scope-checked by caller
@@ -136,7 +145,7 @@ export function can(action: Action, ctx: AuthzContext): boolean {
     case 'promoteDocument':
       return notOther;
     case 'deleteDocument':
-      return admin || buyLead; // "may initiate the delete handshake"
+      return sellLead || buyLead; // "may initiate the delete handshake"
     case 'createDocRequest':
       return notOther;
     case 'sendForSignature':
@@ -147,7 +156,7 @@ export function can(action: Action, ctx: AuthzContext): boolean {
     // --- payments (Module 11) — a lead records; the counterparty confirms/voids ---
     case 'recordPayment':
     case 'voidPayment':
-      return admin || buyLead; // "may initiate the confirm / void handshake"
+      return sellLead || buyLead; // "may initiate the confirm / void handshake"
 
     default:
       return false;
@@ -205,6 +214,7 @@ export type HandshakeAction =
   | 'edit_price'
   | 'edit_dates'
   | 'delete_document'
+  | 'delete_thread'
   | 'confirm_payment'
   | 'void_payment';
 
@@ -215,6 +225,7 @@ export const HANDSHAKE_ACTIONS: readonly HandshakeAction[] = [
   'edit_price',
   'edit_dates',
   'delete_document',
+  'delete_thread',
   'confirm_payment',
   'void_payment',
 ];
@@ -226,13 +237,53 @@ export function handshakeApproverSide(initiatedSide: Side): Side {
 
 /**
  * Whether this member may approve/reject a handshake initiated by
- * `initiatedSide`. The approver is a *lead* on the opposite side: the admin on
- * the sell side, a `BUYER` / `BUYER_AGENT` on the buy side.
+ * `initiatedSide`. The approver is a *lead* on the opposite side: a
+ * `SELLER` / `SELLER_AGENT` on the sell side, a `BUYER` / `BUYER_AGENT` on the buy side.
  */
 export function isHandshakeApprover(ctx: AuthzContext, initiatedSide: Side): boolean {
   if (ctx.status !== 'active') return false;
   return handshakeApproverSide(initiatedSide) === 'sell'
-    ? ctx.isAdmin
+    ? isSellSideLead(ctx.role)
+    : isBuySideLead(ctx.role);
+}
+
+/**
+ * The side whose lead approves a handshake. Normally the counterparty, but
+ * archiving a document the counterparty side **cannot see** — because of its
+ * scope (side-private) *or* its category (e.g. Financing / Appraisal are hidden
+ * from the sell side even deal-wide) — is approved by the *other lead on the
+ * initiating side*. The counterparty has no basis to review a document it can't
+ * open, and shouldn't be pulled into the decision.
+ */
+export function approverSideFor(
+  action: HandshakeAction,
+  initiatedSide: Side,
+  scope?: string,
+  category?: string,
+): Side {
+  const counterparty = handshakeApproverSide(initiatedSide);
+  if (action !== 'delete_document') return counterparty;
+
+  const counterpartyLead: Role = counterparty === 'sell' ? 'SELLER_AGENT' : 'BUYER_AGENT';
+  const counterpartySeesIt = canSeeDocument(
+    { role: counterpartyLead, side: counterparty, status: 'active' },
+    (scope as Scope) || 'deal_wide',
+    (category as DocumentCategory) || 'Other',
+  );
+  return counterpartySeesIt ? counterparty : initiatedSide;
+}
+
+/** Whether `ctx` is a lead of the side that approves this handshake. */
+export function canApproveHandshake(
+  ctx: AuthzContext,
+  action: HandshakeAction,
+  initiatedSide: Side,
+  scope?: string,
+  category?: string,
+): boolean {
+  if (ctx.status !== 'active') return false;
+  return approverSideFor(action, initiatedSide, scope, category) === 'sell'
+    ? isSellSideLead(ctx.role)
     : isBuySideLead(ctx.role);
 }
 
@@ -250,6 +301,8 @@ export function initiateActionFor(action: HandshakeAction): Action {
       return 'editDates';
     case 'delete_document':
       return 'deleteDocument';
+    case 'delete_thread':
+      return 'deleteThread';
     case 'confirm_payment':
       return 'recordPayment';
     case 'void_payment':
@@ -269,7 +322,11 @@ const UI_ACTIONS: Action[] = [
   'advanceMilestone',
   'editChecklist',
   'createThreadDealWide',
+  'convertChannelThread',
+  'deleteThread',
   'uploadDealWideDoc',
+  'promoteDocument',
+  'deleteDocument',
   'createDocRequest',
   'sendForSignature',
   'recordPayment',
@@ -284,6 +341,7 @@ export function capabilitiesFor(ctx: AuthzContext): Record<string, boolean> {
   const out: Record<string, boolean> = {};
   for (const a of UI_ACTIONS) out[a] = can(a, ctx);
   // roster management is per-target; expose a coarse hint
-  out.manageRoster = ctx.status === 'active' && (ctx.isAdmin || isBuySideLead(ctx.role));
+  out.manageRoster =
+    ctx.status === 'active' && (isSellSideLead(ctx.role) || isBuySideLead(ctx.role));
   return out;
 }
