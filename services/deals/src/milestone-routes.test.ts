@@ -90,41 +90,6 @@ describe('POST /v1/deals/{dealId}/advance', () => {
   });
 });
 
-describe('checklist', () => {
-  it('403s an OTHER member adding an item', async () => {
-    vi.mocked(repo.getDeal).mockResolvedValue(deal());
-    vi.mocked(repo.getMembership).mockResolvedValue(
-      member({ userId: 'insp', role: 'OTHER', side: 'buy', isAdmin: false }),
-    );
-    const res = await run(
-      event({
-        routeKey: 'POST /v1/deals/{dealId}/stages/{n}/checklist',
-        path: { dealId: 'd1', n: '3' },
-        sub: 'insp',
-        body: { title: 'Extra check' },
-      }),
-    );
-    expect(res.statusCode).toBe(403);
-  });
-
-  it('toggling done publishes checklist.item_toggled and stamps doneBy', async () => {
-    vi.mocked(repo.getDeal).mockResolvedValue(deal());
-    vi.mocked(repo.getMembership).mockResolvedValue(member());
-    vi.mocked(repo.updateChecklistItem).mockResolvedValue({ itemId: 't0', done: true } as never);
-    const res = await run(
-      event({
-        routeKey: 'PATCH /v1/deals/{dealId}/stages/{n}/checklist/{itemId}',
-        path: { dealId: 'd1', n: '3', itemId: 't0' },
-        body: { done: true },
-      }),
-    );
-    expect(res.statusCode).toBe(200);
-    expect(detailTypes()).toContain('checklist.item_toggled');
-    const patch = vi.mocked(repo.updateChecklistItem).mock.calls[0]![3] as Record<string, unknown>;
-    expect(patch.doneBy).toBe('admin');
-  });
-});
-
 describe('PATCH /v1/deals/{dealId}/stages/{n}', () => {
   it('400s a target-date change once the deal is firm', async () => {
     vi.mocked(repo.getDeal).mockResolvedValue(deal({ firm: true, currentStage: 4 }));

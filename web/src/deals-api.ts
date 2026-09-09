@@ -53,14 +53,6 @@ export interface Stage {
   notes?: string;
 }
 
-export interface ChecklistItem {
-  itemId: string;
-  n: number;
-  title: string;
-  done: boolean;
-  doneBy?: string;
-  fromTemplate: boolean;
-}
 
 export interface Handshake {
   hsId: string;
@@ -263,13 +255,6 @@ export function dealsApi(cfg: AppConfig, token: string) {
       f<{ stages: Stage[]; currentStage: number; firm: boolean }>(`/v1/deals/${id}/stages`),
     advance: (id: string) =>
       f<{ handshakeId: string; status: string }>(`/v1/deals/${id}/advance`, { method: 'POST' }),
-    checklist: (id: string, n: number) =>
-      f<{ items: ChecklistItem[] }>(`/v1/deals/${id}/stages/${n}/checklist`),
-    toggleChecklistItem: (id: string, n: number, itemId: string, done: boolean) =>
-      f<ChecklistItem>(`/v1/deals/${id}/stages/${n}/checklist/${itemId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ done }),
-      }),
     handshakes: (id: string) => f<{ handshakes: Handshake[] }>(`/v1/deals/${id}/handshakes`),
     myApprovals: () => f<{ handshakes: Handshake[] }>('/v1/handshakes'),
     approveHandshake: (id: string, hsId: string) =>

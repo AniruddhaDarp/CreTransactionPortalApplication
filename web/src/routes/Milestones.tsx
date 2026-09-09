@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { Capabilities, ChecklistItem, DealsApi, Handshake, Stage } from '../deals-api.js';
+import type { Capabilities, DealsApi, Handshake, Stage } from '../deals-api.js';
 import { isSameSideDelete } from '../roles.js';
 import { useAsk } from './dialog.js';
 import { humanizeError } from './errors.js';
@@ -123,7 +123,6 @@ export function Milestones({
 }) {
   const [stages, setStages] = useState<Stage[]>([]);
   const [currentStage, setCurrentStage] = useState(1);
-  const [items, setItems] = useState<ChecklistItem[]>([]);
   const [handshakes, setHandshakes] = useState<Handshake[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -145,9 +144,7 @@ export function Milestones({
       .then((r) => {
         setStages(r.stages);
         setCurrentStage(r.currentStage);
-        return api.checklist(dealId, r.currentStage);
       })
-      .then((c) => setItems(c.items))
       .catch((e: unknown) => setMsg(humanizeError(String(e))));
     api
       .handshakes(dealId)
@@ -257,27 +254,6 @@ export function Milestones({
           )}
         </div>
       )}
-
-      <h4>Checklist — current stage</h4>
-      {items.length === 0 && <p className="empty">No checklist items.</p>}
-      <ul className="checklist">
-        {items.map((it) => (
-          <li key={it.itemId}>
-            <input
-              type="checkbox"
-              id={`chk-${it.itemId}`}
-              checked={it.done}
-              disabled={!capabilities.editChecklist}
-              onChange={(e) =>
-                void act(api.toggleChecklistItem(dealId, currentStage, it.itemId, e.target.checked))
-              }
-            />
-            <label htmlFor={`chk-${it.itemId}`} className={it.done ? 'done' : ''}>
-              {it.title}
-            </label>
-          </li>
-        ))}
-      </ul>
 
       {handshakes.length > 0 && (
         <>

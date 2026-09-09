@@ -12,21 +12,6 @@ const stagePatchSchema = z
   .object({ notes: z.string().max(2000), targetDate: isoDate })
   .partial();
 
-const newItemSchema = z.object({
-  title: z.string().min(1).max(200),
-  assigneeUserId: z.string().max(80).optional(),
-  dueDate: isoDate.optional(),
-});
-
-const itemPatchSchema = z
-  .object({
-    title: z.string().min(1).max(200),
-    assigneeUserId: z.string().max(80),
-    dueDate: isoDate,
-    done: z.boolean(),
-  })
-  .partial();
-
 export const stageRoutes: Record<string, RouteHandler> = {
   'GET /v1/deals/{dealId}/stages': async (ctx) => {
     const { deal } = await requireMember(param(ctx, 'dealId'), ctx.userId);
@@ -78,81 +63,5 @@ export const stageRoutes: Record<string, RouteHandler> = {
     });
     await emit(deal.dealId, ctx.correlationId, ctx.userId, events);
     return { status: 202, body: { handshakeId: hs.hsId, action: 'advance_stage', status: 'pending' } };
-  },
-
-  'GET /v1/deals/{dealId}/stages/{n}/checklist': async (ctx) => {
-    const { deal } = await requireMember(param(ctx, 'dealId'), ctx.userId);
-    const items = await repo.materializeChecklist(deal.dealId, stageNum(ctx));
-    return { body: { items } };
-  },
-
-  'POST /v1/deals/{dealId}/stages/{n}/checklist': async (ctx) => {
-    const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
-    assertActive(deal);
-    const n = stageNum(ctx);
-    if (!can('editChecklist', buildCtx(deal, membership))) {
-      throw new HttpError(403, 'not allowed to edit the checklist');
-    }
-    const input = parseBody(newItemSchema, ctx.body ?? {});
-    const itemId = crypto.randomUUID();
-    await repo.putChecklistItem({
-      dealId: deal.dealId,
-      n,
-      itemId,
-      title: input.title,
-      assigneeUserId: input.assigneeUserId,
-      dueDate: input.dueDate,
-      done: false,
-      fromTemplate: false,
-    });
-    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
-      { type: 'checklist.item_added', detail: { dealId: deal.dealId, n, itemId, title: input.title } },
-    ]);
-    return { status: 201, body: { itemId, title: input.title } };
-  },
-
-  'PATCH /v1/deals/{dealId}/stages/{n}/checklist/{itemId}': async (ctx) => {
-    const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
-    assertActive(deal);
-    const n = stageNum(ctx);
-    const itemId = param(ctx, 'itemId');
-    if (!can('editChecklist', buildCtx(deal, membership))) {
-      throw new HttpError(403, 'not allowed to edit the checklist');
-    }
-    const patch = parseBody(itemPatchSchema, ctx.body ?? {});
-    if (Object.keys(patch).length === 0) throw new HttpError(400, 'nothing to update');
-    const dbPatch: Record<string, unknown> = { ...patch };
-    if (patch.done === true) {
-      dbPatch.doneBy = ctx.userId;
-      dbPatch.doneAt = new Date().toISOString();
-    } else if (patch.done === false) {
-      dbPatch.doneBy = undefined;
-      dbPatch.doneAt = undefined;
-    }
-    const updated = await repo.updateChecklistItem(deal.dealId, n, itemId, dbPatch);
-    if (patch.done !== undefined) {
-      await emit(deal.dealId, ctx.correlationId, ctx.userId, [
-        {
-          type: 'checklist.item_toggled',
-          detail: { dealId: deal.dealId, n, itemId, done: patch.done },
-        },
-      ]);
-    }
-    return { body: updated };
-  },
-
-  'DELETE /v1/deals/{dealId}/stages/{n}/checklist/{itemId}': async (ctx) => {
-    const { deal, membership } = await requireMember(param(ctx, 'dealId'), ctx.userId);
-    assertActive(deal);
-    const n = stageNum(ctx);
-    const itemId = param(ctx, 'itemId');
-    if (!can('editChecklist', buildCtx(deal, membership))) {
-      throw new HttpError(403, 'not allowed to edit the checklist');
-    }
-    await repo.deleteChecklistItem(deal.dealId, n, itemId);
-    await emit(deal.dealId, ctx.correlationId, ctx.userId, [
-      { type: 'checklist.item_removed', detail: { dealId: deal.dealId, n, itemId } },
-    ]);
-    return { body: { removed: true } };
   },
 };

@@ -202,10 +202,6 @@ $API/v1/deals/<id>/advance` only ever moves +1, and at stage 6 → `409`.
 **T4.5 `[API]` Advance with no buy-side lead** — on a fresh deal with only
 sell-side members, `POST …/advance` → `409` ("invite the buyer's side").
 
-**T4.6 `[SPA]` Checklist** — open stage 3's checklist. Template items appear on
-first view. Check two items → they persist on reload. As `seed-inspector`
-(`OTHER`) checking an item → `403` (non-`OTHER` only).
-
 **T4.7 `[API]` Edit price is always a handshake** — the seed deal already has one
 pending (buyer agent → admin, $14.5M). As admin, `GET $API/v1/handshakes` →
 shows it. Approve it → `GET $API/v1/deals/<id>` shows `price: 14500000`.

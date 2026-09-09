@@ -97,13 +97,6 @@ async function main() {
   };
   await advance(U.buyer); // stage 1 → 2
   await advance(U.buyerAgent); // stage 2 → 3 (flips "firm")
-  // tick a couple of checklist items on the completed stages
-  for (const n of [1, 2]) {
-    const { items } = await U.sellerAgent.must('GET', `/v1/deals/${id}/stages/${n}/checklist`);
-    for (const it of items.slice(0, 2)) {
-      await U.sellerAgent.must('PATCH', `/v1/deals/${id}/stages/${n}/checklist/${it.itemId}`, { done: true });
-    }
-  }
 
   console.log('· threads — one per scope, with a couple of messages');
   const thread = async (author, subject, scope) => {

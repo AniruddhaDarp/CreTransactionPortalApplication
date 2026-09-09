@@ -32,7 +32,7 @@ See `docs/01-problem-exploration.md` for why this problem was chosen.
 - One workspace per deal; all parties first-class; server-enforced role- and
   scope-based access.
 - The standard commercial purchase pipeline as a guided, forward-only sequence
-  of stages with per-stage checklists.
+  of six stages, advanced by handshake.
 - Threaded messaging with four visibility scopes and delivery/read receipts.
 - A document room with explicit versioning, scoped access, promotion of
   side-private documents to deal-wide, and a document-request workflow.
@@ -45,8 +45,7 @@ See `docs/01-problem-exploration.md` for why this problem was chosen.
 ### Non-goals (V1)
 
 - No wire/payment handling or identity verification (problem 1).
-- No deadline/contingency automation or reminders (problem 5) — checklists are
-  manual.
+- No deadline/contingency automation or reminders (problem 5).
 - No in-app bidding or pre-contract sourcing; a deal starts at an accepted offer.
 - No e-signature, no MLS/title/lender integrations, no real-time push, no
   multi-tenant billing, no mobile app.
@@ -231,15 +230,15 @@ date, optional stage tag, scope. States: `open` → `fulfilled` (links the
 uploaded document) / `declined` (with reason) / `cancelled` (by the requester).
 Notifications on create and resolve; every transition audited.
 
-### 5.7 Milestones & checklists
+### 5.7 Milestones
 
 Each stage has a status (`not_started` / `in_progress` / `completed`), an
-optional target date, notes, and a **checklist**. Checklist items are seeded from
-a per-stage template and can be added/removed; fields: title, optional assignee,
-optional due date, done flag, done-by/at. Any active non-`OTHER` member can
-check/uncheck; audited. **Checklists are guidance, not a hard gate** on
-advancing (advancing is the handshake). Advancing marks the current stage
-`completed` and the next `in_progress`.
+optional target date, and notes. Advancing is a handshake; on approval the
+current stage is marked `completed` and the next `in_progress`. Closing the deal
+from the final stage completes stage 6 in the same transaction.
+
+*(A per-stage checklist was built and then removed — see §17 As-built notes. It
+was advisory only and never gated advancement.)*
 
 ### 5.8 Audit trail
 
@@ -248,7 +247,7 @@ target (type + id), timestamp, scope, metadata (old→new values, reason text).
 
 Logged actions: deal created / terms edited / status changed; member invited /
 joined / role changed / removed; handshake requested / approved / rejected;
-milestone advanced; checklist item added / checked / unchecked; thread created /
+milestone advanced; thread created /
 scope converted; message posted / edited / deleted; document uploaded / new
 version / promoted / opened / previewed / downloaded / deleted; document request
 created / fulfilled / declined / cancelled.
@@ -304,7 +303,6 @@ few-seconds eventual-consistency window after a membership change; see
 | Edit dates (closing, stage targets) | Admin pre-firm → handshake once firm |
 | Close / cancel deal | Admin in/before Attorney Review → handshake once firm |
 | Advance milestone | Handshake, either side initiates |
-| Checklist items (add/check/uncheck) | Any active non-`OTHER` member |
 | Invite sell-side + `TITLE_AGENT` | Admin |
 | Invite buy-side | Admin (to bootstrap the side) or `BUYER` / `BUYER_AGENT`, within limits |
 | Invite `OTHER` | Lead of the side bringing them |
@@ -421,7 +419,7 @@ DLQ. No service reads another's table; cross-domain data arrives as events.
 | Service | Owns | Publishes | Consumes |
 |---|---|---|---|
 | **Accounts** | user profiles; **the Cognito user pool + app client + hosted-UI domain + post-confirmation trigger + the shared JWT authorizer** (exported via SSM) | `account.created` | — |
-| **Deals** | deal record + status; membership + invitations; milestones (stages, checklists); handshake state machine | `deal.created`, `deal.updated`, `deal.status_changed`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed`, `stage.advanced`, `handshake.requested`, `handshake.approved`, `handshake.rejected` | `document.delete_requested` (opens the delete handshake), `document.archived` (closes the saga) |
+| **Deals** | deal record + status; membership + invitations; milestones (stages, handshake state machine) | `deal.created`, `deal.updated`, `deal.status_changed`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed`, `stage.advanced`, `handshake.requested`, `handshake.approved`, `handshake.rejected` | `document.delete_requested` (opens the delete handshake), `document.archived` (closes the saga) |
 | **Chat** | threads, messages, receipts, read markers; local `memberships` projection | `message.posted`, `message.edited`, `message.deleted`, `thread.created`, `thread.converted` | `member.*` |
 | **Documents** | documents + versions, document requests; S3 docs bucket; local `memberships` projection | `document.uploaded`, `document.versioned`, `document.promoted`, `document.archived`, `document.accessed`, `document.delete_requested`, `docrequest.created`, `docrequest.fulfilled`, `docrequest.declined`, `docrequest.cancelled` | `member.*`, `handshake.approved` |
 | **Notifications** | per-user notification rows (bell + unread) + `MEMBERVIEW#` / `PROFILE#` projections; SESv2 dispatch for invitations + action-required (flag-gated on `NOTIFY_EMAIL_FROM`) | `notification.emailed` | `member.*`, `account.created`, `handshake.*`, `message.posted`, `docrequest.*`, `stage.advanced`, `deal.status_changed`, `thread.converted` (matched by detail-type across sources) |
@@ -541,15 +539,13 @@ noted. **No service reads another service's table.**
 | Membership | `DEAL#<dealId>` | `MEMBER#<userId>` | role, side, status, invitedBy, joinedAt, version · **GSI1** `USER#<userId>` / `DEAL#<dealId>` |
 | Invitation | `DEAL#<dealId>` | `INVITE#<token>` | email, role, side, invitedBy, status, expiresAt · **GSI2** `EMAIL#<email>` / `INVITE#<dealId>` |
 | Stage state | `DEAL#<dealId>` | `STAGE#<n>` (1–6) | name, status, targetDate, notes, completedBy, completedAt |
-| Checklist item | `DEAL#<dealId>` | `CHECK#<n>#<itemId>` | title, assigneeUserId, dueDate, done, doneBy, doneAt, fromTemplate |
 | Handshake | `DEAL#<dealId>` | `HS#<hsId>` | action, payload, initiatedBy, initiatedSide, status (`pending`→`approved`/`rejected`/`completed`), sagaState, decidedBy, decisionReason, createdAt, decidedAt |
 | Approval pointer | `DEAL#<dealId>` | `APPR#<hsId>#<userId>` | one per eligible approver (a lead on the counterparty side) · **GSI1** `USER#<userId>` / `APPR#<createdAt>#<hsId>` — serves "my pending approvals"; all pointers for an `hsId` are deleted when it is decided |
 | Stage | `DEAL#<dealId>` | `STAGE#<n>` (1–6) | key, name, status, targetDate, notes, completedBy, completedAt — the 6 rows are written by `createDeal` |
-| Checklist item | `DEAL#<dealId>` | `CHECK#<n>#<itemId>` | title, assigneeUserId, dueDate, done, doneBy/At, fromTemplate — template items are materialized the first time a stage's checklist is read |
 
 - **GSI1 "by user"** → my deals (memberships); my pending approvals (handshakes).
 - **GSI2 "by email"** → pending invites for an email at login.
-- Patterns: deal meta (GetItem); members / invites / stages / checklist / open
+- Patterns: deal meta (GetItem); members / invites / stages / open
   handshakes (Query by `SK` prefix); my deals & my approvals (GSI1).
 
 ### 8.3 `chat` table (Chat svc)
@@ -709,8 +705,7 @@ membership view before touching data.
 - **Deals svc — milestones:** `GET /deals/{id}/stages`,
   `PATCH /deals/{id}/stages/{n}` (notes / target date — target dates are
   handshake-gated once firm), `POST /deals/{id}/advance` (opens an advance
-  handshake), `GET/POST /deals/{id}/stages/{n}/checklist`,
-  `PATCH|DELETE /deals/{id}/stages/{n}/checklist/{itemId}`.
+  handshake).
 - **Deals svc — terms & status:** `POST /deals/{id}/status` (close/cancel —
   unilateral pre-firm, opens a handshake once firm), `POST /deals/{id}/terms`
   (price change → always a handshake; closing-date change → unilateral pre-firm,
@@ -965,7 +960,8 @@ assignment and for keeping the demo up afterward.
 - Pre-contract stages + in-app bidding (Sourcing & Underwriting, Offer / LOI with
   a preliminary underwriting model; offer submission, counters, acceptance).
 - Deadline & contingency automation: lead-time reminders and escalation on stage
-  target dates and checklist items (problem 5).
+  target dates (problem 5); optionally a re-introduced per-stage checklist tied
+  to those alerts.
 - Real-time push (API Gateway WebSockets or AppSync) instead of short polling.
 - Multi-property / portfolio deals; richer deal state machine (e.g. `ON_HOLD`).
 - Identity verification / KYC for all parties; audit-log tamper-evidence via
@@ -1042,6 +1038,13 @@ sections have been updated to match; this section is the changelog.)
 - `allMembers` **broadcast notifications** (`stage.advanced`,
   `deal.status_changed`) include the actor; a milestone is deal-wide news, not
   feedback on one's own click. Targeted notifications still skip the actor.
+- **Per-stage checklists were removed.** They were built (templated items,
+  add/check/remove routes, `checklist.*` events, `editChecklist` capability,
+  `CHECK#` rows) but never earned their place: purely advisory, no gate on
+  advancement, and adding little the milestone name + stage notes didn't. The
+  routes, events, capability and table rows were deleted. Closing a stage now
+  completes it via the advance handshake alone. Sections 5.7, 6, 8.x and 12
+  below describe the milestone backbone without the checklist.
 
 ### Audit
 

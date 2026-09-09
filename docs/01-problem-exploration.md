@@ -1,40 +1,32 @@
 # Problem Exploration
 
-## The brief
-
-> *"Imagine you are a staff software engineer at a commercial real estate company.
-> Identify a meaningful problem worth solving and build a working solution for it."*
-
-That is the entire specification. No problem, no users, no constraints given.
-This document records the problems I considered, what I found researching each,
-and why I chose the one I built.
-
-My filter for "meaningful and worth building here":
-
-1. **Real cost** — measurable money or time lost today, ideally getting worse.
-2. **Clear users** — a specific set of people whose job this touches.
-3. **A genuine gap** — not already solved well by an incumbent.
-4. **Buildable in the time** — a defensible vertical slice without needing data
-   or integrations I can't get for a prototype.
-5. **Exercises real engineering** — architecture and tradeoffs worth discussing,
-   not a CRUD form.
-
 ## Candidate problems
 
 ### 1. Lease critical-date management
 
 Commercial leases bury money-critical dates — renewal-option notice windows
-(typically 9–12 months before expiry), escalations, expirations, termination
-rights, CAM caps. The renewal-notice deadline is both the most commonly missed
-and the most financially damaging: miss it by a day and the option is gone.
-Tracking is mostly spreadsheets, and studies put material-error rates in
-spreadsheets around 88%. AI lease abstraction is now reported at 94–99% accuracy
-with human validation.
+(typically 9–12 months before expiry), ROFO/ROFR triggers, escalation dates,
+expirations, termination rights, CAM-cap true-up windows. The renewal-notice
+deadline is both the most commonly missed and the most financially damaging:
+miss it by a day and the option is gone. Tracking is mostly spreadsheets, and
+studies put material-error rates in spreadsheets around 88%.
 
-**Why not chosen:** a strong problem, but crowded with capable incumbents (VTS,
-Prophia, Occupier, LeaseAccelerator), and the interesting core is an LLM
-extraction + evaluation pipeline — a narrower "systems" story than I wanted, and
-problem identification here isn't novel.
+**The technical problem:** a document-understanding pipeline feeding an alerting
+engine. Ingest heterogeneous lease PDFs (scanned originals plus a chain of
+amendments and estoppels), extract a normalized set of dated obligations,
+reconcile the amendment chain to decide which clause is operative, attach
+calibrated confidence, and route low-confidence extractions to human review —
+then drive lead-time alerts and escalation off the resulting dates. The
+engineering worth defending is the extraction-evaluation loop: a gold set,
+precision/recall gates, and regression tests that catch drift when a model or a
+prompt changes.
+
+**Why not chosen:** the quality ceiling is set by the model and a labeled lease
+corpus, not by system design, and I have neither. Without them the prototype
+either runs on toy inputs or collapses to the same alerting engine the
+transaction problem also needs. The distinctive engineering is one narrow slice
+(the eval harness), and the space is crowded with capable incumbents (VTS,
+Prophia, Occupier, LeaseAccelerator).
 
 ### 2. CAM / operating-expense reconciliation
 
@@ -43,34 +35,45 @@ tenants have a 90-day-to-12-month window to audit it. Disputes reliably cluster
 around capital expenditures misclassified as operating expenses, management fees
 on a grossed-up base, and double-dipped charges. Recoveries are real money.
 
-**Why not chosen:** sharp and valuable, but narrow. A convincing demo needs a
-corpus of leases plus their reconciliation statements, and the work is mostly a
-rules engine plus arithmetic — less architecture to discuss.
+**The technical problem:** a lease-economics rules engine. Represent each
+lease's expense provisions — exclusions, caps, gross-up percentage, base year,
+pro-rata share, admin-fee basis — as structured, versioned rules; parse the
+landlord's reconciliation statement into line items; recompute the tenant's
+share deterministically; and emit an explainable line-by-line diff that cites
+the governing clause for every discrepancy. The interesting part is the rule
+representation — a small DSL for lease economics — and reproducible
+recomputation.
 
-### 3. The 2026 debt-maturity wall
+**Why not chosen:** it is a closed, single-tenant computation — no multi-party
+state, no concurrency, no authorization model, no workflow — so it exercises one
+engineering muscle deeply and nothing else. Turning prose clauses into
+structured rules is again a document-extraction task, and a convincing demo
+needs paired leases and reconciliation statements that aren't publicly
+available.
 
-Roughly $950B–$1.26T of CRE loans mature each year across 2025–2027, refinancing
-into higher rates and stricter DSCR minimums (commonly 1.20x–1.35x). Lenders and
-borrowers need covenant-compliance and refinance-risk monitoring across a loan
-portfolio.
-
-**Why not chosen:** macro-timely, but the software is essentially a
-spreadsheet-replacement tracker. The hard part is acquiring borrower financials
-each period — which I can't realistically source or fake well for a prototype.
-
-### 4. Building Performance Standard penalties
+### 3. Building Performance Standard penalties
 
 16+ US jurisdictions now impose financial penalties for buildings over an
 emissions cap — NYC Local Law 97 at $268 per metric ton of CO₂e over cap across
 ~50,000 buildings, DC BEPS up to $10/sf. Owners need per-building breach
 forecasts and retrofit prioritization.
 
-**Why not chosen:** differentiated and current, but it's jurisdiction-specific
-rules (that change) plus data ingestion from ENERGY STAR Portfolio Manager — a
-rules-and-data exercise, and it reads more as a sustainability-consultant tool
-than something a staff engineer *at a CRE company* would own.
+**The technical problem:** an effective-dated rules engine over regulations that
+change. Encode each jurisdiction's cap schedule (caps step down each compliance
+period), fuel-to-CO₂e coefficients (periodically revised), and penalty formulas
+as versioned rules keyed by effective date, so a compliance calculation for 2027
+run today uses the coefficients as they will stand then and stays reproducible
+when audited later. Layer on ingestion of monthly energy data (ENERGY STAR
+Portfolio Manager API, utility feeds) and scenario modeling to rank retrofit
+capital across a portfolio.
 
-### 5. Executing the transaction — coordination across all parties
+**Why not chosen:** the effective-dated rules engine is real, but most of the
+work is encoding jurisdiction-by-jurisdiction rules that track legislation —
+content that ages, not system design — plus one external-API ingestion adapter.
+It also reads as a sustainability-consulting tool, further from the transaction
+and asset-management systems a CRE engineering team actually owns.
+
+### 4. Executing the transaction — coordination across all parties
 
 Closing a property purchase runs across email, text, personal inboxes, phone
 calls, PDFs, e-sign tools, and shared drives, with no single source of truth.
@@ -101,7 +104,7 @@ seller, and the two attorneys are typically bolted on as guests.
 
 ## The problem I chose
 
-**The coordination gap in problem 5: there is no neutral, multi-party workspace
+**The coordination gap: there is no neutral, multi-party workspace
 for a property transaction where every party — buyer, seller, both agents, both
 attorneys, lender, title — is a first-class member.** The build targets three
 sub-problems:
@@ -139,7 +142,7 @@ to residential purchases too.
 
 **In scope for the prototype:** one deal type (a property purchase that has
 already reached an accepted offer), a fixed party/role set, the six-stage
-milestone backbone with per-stage checklists, four-scope threaded messaging,
+milestone backbone, four-scope threaded messaging,
 message delivery/read receipts, a versioned + permissioned document room with
 document requests, a dual-approval handshake for gated actions, an append-only
 scoped audit log with export, an in-app notification centre, real
@@ -150,7 +153,7 @@ authentication, and email invitations — deployed and working with seed data.
 - **Problem 1 — secure funds & identity:** verified party identities and
   tamper-evident, in-platform delivery of wire/payoff instructions. The
   highest-value extension; a stretch goal for this build, otherwise next.
-- **Problem 5 — deadline & contingency automation:** turning the milestone
-  checklists into tracked deadlines with lead-time alerts.
+- **Problem 5 — deadline & contingency automation:** tracked deadlines on the
+  milestone stages with lead-time alerts and escalation.
 - In-app bidding / pre-contract sourcing, e-signature, integrations, real-time
   push, multi-tenant billing, mobile.

@@ -39,14 +39,10 @@ const ROUTES: RouteSpec[] = [
   [HttpMethod.POST, '/v1/deals/{dealId}/invites/{token}/decline'],
   [HttpMethod.PATCH, '/v1/deals/{dealId}/members/{userId}'],
   [HttpMethod.DELETE, '/v1/deals/{dealId}/members/{userId}'],
-  // milestones + checklists + handshakes (Module 5)
+  // milestones + handshakes (Module 5)
   [HttpMethod.GET, '/v1/deals/{dealId}/stages'],
   [HttpMethod.PATCH, '/v1/deals/{dealId}/stages/{n}'],
   [HttpMethod.POST, '/v1/deals/{dealId}/advance'],
-  [HttpMethod.GET, '/v1/deals/{dealId}/stages/{n}/checklist'],
-  [HttpMethod.POST, '/v1/deals/{dealId}/stages/{n}/checklist'],
-  [HttpMethod.PATCH, '/v1/deals/{dealId}/stages/{n}/checklist/{itemId}'],
-  [HttpMethod.DELETE, '/v1/deals/{dealId}/stages/{n}/checklist/{itemId}'],
   [HttpMethod.GET, '/v1/deals/{dealId}/handshakes'],
   [HttpMethod.GET, '/v1/handshakes'],
   [HttpMethod.POST, '/v1/deals/{dealId}/handshakes/{hsId}/approve'],
@@ -60,7 +56,7 @@ const ROUTES: RouteSpec[] = [
 
 /**
  * DealsStack — the Deals service: deal records, membership, invitations.
- * Milestones + checklists + the handshake state machine are added in Module 5
+ * Milestones + the handshake state machine are added in Module 5
  * (same stack, same table). Reads SharedStack + AccountsStack identifiers from
  * SSM; owns nothing other services read.
  */

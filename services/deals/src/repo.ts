@@ -1,6 +1,5 @@
 import {
   BatchGetCommand,
-  DeleteCommand,
   GetCommand,
   PutCommand,
   QueryCommand,
@@ -10,7 +9,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import type { HandshakeAction, Role, Side } from '@cre/authz';
 import { docClient } from '@cre/platform';
-import { CHECKLIST_TEMPLATES, STAGES } from './pipeline.js';
+import { STAGES } from './pipeline.js';
 
 export type DealStatus = 'ACTIVE' | 'CLOSED' | 'CANCELLED';
 export type MemberStatus = 'invited' | 'active' | 'removed';
@@ -82,18 +81,6 @@ export interface Stage {
   completedAt?: string;
 }
 
-export interface ChecklistItem {
-  dealId: string;
-  n: number;
-  itemId: string;
-  title: string;
-  assigneeUserId?: string;
-  dueDate?: string;
-  done: boolean;
-  doneBy?: string;
-  doneAt?: string;
-  fromTemplate: boolean;
-}
 
 export interface Handshake {
   dealId: string;
@@ -145,10 +132,6 @@ const dealKey = (id: string) => ({ PK: `DEAL#${id}`, SK: 'META' });
 const memberKey = (id: string, uid: string) => ({ PK: `DEAL#${id}`, SK: `MEMBER#${uid}` });
 const inviteKey = (id: string, token: string) => ({ PK: `DEAL#${id}`, SK: `INVITE#${token}` });
 const stageKey = (id: string, n: number) => ({ PK: `DEAL#${id}`, SK: `STAGE#${n}` });
-const checkKey = (id: string, n: number, itemId: string) => ({
-  PK: `DEAL#${id}`,
-  SK: `CHECK#${n}#${itemId}`,
-});
 const hsKey = (id: string, hsId: string) => ({ PK: `DEAL#${id}`, SK: `HS#${hsId}` });
 const apprKey = (id: string, hsId: string, uid: string) => ({
   PK: `DEAL#${id}`,
@@ -563,103 +546,6 @@ export async function updateStageMeta(
     }),
   );
   return clean<Stage>(r.Attributes ?? {});
-}
-
-// --- checklist ------------------------------------------------------------
-
-export async function listChecklist(dealId: string, n: number): Promise<ChecklistItem[]> {
-  const r = await docClient().send(
-    new QueryCommand({
-      TableName: tableName(),
-      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
-      ExpressionAttributeValues: { ':pk': `DEAL#${dealId}`, ':sk': `CHECK#${n}#` },
-    }),
-  );
-  return (r.Items ?? []).map((i) => clean<ChecklistItem>(i));
-}
-
-/** Write the template items for a stage the first time its checklist is requested. */
-export async function materializeChecklist(dealId: string, n: number): Promise<ChecklistItem[]> {
-  const existing = await listChecklist(dealId, n);
-  if (existing.length > 0) return existing;
-  const titles = CHECKLIST_TEMPLATES[n] ?? [];
-  const items: ChecklistItem[] = titles.map((title, idx) => ({
-    dealId,
-    n,
-    itemId: `t${idx}`,
-    title,
-    done: false,
-    fromTemplate: true,
-  }));
-  await docClient().send(
-    new TransactWriteCommand({
-      TransactItems: items.map((it) => ({
-        Put: { TableName: tableName(), Item: { ...checkKey(dealId, n, it.itemId), ...it } },
-      })),
-    }),
-  );
-  return items;
-}
-
-export async function putChecklistItem(item: ChecklistItem): Promise<void> {
-  await docClient().send(
-    new PutCommand({
-      TableName: tableName(),
-      Item: { ...checkKey(item.dealId, item.n, item.itemId), ...item },
-    }),
-  );
-}
-
-export async function updateChecklistItem(
-  dealId: string,
-  n: number,
-  itemId: string,
-  patch: {
-    title?: string;
-    assigneeUserId?: string;
-    dueDate?: string;
-    done?: boolean;
-    doneBy?: string;
-    doneAt?: string;
-  },
-): Promise<ChecklistItem> {
-  const sets: string[] = [];
-  const removes: string[] = [];
-  const names: Record<string, string> = {};
-  const values: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(patch)) {
-    names[`#${k}`] = k;
-    if (v === undefined) removes.push(`#${k}`);
-    else {
-      sets.push(`#${k} = :${k}`);
-      values[`:${k}`] = v;
-    }
-  }
-  const parts: string[] = [];
-  if (sets.length) parts.push(`SET ${sets.join(', ')}`);
-  if (removes.length) parts.push(`REMOVE ${removes.join(', ')}`);
-  const r = await docClient().send(
-    new UpdateCommand({
-      TableName: tableName(),
-      Key: checkKey(dealId, n, itemId),
-      UpdateExpression: parts.join(' '),
-      ExpressionAttributeNames: names,
-      ExpressionAttributeValues: Object.keys(values).length ? values : undefined,
-      ConditionExpression: 'attribute_exists(PK)',
-      ReturnValues: 'ALL_NEW',
-    }),
-  );
-  return clean<ChecklistItem>(r.Attributes ?? {});
-}
-
-export async function deleteChecklistItem(dealId: string, n: number, itemId: string): Promise<void> {
-  await docClient().send(
-    new DeleteCommand({
-      TableName: tableName(),
-      Key: checkKey(dealId, n, itemId),
-      ConditionExpression: 'attribute_exists(PK)',
-    }),
-  );
 }
 
 // --- handshakes ---------------------------------------------------------

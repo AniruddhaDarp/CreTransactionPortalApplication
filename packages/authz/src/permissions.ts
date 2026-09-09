@@ -39,7 +39,6 @@ export type Action =
   // --- milestones (Module 5) ---
   | 'advanceMilestone'
   | 'editStageMeta'
-  | 'editChecklist'
   // --- communication (refined in Module 6) ---
   | 'createThreadDealWide'
   | 'createThreadSidePrivate'
@@ -122,8 +121,6 @@ export function can(action: Action, ctx: AuthzContext): boolean {
       return sellLead || buyLead; // "may initiate the advance handshake"
     case 'editStageMeta':
       return sellLead || buyLead; // stage notes / target dates
-    case 'editChecklist':
-      return notOther;
 
     // --- communication (refined in Module 6) ---
     case 'createThreadDealWide':
@@ -320,7 +317,6 @@ const UI_ACTIONS: Action[] = [
   'inviteSellSide',
   'inviteBuySide',
   'advanceMilestone',
-  'editChecklist',
   'createThreadDealWide',
   'convertChannelThread',
   'deleteThread',

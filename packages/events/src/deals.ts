@@ -114,26 +114,6 @@ export const handshakeRejectedSchema = z.object({
   initiatedSide: sideSchema,
 });
 
-export const checklistItemAddedSchema = z.object({
-  dealId: z.string(),
-  n: z.number().int(),
-  itemId: z.string(),
-  title: z.string(),
-});
-
-export const checklistItemToggledSchema = z.object({
-  dealId: z.string(),
-  n: z.number().int(),
-  itemId: z.string(),
-  done: z.boolean(),
-});
-
-export const checklistItemRemovedSchema = z.object({
-  dealId: z.string(),
-  n: z.number().int(),
-  itemId: z.string(),
-});
-
 // --- payments (Module 11, stretch) ------------------------------------
 
 export const paymentRecordedSchema = z.object({
@@ -177,9 +157,6 @@ export const dealEventSchemas = {
   'handshake.requested': handshakeRequestedSchema,
   'handshake.approved': handshakeApprovedSchema,
   'handshake.rejected': handshakeRejectedSchema,
-  'checklist.item_added': checklistItemAddedSchema,
-  'checklist.item_toggled': checklistItemToggledSchema,
-  'checklist.item_removed': checklistItemRemovedSchema,
   'payment.recorded': paymentRecordedSchema,
   'payment.confirmed': paymentConfirmedSchema,
   'payment.voided': paymentVoidedSchema,
